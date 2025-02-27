@@ -1,0 +1,35 @@
+{
+  "users": {},
+  "surveys": {},
+  "settings": {
+    "roles": {
+      "admin": {
+        "name": "Администратор",
+        "permissions": [
+          "manage_surveys",
+          "manage_users",
+          "manage_roles",
+          "view_analytics",
+          "export_data"
+        ]
+      },
+      "moderator": {
+        "name": "Модератор",
+        "permissions": [
+          "manage_surveys",
+          "view_analytics"
+        ]
+      },
+      "user": {
+        "name": "Пользователь",
+        "permissions": [
+          "take_surveys"
+        ]
+      },
+      "guest": {
+        "name": "Гость",
+        "permissions": []
+      }
+    }
+  }
+}
