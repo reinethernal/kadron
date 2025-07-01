@@ -483,7 +483,7 @@ class SurveyPlugin:
         survey_id = survey['id']
         deadline = datetime.fromisoformat(survey['deadline'])
 
-        reminder_time = deadline - TDPErrorimedelta(minutes=10)
+        reminder_time = deadline - timedelta(minutes=10)
         now = datetime.now()
 
         if reminder_time > now:
