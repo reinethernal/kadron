@@ -3,7 +3,6 @@
 import asyncio
 import logging
 import os
-from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,7 +21,7 @@ except ImportError:
     logging.warning("DefaultBotProperties not found – bot will be created without parse_mode.")
 
 from core.db_manager import initialize_db
-from handlers import admin_handlers, survey_handlers, group_handlers  # group_handlers нужен
+from plugin_manager import PluginManager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,10 +38,14 @@ async def main():
 
     dp = Dispatcher()
 
-    # Регистрируем хендлеры
-    admin_handlers.register_admin_handlers(dp)
-    survey_handlers.register_survey_handlers(dp)
-    group_handlers.register_group_handlers(dp)  # <-- эта функция должна существовать в group_handlers.py
+    # Инициализация менеджера плагинов
+    plugin_manager = PluginManager(dp)
+
+    # Загружаем плагины
+    await plugin_manager.load_plugins()
+
+    # Регистрируем команды из плагинов
+    await plugin_manager.setup_bot_commands(bot)
 
     logger.info("Бот запущен и ожидает обновлений...")
 
