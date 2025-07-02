@@ -152,7 +152,10 @@ class EditQuestionPlugin:
     def get_commands(self):
         """Return a list of commands this plugin provides"""
         return [
-            {"command": "edit_question", "description": "Edit questions in existing surveys"}
+            types.BotCommand(
+                command="edit_question",
+                description="Edit questions in existing surveys",
+            )
         ]
         
     def get_keyboards(self):
