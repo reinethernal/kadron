@@ -1,8 +1,8 @@
 """
-Plugin Manager for Telegram Bot
+Менеджер плагинов Telegram‑бота.
 
-This module handles loading, unloading, and managing plugins for the bot.
-It provides a central registry for all plugins and their functionality.
+Модуль отвечает за загрузку, выгрузку и управление плагинами бота.
+Он предоставляет центральный реестр всех плагинов и их возможностей.
 """
 
 import importlib
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class PluginManager:
-    """Manages all plugins for the bot"""
+    """Управляет всеми плагинами бота"""
     
     def __init__(self, dp: Dispatcher):
         self.dp = dp
@@ -24,75 +24,75 @@ class PluginManager:
         self.plugin_dir = "plugins"
         
     async def load_plugins(self):
-        """Load all plugins from the plugins directory"""
+        """Загружает все плагины из каталога plugins"""
         if not os.path.exists(self.plugin_dir):
-            logger.warning(f"Plugin directory {self.plugin_dir} does not exist")
+            logger.warning(f"Каталог плагинов {self.plugin_dir} не найден")
             os.makedirs(self.plugin_dir)
             return
             
         for filename in os.listdir(self.plugin_dir):
             if filename.endswith("_plugin.py") and not filename.startswith("__"):
-                plugin_name = filename[:-3]  # Remove .py extension
+                plugin_name = filename[:-3]  # убираем расширение .py
                 await self.load_plugin(plugin_name)
                 
     async def load_plugin(self, plugin_name: str) -> bool:
-        """Load a specific plugin by name"""
+        """Загружает конкретный плагин по имени"""
         if plugin_name in self.plugins:
-            logger.warning(f"Plugin {plugin_name} is already loaded")
+            logger.warning(f"Плагин {plugin_name} уже загружен")
             return False
             
         try:
             module = importlib.import_module(f"{self.plugin_dir}.{plugin_name}")
             plugin = module.load_plugin()
             
-            # Register plugin handlers
+            # Регистрируем обработчики плагина
             await plugin.register_handlers(self.dp)
             
-            # Call plugin load hook if it exists
+            # Вызываем хук загрузки, если он определён
             if hasattr(plugin, "on_plugin_load"):
                 plugin.on_plugin_load()
                 
             self.plugins[plugin_name] = plugin
-            logger.info(f"Plugin {plugin_name} loaded successfully")
+            logger.info(f"Плагин {plugin_name} успешно загружен")
             return True
             
         except Exception as e:
-            logger.error(f"Failed to load plugin {plugin_name}: {e}")
+            logger.error(f"Не удалось загрузить плагин {plugin_name}: {e}")
             return False
             
     async def unload_plugin(self, plugin_name: str) -> bool:
-        """Unload a specific plugin by name"""
+        """Выгружает конкретный плагин по имени"""
         if plugin_name not in self.plugins:
-            logger.warning(f"Plugin {plugin_name} is not loaded")
+            logger.warning(f"Плагин {plugin_name} не загружен")
             return False
             
         try:
             plugin = self.plugins[plugin_name]
             
-            # Call plugin unload hook if it exists
+            # Вызываем хук выгрузки, если он определён
             if hasattr(plugin, "on_plugin_unload"):
                 plugin.on_plugin_unload()
                 
-            # Remove plugin from registry
+            # Убираем плагин из реестра
             del self.plugins[plugin_name]
             
-            logger.info(f"Plugin {plugin_name} unloaded successfully")
+            logger.info(f"Плагин {plugin_name} успешно выгружен")
             return True
             
         except Exception as e:
-            logger.error(f"Failed to unload plugin {plugin_name}: {e}")
+            logger.error(f"Не удалось выгрузить плагин {plugin_name}: {e}")
             return False
             
     def get_plugin(self, plugin_name: str) -> Optional[Any]:
-        """Get a plugin by name"""
+        """Возвращает плагин по имени"""
         return self.plugins.get(plugin_name)
         
     def get_all_plugins(self) -> Dict[str, Any]:
-        """Get all loaded plugins"""
+        """Возвращает все загруженные плагины"""
         return self.plugins
         
     def get_all_commands(self) -> List[BotCommand]:
-        """Get all commands from all plugins"""
+        """Получает команды из всех плагинов"""
         commands = []
         for plugin in self.plugins.values():
             if hasattr(plugin, "get_commands"):
@@ -100,14 +100,14 @@ class PluginManager:
         return commands
     
     async def setup_bot_commands(self, bot: Bot):
-        """Set up bot commands from all plugins"""
+        """Настраивает команды бота на основе плагинов"""
         commands = self.get_all_commands()
         if commands:
             await bot.set_my_commands(commands)
-            logger.info(f"Set up {len(commands)} bot commands")
+            logger.info(f"Установлено команд: {len(commands)}")
     
     def get_all_keyboards(self) -> Dict[str, Any]:
-        """Get all keyboards from all plugins"""
+        """Получает все клавиатуры из плагинов"""
         keyboards = {}
         for plugin in self.plugins.values():
             if hasattr(plugin, "get_keyboards"):

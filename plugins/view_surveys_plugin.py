@@ -1,8 +1,8 @@
 """
-View Surveys Plugin
+Плагин просмотра опросов.
 
-This plugin implements the functionality to view surveys in the system.
-It allows users to list, filter, and view details of surveys.
+Реализует возможность просматривать список опросов, фильтровать их и получать
+подробную информацию.
 """
 
 from aiogram import Dispatcher, types
@@ -11,7 +11,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# Use helpers from db_manager instead of the missing database module
+# Используем функции из db_manager вместо отсутствующего модуля базы данных
 from core.db_manager import (
     get_all_polls,
     get_poll_id_by_name,
@@ -23,7 +23,7 @@ from typing import List, Dict, Optional
 
 
 async def get_surveys(user_id: Optional[int] = None) -> List[Dict]:
-    """Return all available surveys."""
+    """Возвращает все доступные опросы."""
     surveys = []
     for name in get_all_polls():
         poll_id = get_poll_id_by_name(name)
@@ -40,7 +40,7 @@ async def get_surveys(user_id: Optional[int] = None) -> List[Dict]:
 
 
 async def get_survey_by_id(survey_id: int) -> Optional[Dict]:
-    """Fetch a survey by ID."""
+    """Получает опрос по его ID."""
     poll = get_poll_by_id(survey_id)
     if not poll:
         return None
@@ -50,7 +50,7 @@ async def get_survey_by_id(survey_id: int) -> Optional[Dict]:
 
 
 async def format_survey_info(survey: Dict) -> str:
-    """Format survey details for display."""
+    """Форматирует информацию об опросе для отображения."""
     info = f"<b>{survey.get('title')}</b>\n"
     info += f"Questions: {len(survey.get('questions', []))}\n"
     if survey.get("time_limit"):
@@ -59,7 +59,7 @@ async def format_survey_info(survey: Dict) -> str:
 
 
 def has_poll_ended(survey: Dict) -> bool:
-    """Return True if the survey time limit has passed."""
+    """Возвращает True, если время опроса истекло."""
     tl = survey.get("time_limit")
     if not tl:
         return False
@@ -71,21 +71,21 @@ def has_poll_ended(survey: Dict) -> bool:
 
 
 class ViewSurveysStates(StatesGroup):
-    """States for viewing surveys"""
+    """Состояния процесса просмотра опросов"""
     Viewing = State()
     FilterMenu = State()
     ViewingDetails = State()
 
 
 class ViewSurveysPlugin:
-    """Plugin for viewing surveys"""
+    """Плагин для просмотра опросов"""
     
     def __init__(self):
         self.name = "view_surveys"
         self.description = "View and manage surveys"
         
     async def register_handlers(self, dp: Dispatcher):
-        """Register all handlers for this plugin"""
+        """Регистрирует все обработчики плагина"""
         dp.message.register(self.cmd_view_surveys, Command("view_surveys"))
         dp.callback_query.register(
             self.handle_survey_selection,
@@ -104,7 +104,7 @@ class ViewSurveysPlugin:
         )
         
     def get_commands(self):
-        """Return a list of commands this plugin provides"""
+        """Возвращает список команд плагина"""
         return [
             types.BotCommand(
                 command="view_surveys",
@@ -113,15 +113,15 @@ class ViewSurveysPlugin:
         ]
         
     def get_keyboards(self):
-        """Return any keyboards this plugin needs"""
+        """Возвращает клавиатуры, необходимые плагину"""
         return {}
         
     def get_states(self):
-        """Return any states this plugin uses"""
+        """Возвращает состояния, которые использует плагин"""
         return ViewSurveysStates
     
     async def cmd_view_surveys(self, message: types.Message, state: FSMContext):
-        """Handle the /view_surveys command"""
+        """Обрабатывает команду /view_surveys"""
         user_id = message.from_user.id
         surveys = await get_surveys(user_id=user_id)
         
@@ -129,7 +129,7 @@ class ViewSurveysPlugin:
             await message.answer("No surveys available.")
             return
             
-        # Create a keyboard with survey options
+        # Создаём клавиатуру со списком опросов
         keyboard = InlineKeyboardMarkup(row_width=1)
         
         for survey in surveys:
@@ -140,17 +140,17 @@ class ViewSurveysPlugin:
                 callback_data=f"view_survey_{survey['id']}"
             ))
             
-        # Add filter button
+        # Кнопка фильтрации
         keyboard.add(InlineKeyboardButton(
             text="🔍 Filter Surveys",
             callback_data="filter_menu"
         ))
         
-        await message.answer("Available surveys:", reply_markup=keyboard)
+        await message.answer("Доступные опросы:", reply_markup=keyboard)
         await ViewSurveysStates.Viewing.set()
         
     async def handle_survey_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
-        """Handle selection of a survey from the list"""
+        """Обрабатывает выбор опроса из списка"""
         survey_id = int(callback_query.data.split('_')[2])
         survey = await get_survey_by_id(survey_id)
         
@@ -158,20 +158,20 @@ class ViewSurveysPlugin:
             await callback_query.answer("Survey not found.")
             return
             
-        # Format survey details
+        # Формируем текст с подробной информацией
         survey_info = await format_survey_info(survey)
         
-        # Create action buttons
+        # Создаём кнопки действий
         keyboard = InlineKeyboardMarkup(row_width=2)
         
-        # Add appropriate action buttons based on survey status
+        # В зависимости от статуса добавляем нужные действия
         if not has_poll_ended(survey):
             keyboard.add(InlineKeyboardButton(
                 text="Take Survey",
                 callback_data=f"survey_action_take_{survey_id}"
             ))
             
-        # Add back button
+        # Кнопка возврата к списку
         keyboard.add(InlineKeyboardButton(
             text="Back to List",
             callback_data="survey_action_back"
@@ -186,12 +186,12 @@ class ViewSurveysPlugin:
         await callback_query.answer()
         
     async def handle_filter_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
-        """Handle filter selection for surveys"""
+        """Обрабатывает выбор фильтра для опросов"""
         user_id = callback_query.from_user.id
         filter_type = callback_query.data.split('_')[1]
         
         if filter_type == "menu":
-            # Show filter options
+            # Показываем варианты фильтра
             keyboard = InlineKeyboardMarkup(row_width=1)
             keyboard.add(
                 InlineKeyboardButton(text="Active Surveys", callback_data="filter_active"),
@@ -200,17 +200,17 @@ class ViewSurveysPlugin:
                 InlineKeyboardButton(text="Back", callback_data="filter_back")
             )
             await callback_query.message.edit_text(
-                "Select filter option:",
+                "Выберите вариант фильтра:",
                 reply_markup=keyboard
             )
             await ViewSurveysStates.FilterMenu.set()
             
         elif filter_type == "back":
-            # Go back to main survey list
+            # Возврат к общему списку опросов
             await self.cmd_view_surveys(callback_query.message, state)
             
         else:
-            # Apply selected filter
+            # Применяем выбранный фильтр
             surveys = await get_surveys(user_id=user_id)
             
             if filter_type == "active":
@@ -218,12 +218,12 @@ class ViewSurveysPlugin:
             elif filter_type == "completed":
                 surveys = [s for s in surveys if has_poll_ended(s)]
                 
-            # Create keyboard with filtered surveys
+            # Создаём клавиатуру с отфильтрованными опросами
             keyboard = InlineKeyboardMarkup(row_width=1)
             
             if not surveys:
                 await callback_query.message.edit_text(
-                    "No surveys match your filter.",
+                    "Нет опросов, удовлетворяющих фильтру.",
                     reply_markup=InlineKeyboardMarkup().add(
                         InlineKeyboardButton(text="Back", callback_data="filter_menu")
                     )
@@ -238,7 +238,7 @@ class ViewSurveysPlugin:
                     callback_data=f"view_survey_{survey['id']}"
                 ))
                 
-            # Add filter button
+            # Кнопка фильтрации
             keyboard.add(InlineKeyboardButton(
                 text="🔍 Filter Surveys",
                 callback_data="filter_menu"
@@ -253,25 +253,25 @@ class ViewSurveysPlugin:
         await callback_query.answer()
         
     async def handle_survey_action(self, callback_query: types.CallbackQuery, state: FSMContext):
-        """Handle actions on a specific survey"""
+        """Обрабатывает действия с выбранным опросом"""
         action = callback_query.data.split('_')[2]
         
         if action == "back":
-            # Go back to survey list
+            # Возврат к списку опросов
             await self.cmd_view_surveys(callback_query.message, state)
             
         elif action == "take":
             survey_id = int(callback_query.data.split('_')[3])
-            # Start the survey taking process
-            # This would typically transition to another plugin's state
-            await callback_query.message.answer(f"Starting survey {survey_id}...")
-            # Reset state to allow other handlers to take over
+            # Запускаем прохождение опроса
+            # Обычно здесь происходит переход к другому плагину
+            await callback_query.message.answer(f"Запускаем опрос {survey_id}...")
+            # Сбрасываем состояние, чтобы другие хендлеры могли продолжить
             await state.finish()
             
         await callback_query.answer()
 
 
-# This function is required for the plugin manager to load the plugin
+# Эту функцию использует менеджер плагинов для загрузки модуля
 def load_plugin():
-    """Load the plugin"""
+    """Загружает плагин"""
     return ViewSurveysPlugin()

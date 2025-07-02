@@ -1,8 +1,8 @@
 """
-Text Answer Plugin for Telegram Bot
+Плагин текстовых ответов для Telegram‑бота.
 
-This plugin provides text answer question type functionality.
-It handles rendering and processing text answer questions.
+Реализует тип вопроса, предполагающий текстовый ответ, и обрабатывает его
+отображение и ввод пользователем.
 """
 
 from aiogram import Dispatcher, types
@@ -12,11 +12,11 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import StateFilter  # Добавляем фильтр состояния
 import logging
 
-# Import storage from storage_plugin
+# Импорт хранилища из storage_plugin
 try:
     from plugins.storage_plugin import storage
 except ImportError:
-    # Fallback for testing
+    # Запасной вариант для тестирования
     class DummyStorage:
         def get_survey(self, survey_id): return {}
         def save_survey(self, survey_id, data): pass
@@ -25,18 +25,18 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class TextAnswerStates(StatesGroup):
-    """States for text answer handling"""
+    """Состояния обработки текстового ответа"""
     WAITING_FOR_ANSWER = State()
 
 class TextAnswerPlugin:
-    """Plugin for text answer question type"""
+    """Плагин для вопросов с текстовым ответом"""
     
     def __init__(self):
         self.name = "text_answer_plugin"
         self.description = "Text answer question type"
     
     async def register_handlers(self, dp: Dispatcher):
-        """Register all handlers for this plugin"""
+        """Регистрирует все обработчики плагина"""
         dp.callback_query.register(
             self.start_text_answer,
             lambda c: c.data.startswith('text_answer_')
@@ -47,19 +47,19 @@ class TextAnswerPlugin:
         )
     
     def get_commands(self):
-        """Return a list of commands this plugin provides"""
+        """Возвращает список команд плагина"""
         return []
     
     def get_question_type(self):
-        """Return the question type identifier"""
+        """Возвращает идентификатор типа вопроса"""
         return "text_answer"
     
     def get_question_type_name(self):
-        """Return the human-readable question type name"""
+        """Возвращает название типа вопроса"""
         return "Текстовый ответ"
     
     def create_question_form(self, question_data=None):
-        """Return form for creating this question type"""
+        """Возвращает описание формы для создания такого вопроса"""
         return {
             'type': 'text_answer',
             'name': 'Текстовый ответ',
@@ -69,7 +69,7 @@ class TextAnswerPlugin:
         }
     
     def render_question(self, question, survey_id):
-        """Render the question for users to answer"""
+        """Отображает вопрос для ответа"""
         markup = InlineKeyboardMarkup()
         markup.add(InlineKeyboardButton(
             "Ответить",
@@ -82,7 +82,7 @@ class TextAnswerPlugin:
         }
     
     async def start_text_answer(self, callback_query: types.CallbackQuery, state: FSMContext):
-        """Start the text answer process"""
+        """Запускает процесс ввода текстового ответа"""
         parts = callback_query.data.split('_')
         survey_id = parts[2]
         question_id = parts[3]
@@ -92,7 +92,7 @@ class TextAnswerPlugin:
             await callback_query.answer("Этот опрос недоступен")
             return
         
-        # Store the question info in state
+        # Сохраняем информацию о вопросе в состоянии
         await state.update_data(
             survey_id=survey_id,
             question_id=question_id
@@ -105,7 +105,7 @@ class TextAnswerPlugin:
         await callback_query.answer()
     
     async def process_text_answer(self, message: types.Message, state: FSMContext):
-        """Process the text answer"""
+        """Обрабатывает введённый текстовый ответ"""
         data = await state.get_data()
         survey_id = data.get('survey_id')
         question_id = data.get('question_id')
@@ -123,7 +123,7 @@ class TextAnswerPlugin:
         
         user_id = message.from_user.id
         
-        # Record the response
+        # Записываем ответ
         response = {
             'user_id': None if survey['is_anonymous'] else user_id,
             'question_id': question_id,
@@ -131,7 +131,7 @@ class TextAnswerPlugin:
             'timestamp': message.date.isoformat()
         }
         
-        # Add or update response
+        # Добавляем либо обновляем ответ
         self._add_or_update_response(survey, user_id, question_id, response)
         storage.save_survey(survey_id, survey)
         
@@ -139,24 +139,24 @@ class TextAnswerPlugin:
         await state.finish()
     
     def _add_or_update_response(self, survey, user_id, question_id, new_response):
-        """Add or update a response in the survey"""
-        # For anonymous surveys, always add a new response
+        """Добавляет или обновляет ответ в опросе"""
+        # Для анонимных опросов всегда добавляем новый ответ
         if survey['is_anonymous']:
             survey['responses'].append(new_response)
             return
         
-        # For non-anonymous, update existing response if any
+        # Для неанонимных опросов обновляем имеющийся ответ, если он есть
         for i, response in enumerate(survey['responses']):
             if (response.get('user_id') == user_id and 
                 response.get('question_id') == question_id):
                 survey['responses'][i] = new_response
                 return
         
-        # No existing response found, add new one
+        # Если ответа нет, добавляем новый
         survey['responses'].append(new_response)
     
     def process_results(self, question, responses):
-        """Process results for this question type"""
+        """Обрабатывает результаты для этого типа вопроса"""
         results = {
             'question': question['text'],
             'type': 'text_answer',
@@ -174,13 +174,13 @@ class TextAnswerPlugin:
         return results
     
     def on_plugin_load(self):
-        """Called when the plugin is loaded"""
+        """Вызывается при загрузке плагина"""
         logger.info("Text answer plugin loaded")
     
     def on_plugin_unload(self):
-        """Called when the plugin is unloaded"""
+        """Вызывается при выгрузке плагина"""
         logger.info("Text answer plugin unloaded")
 
 def load_plugin():
-    """Load the plugin"""
+    """Загружает плагин"""
     return TextAnswerPlugin()

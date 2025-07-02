@@ -1,96 +1,93 @@
 # Kadron Bot
 
-A Telegram bot for managing polls and group interactions. The project is built with [aiogram](https://github.com/aiogram/aiogram) and uses a plugin architecture for additional features.
+Телеграм-бот для управления опросами и взаимодействия в группах. Проект построен на [aiogram](https://github.com/aiogram/aiogram) и использует архитектуру плагинов для расширения функциональности.
 
-## Prerequisites
+## Требования
 
-- Python 3.10 or newer
-- `pip` for installing dependencies
+- Python 3.10 или новее
+- `pip` для установки зависимостей
 
-Install the required packages:
+Установите необходимые пакеты:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Environment variables
+## Переменные окружения
 
-Copy `example.env` to `.env` and fill in your values:
+Скопируйте `example.env` в `.env` и укажите свои значения:
 
 ```bash
 cp example.env .env
 ```
 
-The variables are:
+Переменные:
 
-| Name | Description |
+| Имя | Описание |
 | --- | --- |
-| `BOT_TOKEN` | Token obtained from BotFather |
-| `DATABASE` | Path to the SQLite database file |
-| `ADMIN_IDS` | Comma separated Telegram user IDs with admin access |
-| `ENABLE_LOGGING` | Enable additional logging (`True` or `False`) |
-| `LOGGING_LEVEL` | Logging level (e.g. `DEBUG` or `INFO`) |
-| `ENABLE_CAPTCHA` | Use captcha for new group members |
-| `CAPTCHA_TIMEOUT` | Captcha timeout in minutes |
-| `MAX_WARNINGS` | Maximum number of warnings before action |
-| `INACTIVITY_DAYS` | Days of inactivity before removal |
-| `WELCOME_MESSAGE` | Default welcome text for new users |
+| `BOT_TOKEN` | Токен, полученный от BotFather |
+| `DATABASE` | Путь к файлу базы SQLite |
+| `ADMIN_IDS` | ID администраторов Telegram через запятую |
+| `ENABLE_LOGGING` | Включить дополнительное логирование (`True` или `False`) |
+| `LOGGING_LEVEL` | Уровень логирования (например, `DEBUG` или `INFO`) |
+| `ENABLE_CAPTCHA` | Использовать капчу для новых участников групп |
+| `CAPTCHA_TIMEOUT` | Время ожидания капчи в минутах |
+| `MAX_WARNINGS` | Максимальное число предупреждений перед действием |
+| `INACTIVITY_DAYS` | Количество дней неактивности до удаления |
+| `WELCOME_MESSAGE` | Приветственное сообщение по умолчанию |
 
-## Running the bot
+## Запуск бота
 
-After configuring `.env` run:
+После настройки `.env` запустите:
 
 ```bash
 python main.py
 ```
 
-## Running tests
+## Запуск тестов
 
-Install the dependencies first:
+Сначала установите зависимости:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run the test suite with:
+Запустите тесты командой:
 
 ```bash
 pytest
 ```
 
-Use the correct Python executable if you have multiple versions installed (e.g. `python3.10 main.py`).
+Если установлено несколько версий Python, используйте соответствующий исполняемый файл (например, `python3.10 main.py`).
 
-## Plugins
+## Плагины
 
-Plugins live in the `plugins` directory. `plugin_manager.py` automatically loads every file that ends with `_plugin.py`.
+Плагины расположены в каталоге `plugins`. `plugin_manager.py` автоматически загружает каждый файл с окончанием `_plugin.py`.
 
-For a walkthrough on creating your own plugin using `plugin_template.py` see
-[CONTRIBUTING.md](CONTRIBUTING.md).
+Подробности создания собственных плагинов описаны в [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Example usage:
+Пример использования:
 
 ```python
 from aiogram import Dispatcher
 from plugin_manager import PluginManager
 
-# dp is your Dispatcher instance
+# dp — экземпляр Dispatcher
 pm = PluginManager(dp)
 await pm.load_plugins()
 await pm.setup_bot_commands(bot)
 ```
 
-To disable a plugin either rename or remove its file or call `unload_plugin` at runtime:
+Чтобы отключить плагин, переименуйте или удалите его файл либо вызовите `unload_plugin` во время работы бота:
 
 ```python
-await pm.unload_plugin('test_mode_plugin')  # name without .py
+await pm.unload_plugin('test_mode_plugin')  # имя без .py
 ```
 
-Load it again with `load_plugin('test_mode_plugin')`.
+Загрузить его снова можно вызовом `load_plugin('test_mode_plugin')`.
 
-## Example run
+## Пример запуска
 
 ```bash
 python main.py
 ```
-
-
