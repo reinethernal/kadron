@@ -106,7 +106,10 @@ class ViewSurveysPlugin:
     def get_commands(self):
         """Return a list of commands this plugin provides"""
         return [
-            {"command": "view_surveys", "description": "View available surveys"}
+            types.BotCommand(
+                command="view_surveys",
+                description="View available surveys",
+            )
         ]
         
     def get_keyboards(self):
