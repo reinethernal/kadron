@@ -9,8 +9,64 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from database import get_surveys, get_survey_by_id
-from utils import format_survey_info, has_poll_ended
+
+# Use helpers from db_manager instead of the missing database module
+from core.db_manager import (
+    get_all_polls,
+    get_poll_id_by_name,
+    get_poll_by_id,
+    get_questions_by_poll,
+)
+from datetime import datetime
+from typing import List, Dict, Optional
+
+
+async def get_surveys(user_id: Optional[int] = None) -> List[Dict]:
+    """Return all available surveys."""
+    surveys = []
+    for name in get_all_polls():
+        poll_id = get_poll_id_by_name(name)
+        poll = get_poll_by_id(poll_id)
+        if not poll:
+            continue
+        surveys.append({
+            "id": poll_id,
+            "title": poll["name"],
+            "questions": get_questions_by_poll(poll_id),
+            "time_limit": poll.get("time_limit"),
+        })
+    return surveys
+
+
+async def get_survey_by_id(survey_id: int) -> Optional[Dict]:
+    """Fetch a survey by ID."""
+    poll = get_poll_by_id(survey_id)
+    if not poll:
+        return None
+    poll["title"] = poll.pop("name")
+    poll["questions"] = get_questions_by_poll(survey_id)
+    return poll
+
+
+async def format_survey_info(survey: Dict) -> str:
+    """Format survey details for display."""
+    info = f"<b>{survey.get('title')}</b>\n"
+    info += f"Questions: {len(survey.get('questions', []))}\n"
+    if survey.get("time_limit"):
+        info += f"Ends: {survey['time_limit']}\n"
+    return info
+
+
+def has_poll_ended(survey: Dict) -> bool:
+    """Return True if the survey time limit has passed."""
+    tl = survey.get("time_limit")
+    if not tl:
+        return False
+    try:
+        end_time = datetime.fromisoformat(tl)
+    except (TypeError, ValueError):
+        return False
+    return datetime.now() > end_time
 
 
 class ViewSurveysStates(StatesGroup):

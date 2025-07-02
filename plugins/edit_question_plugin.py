@@ -9,8 +9,78 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from database import get_survey_by_id, get_question_by_id, update_question, get_surveys
-from utils import is_admin
+
+# Replace deprecated database imports with db_manager helpers
+from core.db_manager import (
+    DATABASE,
+    get_all_polls,
+    get_poll_id_by_name,
+    get_poll_by_id,
+    get_questions_by_poll,
+)
+import sqlite3
+import os
+from dotenv import load_dotenv
+from typing import List, Dict, Optional
+
+load_dotenv()
+ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x]
+
+
+def is_admin(user_id: int) -> bool:
+    """Check if a user is an administrator."""
+    return user_id in ADMIN_IDS
+
+
+async def get_surveys(creator_id: Optional[int] = None) -> List[Dict]:
+    """Return a list of all surveys."""
+    surveys = []
+    for name in get_all_polls():
+        poll_id = get_poll_id_by_name(name)
+        poll = get_poll_by_id(poll_id)
+        if not poll:
+            continue
+        poll_data = {
+            "id": poll_id,
+            "title": poll["name"],
+            "questions": get_questions_by_poll(poll_id),
+            "time_limit": poll.get("time_limit"),
+        }
+        surveys.append(poll_data)
+    return surveys
+
+
+async def get_survey_by_id(survey_id: int) -> Optional[Dict]:
+    """Fetch a survey by its ID."""
+    poll = get_poll_by_id(survey_id)
+    if not poll:
+        return None
+    poll["title"] = poll.pop("name")
+    poll["questions"] = get_questions_by_poll(survey_id)
+    return poll
+
+
+async def update_question(survey_id: int, question_index: int, question: Dict) -> bool:
+    """Update a question in the database."""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT id FROM questions WHERE poll_id = ? ORDER BY id LIMIT 1 OFFSET ?",
+        (survey_id, question_index),
+    )
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        return False
+    question_id = row[0]
+    options_str = ",".join(question.get("options", [])) if question.get("options") else None
+    cursor.execute(
+        "UPDATE questions SET text = ?, type = ?, options = ? WHERE id = ?",
+        (question.get("text"), question.get("type"), options_str, question_id),
+    )
+    conn.commit()
+    conn.close()
+    return True
 
 
 class EditQuestionStates(StatesGroup):
