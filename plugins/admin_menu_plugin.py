@@ -103,24 +103,24 @@ class AdminMenuPlugin:
         if message.from_user.id not in self.admin_ids:
             await message.answer("У вас нет доступа к меню администратора.")
             return
-        await AdminMenuStates.MAIN_MENU.set()
+        await state.set_state(AdminMenuStates.MAIN_MENU)
         await message.answer("Главное меню администратора:", reply_markup=self.get_keyboards()['admin_main'])
     
     async def handle_main_menu(self, message: types.Message, state: FSMContext):
         """Обрабатывает выбор пункта главного меню"""
         if message.text == "📊 Опросы":
-            await AdminMenuStates.SURVEYS_MENU.set()
+            await state.set_state(AdminMenuStates.SURVEYS_MENU)
             await message.answer("Меню управления опросами:", reply_markup=self.get_keyboards()['admin_surveys'])
         elif message.text == "📈 Аналитика":
-            await AdminMenuStates.ANALYTICS_MENU.set()
+            await state.set_state(AdminMenuStates.ANALYTICS_MENU)
             await message.answer("Меню аналитики:", reply_markup=self.get_keyboards()['admin_analytics'])
         elif message.text == "⚙ Настройки":
-            await AdminMenuStates.SETTINGS_MENU.set()
+            await state.set_state(AdminMenuStates.SETTINGS_MENU)
             await message.answer("Меню настроек:", reply_markup=self.get_keyboards()['admin_settings'])
     
     async def handle_back(self, message: types.Message, state: FSMContext):
         """Обрабатывает кнопку 'Назад'"""
-        await AdminMenuStates.MAIN_MENU.set()
+        await state.set_state(AdminMenuStates.MAIN_MENU)
         await message.answer("Главное меню администратора:", reply_markup=self.get_keyboards()['admin_main'])
 
 def load_plugin():

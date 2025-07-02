@@ -191,7 +191,7 @@ class RolesPlugin:
         if action == "assign":
             # Показываем список пользователей для назначения ролей
             await self.show_user_list(callback_query.message)
-            await RoleStates.SELECTING_USER.set()
+            await state.set_state(RoleStates.SELECTING_USER)
             
         elif action == "edit":
             # Показываем список ролей для редактирования
@@ -203,7 +203,7 @@ class RolesPlugin:
                 "Создание новой роли\n\n"
                 "Введите название для новой роли:"
             )
-            await RoleStates.CREATING_ROLE.set()
+            await state.set_state(RoleStates.CREATING_ROLE)
             
         await callback_query.answer()
     
@@ -303,7 +303,7 @@ class RolesPlugin:
             reply_markup=markup
         )
         
-        await RoleStates.SELECTING_ROLE.set()
+        await state.set_state(RoleStates.SELECTING_ROLE)
         await callback_query.answer()
     
     async def handle_role_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
@@ -368,7 +368,7 @@ class RolesPlugin:
         
         # Показываем интерфейс редактирования разрешений
         await self.show_permissions_editor(message, role_id)
-        await RoleStates.EDITING_PERMISSIONS.set()
+        await state.set_state(RoleStates.EDITING_PERMISSIONS)
     
     async def show_permissions_editor(self, message, role_id):
         """Показывает интерфейс для редактирования разрешений роли"""

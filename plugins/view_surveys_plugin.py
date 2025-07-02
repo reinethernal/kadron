@@ -147,7 +147,7 @@ class ViewSurveysPlugin:
         ))
         
         await message.answer("Доступные опросы:", reply_markup=keyboard)
-        await ViewSurveysStates.Viewing.set()
+        await state.set_state(ViewSurveysStates.Viewing)
         
     async def handle_survey_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
         """Обрабатывает выбор опроса из списка"""
@@ -182,7 +182,7 @@ class ViewSurveysPlugin:
             reply_markup=keyboard,
             parse_mode="HTML"
         )
-        await ViewSurveysStates.ViewingDetails.set()
+        await state.set_state(ViewSurveysStates.ViewingDetails)
         await callback_query.answer()
         
     async def handle_filter_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
@@ -203,7 +203,7 @@ class ViewSurveysPlugin:
                 "Выберите вариант фильтра:",
                 reply_markup=keyboard
             )
-            await ViewSurveysStates.FilterMenu.set()
+            await state.set_state(ViewSurveysStates.FilterMenu)
             
         elif filter_type == "back":
             # Возврат к общему списку опросов
@@ -248,7 +248,7 @@ class ViewSurveysPlugin:
                 f"Surveys ({filter_type}):",
                 reply_markup=keyboard
             )
-            await ViewSurveysStates.Viewing.set()
+            await state.set_state(ViewSurveysStates.Viewing)
             
         await callback_query.answer()
         
