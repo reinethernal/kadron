@@ -50,6 +50,9 @@ Use the correct Python executable if you have multiple versions installed (e.g. 
 
 Plugins live in the `plugins` directory. `plugin_manager.py` automatically loads every file that ends with `_plugin.py`.
 
+For a walkthrough on creating your own plugin using `plugin_template.py` see
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
 Example usage:
 
 ```python
