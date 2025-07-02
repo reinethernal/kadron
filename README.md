@@ -27,7 +27,7 @@ cp example.env .env
 | --- | --- |
 | `BOT_TOKEN` | Токен, полученный от BotFather |
 | `DATABASE` | Путь к файлу базы SQLite |
-| `ADMIN_IDS` | ID администраторов Telegram через запятую |
+| `ADMIN_IDS` | ID администраторов Telegram через запятую. Допустимы формы `123,456` и `[123,456]` |
 | `ENABLE_LOGGING` | Включить дополнительное логирование (`True` или `False`) |
 | `LOGGING_LEVEL` | Уровень логирования (например, `DEBUG` или `INFO`) |
 | `ENABLE_CAPTCHA` | Использовать капчу для новых участников групп |
