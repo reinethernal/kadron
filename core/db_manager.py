@@ -261,6 +261,34 @@ def get_questions_by_poll(poll_id: int) -> List[Dict]:
     conn.close()
     return questions
 
+def update_question_text(question_id: int, new_text: str):
+    """Update the text of a question by its ID."""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE questions SET text = ? WHERE id = ?', (new_text, question_id))
+    conn.commit()
+    conn.close()
+    logger.info(f"Question {question_id} text updated to '{new_text}'.")
+
+def update_question_options(question_id: int, options: List[str]):
+    """Update the options for a question by its ID."""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    options_str = ','.join(options) if options else None
+    cursor.execute('UPDATE questions SET options = ? WHERE id = ?', (options_str, question_id))
+    conn.commit()
+    conn.close()
+    logger.info(f"Question {question_id} options updated.")
+
+def delete_question_by_id(question_id: int):
+    """Delete a question and its answers by ID."""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM questions WHERE id = ?', (question_id,))
+    conn.commit()
+    conn.close()
+    logger.info(f"Question {question_id} deleted.")
+
 # --- Группы ---
 def add_group(group_id: int, title: str):
     conn = sqlite3.connect(DATABASE)
