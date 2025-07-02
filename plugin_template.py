@@ -1,23 +1,23 @@
 """
-Plugin Template for Telegram Bot
+Шаблон плагина для Telegram‑бота.
 
-This template provides the basic structure for creating new plugins for the bot.
-Each plugin should implement the required methods and register itself with the plugin manager.
+Этот файл задаёт основную структуру для создания новых плагинов. Каждый плагин
+должен реализовать обязательные методы и зарегистрировать себя в менеджере плагинов.
 
-Usage:
-1. Copy this template
-2. Rename it to your_plugin_name_plugin.py
-3. Implement the required methods
-4. The plugin will be automatically loaded by the plugin manager
+Использование:
+1. Скопируйте этот шаблон;
+2. Переименуйте файл в `your_name_plugin.py`;
+3. Реализуйте необходимые методы;
+4. Плагин будет автоматически загружен менеджером.
 
-Required methods:
-- register_handlers(dp): Register all handlers for this plugin
-- get_commands(): Return a list of commands this plugin provides
+Обязательные методы:
+- `register_handlers(dp)` — регистрация обработчиков;
+- `get_commands()` — список поддерживаемых команд.
 
-Optional methods:
-- get_keyboards(): Return any keyboards this plugin needs
-- on_plugin_load(): Called when the plugin is loaded
-- on_plugin_unload(): Called when the plugin is unloaded
+Необязательные методы:
+- `get_keyboards()` — необходимые клавиатуры;
+- `on_plugin_load()` — вызывается при загрузке плагина;
+- `on_plugin_unload()` — вызывается при выгрузке плагина.
 """
 
 from aiogram import Dispatcher, types
@@ -28,30 +28,30 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 
 
 class PluginStates(StatesGroup):
-    """States for the plugin"""
+    """Состояния для примера плагина"""
     SomeState = State()
 
 
 class PluginTemplate:
-    """Template for creating new plugins"""
+    """Шаблонный класс для создания новых плагинов"""
     
     def __init__(self):
         self.name = "template_plugin"
         self.description = "Template Plugin"
         
     async def register_handlers(self, dp: Dispatcher):
-        """Register all handlers for this plugin"""
+        """Регистрация всех обработчиков плагина"""
         dp.message.register(self.command_handler, Command("template_command"))
-        # Register more handlers as needed
+        # Добавляйте другие обработчики при необходимости
         
     def get_commands(self):
-        """Return a list of commands this plugin provides"""
+        """Возвращает список команд, предоставляемых плагином"""
         return [
             types.BotCommand("template_command", "Template command")
         ]
         
     def get_keyboards(self):
-        """Return any keyboards this plugin needs"""
+        """Возвращает клавиатуры, необходимые плагину"""
         return {
             "main": ReplyKeyboardMarkup(
                 keyboard=[
@@ -67,19 +67,19 @@ class PluginTemplate:
         }
         
     def on_plugin_load(self):
-        """Called when the plugin is loaded"""
+        """Вызывается при загрузке плагина"""
         print(f"Plugin {self.name} loaded")
         
     def on_plugin_unload(self):
-        """Called when the plugin is unloaded"""
+        """Вызывается при выгрузке плагина"""
         print(f"Plugin {self.name} unloaded")
         
     async def command_handler(self, message: types.Message, state: FSMContext):
-        """Example command handler"""
-        await message.answer("This is a template command handler")
+        """Пример обработчика команды"""
+        await message.answer("Это пример обработчика команды")
 
 
-# This function is required for the plugin manager to load the plugin
+# Эта функция необходима менеджеру плагинов для загрузки плагина
 def load_plugin():
-    """Load the plugin"""
+    """Загружает плагин"""
     return PluginTemplate()
