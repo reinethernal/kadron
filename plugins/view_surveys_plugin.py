@@ -6,8 +6,9 @@ It allows users to list, filter, and view details of surveys.
 """
 
 from aiogram import Dispatcher, types
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Use helpers from db_manager instead of the missing database module
@@ -85,18 +86,18 @@ class ViewSurveysPlugin:
         
     async def register_handlers(self, dp: Dispatcher):
         """Register all handlers for this plugin"""
-        dp.register_message_handler(self.cmd_view_surveys, commands=["view_surveys"])
-        dp.register_callback_query_handler(
-            self.handle_survey_selection, 
+        dp.message.register(self.cmd_view_surveys, Command("view_surveys"))
+        dp.callback_query.register(
+            self.handle_survey_selection,
             lambda c: c.data.startswith('view_survey_'),
             state=ViewSurveysStates.Viewing
         )
-        dp.register_callback_query_handler(
+        dp.callback_query.register(
             self.handle_filter_selection,
             lambda c: c.data.startswith('filter_'),
             state=ViewSurveysStates.FilterMenu
         )
-        dp.register_callback_query_handler(
+        dp.callback_query.register(
             self.handle_survey_action,
             lambda c: c.data.startswith('survey_action_'),
             state=ViewSurveysStates.ViewingDetails

@@ -21,8 +21,9 @@ Optional methods:
 """
 
 from aiogram import Dispatcher, types
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 
@@ -40,7 +41,7 @@ class PluginTemplate:
         
     async def register_handlers(self, dp: Dispatcher):
         """Register all handlers for this plugin"""
-        dp.register_message_handler(self.command_handler, commands=["template_command"])
+        dp.message.register(self.command_handler, Command("template_command"))
         # Register more handlers as needed
         
     def get_commands(self):
