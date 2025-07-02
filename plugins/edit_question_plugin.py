@@ -8,7 +8,7 @@ It allows administrators to modify question text, options, and other properties.
 from aiogram import Dispatcher, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Replace deprecated database imports with db_manager helpers
@@ -113,40 +113,40 @@ class EditQuestionPlugin:
         dp.callback_query.register(
             self.handle_survey_selection,
             lambda c: c.data.startswith('edit_survey_'),
-            state=EditQuestionStates.SelectSurvey
+            StateFilter(EditQuestionStates.SelectSurvey)
         )
         
         dp.callback_query.register(
             self.handle_question_selection,
             lambda c: c.data.startswith('edit_question_'),
-            state=EditQuestionStates.SelectQuestion
+            StateFilter(EditQuestionStates.SelectQuestion)
         )
         
         dp.callback_query.register(
             self.handle_edit_action,
             lambda c: c.data.startswith('edit_action_'),
-            state=[
+            StateFilter(
                 EditQuestionStates.SelectQuestion,
                 EditQuestionStates.EditQuestionText,
                 EditQuestionStates.EditQuestionOptions,
                 EditQuestionStates.ConfirmChanges
-            ]
+            )
         )
         
         dp.message.register(
             self.process_question_text,
-            state=EditQuestionStates.EditQuestionText
+            StateFilter(EditQuestionStates.EditQuestionText)
         )
         
         dp.message.register(
             self.process_new_option,
-            state=EditQuestionStates.AddOption
+            StateFilter(EditQuestionStates.AddOption)
         )
         
         dp.callback_query.register(
             self.handle_remove_option,
             lambda c: c.data.startswith('remove_option_'),
-            state=EditQuestionStates.RemoveOption
+            StateFilter(EditQuestionStates.RemoveOption)
         )
         
     def get_commands(self):

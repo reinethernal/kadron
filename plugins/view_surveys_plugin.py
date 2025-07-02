@@ -8,7 +8,7 @@ It allows users to list, filter, and view details of surveys.
 from aiogram import Dispatcher, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Use helpers from db_manager instead of the missing database module
@@ -90,17 +90,17 @@ class ViewSurveysPlugin:
         dp.callback_query.register(
             self.handle_survey_selection,
             lambda c: c.data.startswith('view_survey_'),
-            state=ViewSurveysStates.Viewing
+            StateFilter(ViewSurveysStates.Viewing)
         )
         dp.callback_query.register(
             self.handle_filter_selection,
             lambda c: c.data.startswith('filter_'),
-            state=ViewSurveysStates.FilterMenu
+            StateFilter(ViewSurveysStates.FilterMenu)
         )
         dp.callback_query.register(
             self.handle_survey_action,
             lambda c: c.data.startswith('survey_action_'),
-            state=ViewSurveysStates.ViewingDetails
+            StateFilter(ViewSurveysStates.ViewingDetails)
         )
         
     def get_commands(self):
