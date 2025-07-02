@@ -8,13 +8,9 @@ import asyncio
 from aiogram.types import ChatPermissions
 from aiogram.client.bot import Bot
 from core.db_manager import (
-    add_group,
-    get_welcome_message,
-    add_user_to_pending,
     is_user_pending,
     remove_user_from_pending,
     get_pending_chats_for_user,
-    update_user_activity,
     get_inactive_users,
     get_all_groups
 )

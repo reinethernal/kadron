@@ -18,25 +18,18 @@ from aiogram.fsm.state import State, StatesGroup
 
 from core.db_manager import (
     add_poll,
-    poll_exists,
     get_all_polls,
     get_poll_id_by_name,
     delete_poll_by_id,
-    update_poll_anonymous,
-    update_poll_time_limit,
-    schedule_poll,
     get_scheduled_surveys,
     add_poll_tag,
     get_active_users,
-    filter_polls,
     set_welcome_message,
-    get_welcome_message,
     set_group_join_poll,
     get_all_groups,
     poll_exists,
     get_questions_by_poll,      # <-- Импортируем функцию для получения вопросов
 )
-from utils.data_manager import save_to_excel
 
 load_dotenv()
 ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x]
@@ -360,7 +353,7 @@ async def poll_settings_handler(message: Message, state: FSMContext):
         await admin_panel(message, state)
     else:
         try:
-            from datetime import timedelta
+            from datetime import datetime, timedelta
             hours = int(text)
             tlimit = datetime.now() + timedelta(hours=hours)
             from core.db_manager import update_poll_time_limit
@@ -374,7 +367,6 @@ async def poll_adding_tags_handler(message: Message, state: FSMContext):
     tags = [t.strip() for t in message.text.split(',')]
     data = await state.get_data()
     pid = data.get('poll_id')
-    from core.db_manager import add_poll_tag
     for tag in tags:
         add_poll_tag(pid, tag)
     await message.answer("Теги добавлены.")
@@ -419,7 +411,6 @@ async def poll_scheduling_handler(message: Message, state: FSMContext):
 @router.message(StateFilter(PollCreation.setting_welcome_message))
 async def poll_welcome_handler(message: Message, state: FSMContext):
     text = message.text.strip()
-    from core.db_manager import set_welcome_message
     set_welcome_message(text)
     await message.answer("Приветственное сообщение обновлено.")
     await state.clear()

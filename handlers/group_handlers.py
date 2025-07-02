@@ -1,10 +1,8 @@
 # group_handlers.py
 
-import os
 import logging
-import asyncio
-from aiogram import Router, Dispatcher, Bot, types
-from aiogram.types import Message, ChatMemberUpdated, ChatPermissions
+from aiogram import Router, Dispatcher, types
+from aiogram.types import Message
 from dotenv import load_dotenv
 from core.db_manager import add_group, update_user_activity
 

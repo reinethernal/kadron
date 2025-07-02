@@ -3,25 +3,28 @@
 import asyncio
 import logging
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN не установлен в .env")
 
 from aiogram import Dispatcher
+from dotenv import load_dotenv
+
 # Здесь пытаемся импортировать DefaultBotProperties, если его нет – игнорируем
 try:
     from aiogram.client.bot import Bot, DefaultBotProperties
 except ImportError:
     from aiogram.client.bot import Bot
     DefaultBotProperties = None
-    logging.warning("DefaultBotProperties not found – bot will be created without parse_mode.")
+    logging.warning(
+        "DefaultBotProperties not found – bot will be created without parse_mode."
+    )
 
 from core.db_manager import initialize_db
 from plugin_manager import PluginManager
+
+load_dotenv()
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN не установлен в .env")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

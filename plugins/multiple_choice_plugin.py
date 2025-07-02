@@ -6,7 +6,6 @@ It handles rendering and processing multiple choice questions.
 """
 
 import logging
-import asyncio
 
 from aiogram import Dispatcher
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery

@@ -11,8 +11,6 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
-import uuid
-from datetime import datetime, timedelta
 
 # Импортируем модуль хранилища
 try:
