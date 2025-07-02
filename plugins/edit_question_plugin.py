@@ -6,8 +6,9 @@ It allows administrators to modify question text, options, and other properties.
 """
 
 from aiogram import Dispatcher, types
-from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # Replace deprecated database imports with db_manager helpers
@@ -103,25 +104,25 @@ class EditQuestionPlugin:
         
     async def register_handlers(self, dp: Dispatcher):
         """Register all handlers for this plugin"""
-        dp.register_message_handler(
-            self.cmd_edit_question, 
-            lambda msg: is_admin(msg.from_user.id),
-            commands=["edit_question"]
+        dp.message.register(
+            self.cmd_edit_question,
+            Command("edit_question"),
+            lambda msg: is_admin(msg.from_user.id)
         )
         
-        dp.register_callback_query_handler(
+        dp.callback_query.register(
             self.handle_survey_selection,
             lambda c: c.data.startswith('edit_survey_'),
             state=EditQuestionStates.SelectSurvey
         )
         
-        dp.register_callback_query_handler(
+        dp.callback_query.register(
             self.handle_question_selection,
             lambda c: c.data.startswith('edit_question_'),
             state=EditQuestionStates.SelectQuestion
         )
         
-        dp.register_callback_query_handler(
+        dp.callback_query.register(
             self.handle_edit_action,
             lambda c: c.data.startswith('edit_action_'),
             state=[
@@ -132,17 +133,17 @@ class EditQuestionPlugin:
             ]
         )
         
-        dp.register_message_handler(
+        dp.message.register(
             self.process_question_text,
             state=EditQuestionStates.EditQuestionText
         )
         
-        dp.register_message_handler(
+        dp.message.register(
             self.process_new_option,
             state=EditQuestionStates.AddOption
         )
         
-        dp.register_callback_query_handler(
+        dp.callback_query.register(
             self.handle_remove_option,
             lambda c: c.data.startswith('remove_option_'),
             state=EditQuestionStates.RemoveOption
