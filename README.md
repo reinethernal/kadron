@@ -44,6 +44,14 @@ After configuring `.env` run:
 python main.py
 ```
 
+## Running tests
+
+Run the test suite with:
+
+```bash
+pytest
+```
+
 Use the correct Python executable if you have multiple versions installed (e.g. `python3.10 main.py`).
 
 ## Plugins
@@ -79,3 +87,11 @@ Load it again with `load_plugin('test_mode_plugin')`.
 python main.py
 ```
 
+
+## Running tests
+
+Run the test suite with:
+
+```bash
+pytest
+```
