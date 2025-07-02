@@ -18,7 +18,6 @@ try:
     from plugins.storage_plugin import storage
 except ImportError:
     # Запасной вариант для тестирования
-    from typing import Dict, Any
     class DummyStorage:
         def get_survey(self, survey_id): return {}
         def save_survey(self, survey_id, data): pass

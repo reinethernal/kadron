@@ -6,7 +6,6 @@ import datetime
 
 from aiogram import Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.fsm.context import FSMContext  # новый импорт
 
 # Импорт хранилища
 try:
