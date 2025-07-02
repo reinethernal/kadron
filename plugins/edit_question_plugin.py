@@ -187,7 +187,7 @@ class EditQuestionPlugin:
             ))
             
         await message.answer("Выберите опрос для редактирования вопросов:", reply_markup=keyboard)
-        await EditQuestionStates.SelectSurvey.set()
+        await state.set_state(EditQuestionStates.SelectSurvey)
         
     async def handle_survey_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
         """Обрабатывает выбор опроса для редактирования"""
@@ -231,7 +231,7 @@ class EditQuestionPlugin:
             f"Выберите вопрос для редактирования из опроса '{survey['title']}':",
             reply_markup=keyboard
         )
-        await EditQuestionStates.SelectQuestion.set()
+        await state.set_state(EditQuestionStates.SelectQuestion)
         await callback_query.answer()
         
     async def handle_question_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
@@ -305,7 +305,7 @@ class EditQuestionPlugin:
                     InlineKeyboardButton(text="Отмена", callback_data="edit_action_cancel")
                 )
             )
-            await EditQuestionStates.EditQuestionText.set()
+            await state.set_state(EditQuestionStates.EditQuestionText)
             
         elif action == "options":
             # Показываем меню редактирования вариантов
@@ -330,7 +330,7 @@ class EditQuestionPlugin:
                 options_text,
                 reply_markup=keyboard
             )
-            await EditQuestionStates.EditQuestionOptions.set()
+            await state.set_state(EditQuestionStates.EditQuestionOptions)
             
         elif action == "add_option":
             await callback_query.message.edit_text(
@@ -339,7 +339,7 @@ class EditQuestionPlugin:
                     InlineKeyboardButton(text="Отмена", callback_data="edit_action_cancel_option")
                 )
             )
-            await EditQuestionStates.AddOption.set()
+            await state.set_state(EditQuestionStates.AddOption)
             
         elif action == "remove_option":
             # Меню удаления варианта
@@ -372,7 +372,7 @@ class EditQuestionPlugin:
                 "Выберите вариант для удаления:",
                 reply_markup=keyboard
             )
-            await EditQuestionStates.RemoveOption.set()
+            await state.set_state(EditQuestionStates.RemoveOption)
             
         elif action == "back":
             # Возврат к деталям вопроса
@@ -463,7 +463,7 @@ class EditQuestionPlugin:
             f"Текст вопроса обновлён:\n\n{new_text}\n\nСохранить изменения?",
             reply_markup=keyboard
         )
-        await EditQuestionStates.ConfirmChanges.set()
+        await state.set_state(EditQuestionStates.ConfirmChanges)
         
     async def process_new_option(self, message: types.Message, state: FSMContext):
         """Обрабатывает ввод нового варианта"""
@@ -499,7 +499,7 @@ class EditQuestionPlugin:
             f"{options_text}\n\nСохранить изменения или добавить ещё один вариант?",
             reply_markup=keyboard
         )
-        await EditQuestionStates.ConfirmChanges.set()
+        await state.set_state(EditQuestionStates.ConfirmChanges)
         
     async def handle_remove_option(self, callback_query: types.CallbackQuery, state: FSMContext):
         """Обрабатывает удаление варианта"""
@@ -532,7 +532,7 @@ class EditQuestionPlugin:
                 f"Удалён вариант: {removed_option}\n\n{options_text}\n\nСохранить изменения или удалить ещё один вариант?",
                 reply_markup=keyboard
             )
-            await EditQuestionStates.ConfirmChanges.set()
+            await state.set_state(EditQuestionStates.ConfirmChanges)
         else:
             await callback_query.answer("Некорректный номер варианта.")
 

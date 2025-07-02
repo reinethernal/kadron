@@ -98,7 +98,7 @@ class TextAnswerPlugin:
             question_id=question_id
         )
         
-        await TextAnswerStates.WAITING_FOR_ANSWER.set()
+        await state.set_state(TextAnswerStates.WAITING_FOR_ANSWER)
         await callback_query.message.reply(
             "Пожалуйста, введите ваш ответ на вопрос. Отправьте сообщение с текстом:"
         )

@@ -137,20 +137,20 @@ class SurveyPlugin:
 
     async def cmd_create_survey(self, message: types.Message, state: FSMContext):
         """Обработчик команды создания нового опроса"""
-        await SurveyStates.TITLE.set()
+        await state.set_state(SurveyStates.TITLE)
         await state.update_data(creator_id=message.from_user.id)
         await message.answer("Введите название опроса:")
 
     async def process_title(self, message: types.Message, state: FSMContext):
         """Обрабатывает ввод названия опроса"""
         await state.update_data(title=message.text)
-        await SurveyStates.DESCRIPTION.set()
+        await state.set_state(SurveyStates.DESCRIPTION)
         await message.answer("Введите описание опроса:")
 
     async def process_description(self, message: types.Message, state: FSMContext):
         """Обрабатывает ввод описания опроса"""
         await state.update_data(description=message.text)
-        await SurveyStates.QUESTION_TYPE.set()
+        await state.set_state(SurveyStates.QUESTION_TYPE)
 
         markup = InlineKeyboardMarkup(row_width=1)
         markup.add(
@@ -173,7 +173,7 @@ class SurveyPlugin:
 
         if question_type in question_types:
             await state.update_data(question_type=question_types[question_type])
-            await SurveyStates.QUESTION_TEXT.set()
+            await state.set_state(SurveyStates.QUESTION_TEXT)
 
             await callback_query.message.edit_text(
                 f"Выбран тип: {question_types[question_type]}\n\nВведите текст вопроса:"
@@ -187,12 +187,12 @@ class SurveyPlugin:
         data = await state.get_data()
 
         if data['question_type'] in ["одиночный выбор", "множественный выбор"]:
-            await SurveyStates.ADDING_OPTIONS.set()
+            await state.set_state(SurveyStates.ADDING_OPTIONS)
             await message.answer(
                 "Введите варианты ответов, каждый с новой строки.\nВведите 'Готово', когда закончите:"
             )
         else:
-            await SurveyStates.DEADLINE.set()
+            await state.set_state(SurveyStates.DEADLINE)
             await message.answer("Введите срок действия опроса в часах (например, 24):")
 
     async def process_options(self, message: types.Message, state: FSMContext):
@@ -203,7 +203,7 @@ class SurveyPlugin:
                 await message.answer("Вы не добавили ни одного варианта ответа. Пожалуйста, введите варианты:")
                 return
 
-            await SurveyStates.DEADLINE.set()
+            await state.set_state(SurveyStates.DEADLINE)
             await message.answer("Введите срок действия опроса в часах (например, 24):")
         else:
             options = message.text.split('\n')
@@ -224,7 +224,7 @@ class SurveyPlugin:
             deadline = datetime.now() + timedelta(hours=hours)
             await state.update_data(deadline=deadline.isoformat())
 
-            await SurveyStates.ANONYMITY.set()
+            await state.set_state(SurveyStates.ANONYMITY)
             markup = InlineKeyboardMarkup(row_width=2)
             markup.add(
                 InlineKeyboardButton("Да", callback_data="anon_yes"),
@@ -240,7 +240,7 @@ class SurveyPlugin:
         await state.update_data(is_anonymous=is_anonymous)
 
         # Запрос о планировании отправки опроса
-        await SurveyStates.SCHEDULING.set()
+        await state.set_state(SurveyStates.SCHEDULING)
         markup = InlineKeyboardMarkup(row_width=2)
         markup.add(
             InlineKeyboardButton("Сейчас", callback_data="schedule_now"),
@@ -261,7 +261,7 @@ class SurveyPlugin:
 
         if schedule_type == "now":
             await state.update_data(scheduled=False)
-            await SurveyStates.CONFIRMATION.set()
+            await state.set_state(SurveyStates.CONFIRMATION)
 
             data = await state.get_data()
             summary = self._generate_survey_summary(data)
@@ -273,7 +273,7 @@ class SurveyPlugin:
             await callback_query.message.edit_text(
                 "Функция планирования будет доступна в ближайшее время.\n\nОпрос будет создан для немедленной отправки.\nДля подтверждения введите 'Подтвердить':"
             )
-            await SurveyStates.CONFIRMATION.set()
+            await state.set_state(SurveyStates.CONFIRMATION)
 
         await callback_query.answer()
 
@@ -347,7 +347,7 @@ class SurveyPlugin:
                 await callback_query.answer("Опрос не найден")
                 return
 
-            await SurveyStates.EDITING.set()
+            await state.set_state(SurveyStates.EDITING)
             await state.update_data(editing_survey_id=survey_id)
 
             markup = InlineKeyboardMarkup(row_width=1)
@@ -398,7 +398,7 @@ class SurveyPlugin:
             return
 
         await state.update_data(editing_question_id=question_id)
-        await SurveyStates.EDITING_QUESTION.set()
+        await state.set_state(SurveyStates.EDITING_QUESTION)
 
         await callback_query.message.answer(
             f"Редактирование вопроса:\nТекущий текст: {question['text']}\nТип: {question['type']}\n\nВведите новый текст вопроса:"
