@@ -88,10 +88,3 @@ python main.py
 ```
 
 
-## Running tests
-
-Run the test suite with:
-
-```bash
-pytest
-```
