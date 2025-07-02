@@ -46,6 +46,12 @@ python main.py
 
 ## Running tests
 
+Install the dependencies first:
+
+```bash
+pip install -r requirements.txt
+```
+
 Run the test suite with:
 
 ```bash
