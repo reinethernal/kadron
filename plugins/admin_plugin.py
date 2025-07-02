@@ -8,10 +8,12 @@ import logging
 from aiogram.client.bot import Bot
 from core.db_manager import get_all_groups, get_poll_by_id
 import os
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
-ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x]
+ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
+ADMIN_IDS = [int(x) for x in ids]
 
 logger = logging.getLogger(__name__)
 

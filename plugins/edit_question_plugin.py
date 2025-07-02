@@ -21,11 +21,13 @@ from core.db_manager import (
 )
 import sqlite3
 import os
+import re
 from dotenv import load_dotenv
 from typing import List, Dict, Optional
 
 load_dotenv()
-ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x]
+ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
+ADMIN_IDS = [int(x) for x in ids]
 
 
 def is_admin(user_id: int) -> bool:
