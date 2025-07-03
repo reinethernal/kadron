@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import asyncio
 
 # Импортируем модуль хранилища
@@ -40,6 +40,8 @@ class SurveyStates(StatesGroup):
     QUESTION_TEXT = State()
     ADDING_OPTIONS = State()
     SCHEDULING = State()
+    SCHEDULE_DATE = State()
+    SCHEDULE_TIME = State()
     DEADLINE = State()
     ANONYMITY = State()
     CONFIRMATION = State()
@@ -181,6 +183,51 @@ class SurveyPlugin:
 
         await callback_query.answer()
 
+    async def process_schedule_date(self, message: types.Message, state: FSMContext):
+        """Обрабатывает ввод даты от пользователя"""
+        date_str = message.text.strip()
+        try:
+            day, month, year = map(int, date_str.split('.'))
+            selected_date = datetime(year, month, day)
+            if selected_date.date() < datetime.now().date():
+                await message.answer("Дата должна быть в будущем. Введите ещё раз:")
+                return
+            await state.update_data(scheduled_date=selected_date.isoformat())
+            await state.set_state(SurveyStates.SCHEDULE_TIME)
+            await message.answer("Введите время отправки в формате ЧЧ:ММ:")
+        except Exception:
+            await message.answer("Неверный формат даты. Используйте ДД.ММ.ГГГГ:")
+
+    async def process_schedule_time(self, message: types.Message, state: FSMContext):
+        """Обрабатывает ввод времени от пользователя"""
+        time_str = message.text.strip()
+        try:
+            hour, minute = map(int, time_str.split(':'))
+            if not (0 <= hour < 24 and 0 <= minute < 60):
+                await message.answer("Часы 0-23, минуты 0-59. Повторите ввод:")
+                return
+            data = await state.get_data()
+            date_iso = data.get('scheduled_date')
+            if not date_iso:
+                await message.answer("Произошла ошибка. Попробуйте заново.")
+                await state.clear()
+                return
+            base_date = datetime.fromisoformat(date_iso)
+            send_datetime = datetime.combine(base_date.date(), time(hour, minute))
+            if send_datetime <= datetime.now():
+                await message.answer("Укажите время в будущем.")
+                return
+            await state.update_data(scheduled_datetime=send_datetime.isoformat())
+            await state.set_state(SurveyStates.CONFIRMATION)
+
+            data.update({'scheduled_datetime': send_datetime.isoformat()})
+            summary = self._generate_survey_summary(data)
+            await message.answer(
+                f"{summary}\n\nДля подтверждения создания опроса введите 'Подтвердить':"
+            )
+        except Exception:
+            await message.answer("Неверный формат времени. Используйте ЧЧ:ММ:")
+
     async def process_question_text(self, message: types.Message, state: FSMContext):
         """Обрабатывает ввод текста вопроса"""
         await state.update_data(question_text=message.text)
@@ -271,9 +318,10 @@ class SurveyPlugin:
             )
         else:
             await callback_query.message.edit_text(
-                "Функция планирования будет доступна в ближайшее время.\n\nОпрос будет создан для немедленной отправки.\nДля подтверждения введите 'Подтвердить':"
+                "Введите дату отправки в формате ДД.ММ.ГГГГ:",
             )
-            await state.set_state(SurveyStates.CONFIRMATION)
+            await state.update_data(scheduled=True)
+            await state.set_state(SurveyStates.SCHEDULE_DATE)
 
         await callback_query.answer()
 
@@ -296,12 +344,38 @@ class SurveyPlugin:
                     'type': data['question_type'],
                     'options': data.get('options', []) if data['question_type'] != "текстовый ответ" else []
                 }],
-                'responses': [],
-                'status': 'active'
+                'responses': []
             }
 
+            if data.get('scheduled'):
+                survey['status'] = 'scheduled'
+                survey['scheduled_time'] = data.get('scheduled_datetime')
+            else:
+                survey['status'] = 'active'
+
             storage.save_survey(survey_id, survey)
-            self._schedule_survey_notifications(survey)
+
+            if data.get('scheduled'):
+                scheduled_surveys = storage.get_setting('scheduled_surveys', [])
+                scheduled_surveys.append({
+                    'survey_id': survey_id,
+                    'scheduled_time': data['scheduled_datetime'],
+                    'created_by': data['creator_id'],
+                    'created_at': datetime.now().isoformat()
+                })
+                storage.set_setting('scheduled_surveys', scheduled_surveys)
+                try:
+                    from plugins import scheduler_plugin
+                    if getattr(scheduler_plugin, 'scheduler_instance', None):
+                        scheduler_plugin.scheduler_instance._create_scheduled_task(
+                            survey_id,
+                            datetime.fromisoformat(data['scheduled_datetime'])
+                        )
+                except Exception:
+                    pass
+            else:
+                self._schedule_survey_notifications(survey)
+
             await state.clear()
             await message.answer(f"✅ Опрос '{data['title']}' успешно создан!")
         else:
@@ -318,7 +392,12 @@ class SurveyPlugin:
             return
 
         for survey_id, survey in user_surveys.items():
-            status = "Активен" if survey['status'] == 'active' else "Завершен"
+            if survey['status'] == 'active':
+                status = "Активен"
+            elif survey['status'] == 'scheduled':
+                status = "Запланирован"
+            else:
+                status = "Завершен"
             deadline = datetime.fromisoformat(survey['deadline'])
             remaining = (deadline - datetime.now()).total_seconds() / 3600
 
@@ -444,6 +523,10 @@ class SurveyPlugin:
         deadline = datetime.fromisoformat(data['deadline'])
         summary += f"\nСрок действия: до {deadline.strftime('%d.%m.%Y %H:%M')}\n"
         summary += f"Анонимный: {'Да' if data.get('is_anonymous', False) else 'Нет'}"
+
+        if data.get('scheduled') and data.get('scheduled_datetime'):
+            dt = datetime.fromisoformat(data['scheduled_datetime'])
+            summary += f"\nЗапланировано на: {dt.strftime('%d.%m.%Y %H:%M')}"
 
         return summary
 
