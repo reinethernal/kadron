@@ -1,8 +1,9 @@
 """
-Шаблон плагина для Telegram‑бота.
+Шаблон плагина для Telegram‑бота (aiogram 3.x).
 
-Этот файл задаёт основную структуру для создания новых плагинов. Каждый плагин
-должен реализовать обязательные методы и зарегистрировать себя в менеджере плагинов.
+Файл задаёт базовую структуру для новых плагинов. В примере показана
+регистрация обработчиков и создание инлайн‑клавиатур через
+``InlineKeyboardBuilder``.
 
 Использование:
 1. Скопируйте этот шаблон;
@@ -24,7 +25,7 @@ from aiogram import Dispatcher, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
@@ -65,7 +66,7 @@ class PluginTemplate:
         }
 
     def _create_inline_keyboard(self) -> types.InlineKeyboardMarkup:
-        """Создаёт пример инлайн-клавиатуры"""
+        """Создаёт пример инлайн-клавиатуры через ``InlineKeyboardBuilder``"""
         builder = InlineKeyboardBuilder()
         builder.button(text="Button 1", callback_data="btn1")
         builder.button(text="Button 2", callback_data="btn2")
@@ -81,8 +82,11 @@ class PluginTemplate:
         print(f"Plugin {self.name} unloaded")
         
     async def command_handler(self, message: types.Message, state: FSMContext):
-        """Пример обработчика команды"""
-        await message.answer("Это пример обработчика команды")
+        """Пример обработчика команды (стиль aiogram 3.x)"""
+        await message.answer(
+            "Это пример обработчика команды",
+            reply_markup=self._create_inline_keyboard()
+        )
 
 
 # Эта функция необходима менеджеру плагинов для загрузки плагина
