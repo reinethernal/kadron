@@ -6,7 +6,7 @@
 """
 
 from aiogram import Dispatcher, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import StateFilter  # Добавляем фильтр состояния
@@ -70,11 +70,12 @@ class TextAnswerPlugin:
     
     def render_question(self, question, survey_id):
         """Отображает вопрос для ответа"""
-        markup = InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton(
-            "Ответить",
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text="Ответить",
             callback_data=f"text_answer_{survey_id}_{question['id']}"
-        ))
+        )
+        markup = builder.as_markup()
         
         return {
             'text': question['text'],
