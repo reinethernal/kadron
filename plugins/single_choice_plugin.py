@@ -4,6 +4,7 @@
 
 from aiogram import Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 import logging
 
 try:
@@ -38,12 +39,14 @@ class SingleChoicePlugin:
             ]
         }
     def render_question(self, question, survey_id):
-        markup = InlineKeyboardMarkup(row_width=1)
+        builder = InlineKeyboardBuilder()
         for i, option in enumerate(question['options']):
-            markup.add(InlineKeyboardButton(
-                option,
+            builder.button(
+                text=option,
                 callback_data=f"single_choice_{survey_id}_{question['id']}_{i}"
-            ))
+            )
+        builder.adjust(1)
+        markup = builder.as_markup()
         return {'text': question['text'], 'markup': markup}
     async def process_single_choice_selection(self, callback_query: types.CallbackQuery):
         parts = callback_query.data.split('_')
@@ -66,10 +69,15 @@ class SingleChoicePlugin:
         question = next((q for q in survey['questions'] if q['id'] == question_id), None)
         if question:
             options = question['options']
-            markup = InlineKeyboardMarkup(row_width=1)
+            builder = InlineKeyboardBuilder()
             for i, option in enumerate(options):
                 text = f"✅ {option}" if i == option_index else option
-                markup.add(InlineKeyboardButton(text, callback_data=f"single_choice_{survey_id}_{question_id}_{i}"))
+                builder.button(
+                    text=text,
+                    callback_data=f"single_choice_{survey_id}_{question_id}_{i}"
+                )
+            builder.adjust(1)
+            markup = builder.as_markup()
             await callback_query.message.edit_reply_markup(reply_markup=markup)
         await callback_query.answer("Ваш ответ записан!")
     def _add_or_update_response(self, survey, user_id, question_id, new_response):

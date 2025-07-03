@@ -10,6 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Используем функции db_manager вместо устаревших импортов базы данных
 from core.db_manager import (
@@ -179,16 +180,17 @@ class EditQuestionPlugin:
             await message.answer("You don't have any surveys to edit.")
             return
             
-        # Создаём клавиатуру с опросами
-        keyboard = InlineKeyboardMarkup(row_width=1)
-        
+        builder = InlineKeyboardBuilder()
+
         for survey in surveys:
-            keyboard.add(InlineKeyboardButton(
+            builder.button(
                 text=survey['title'],
                 callback_data=f"edit_survey_{survey['id']}"
-            ))
-            
-        await message.answer("Выберите опрос для редактирования вопросов:", reply_markup=keyboard)
+            )
+
+        builder.adjust(1)
+        markup = builder.as_markup()
+        await message.answer("Выберите опрос для редактирования вопросов:", reply_markup=markup)
         await state.set_state(EditQuestionStates.SelectSurvey)
         
     async def handle_survey_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
@@ -207,31 +209,31 @@ class EditQuestionPlugin:
         questions = survey.get('questions', [])
         
         if not questions:
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Back", callback_data="edit_action_back_to_surveys")
+            builder.adjust(1)
             await callback_query.message.edit_text(
                 "У этого опроса нет вопросов для редактирования.",
-                reply_markup=InlineKeyboardMarkup().add(
-                    InlineKeyboardButton(text="Back", callback_data="edit_action_back_to_surveys")
-                )
+                reply_markup=builder.as_markup()
             )
             return
             
         # Создаём клавиатуру с вопросами
-        keyboard = InlineKeyboardMarkup(row_width=1)
-        
+        builder = InlineKeyboardBuilder()
+
         for i, question in enumerate(questions):
-            keyboard.add(InlineKeyboardButton(
+            builder.button(
                 text=f"Q{i+1}: {question['text'][:30]}...",
                 callback_data=f"edit_question_{i}"
-            ))
-            
-        keyboard.add(InlineKeyboardButton(
-            text="Назад",
-            callback_data="edit_action_back_to_surveys"
-        ))
-        
+            )
+
+        builder.button(text="Назад", callback_data="edit_action_back_to_surveys")
+        builder.adjust(1)
+        markup = builder.as_markup()
+
         await callback_query.message.edit_text(
             f"Выберите вопрос для редактирования из опроса '{survey['title']}':",
-            reply_markup=keyboard
+            reply_markup=markup
         )
         await state.set_state(EditQuestionStates.SelectQuestion)
         await callback_query.answer()
@@ -274,21 +276,12 @@ class EditQuestionPlugin:
                 details += f"{i+1}. {option}\n"
                 
         # Создаём кнопки редактирования
-        keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.add(
-            InlineKeyboardButton(
-                text="Изменить текст вопроса",
-                callback_data="edit_action_text"
-            ),
-            InlineKeyboardButton(
-                text="Редактировать варианты",
-                callback_data="edit_action_options"
-            ),
-            InlineKeyboardButton(
-                text="Назад к вопросам",
-                callback_data="edit_action_back_to_questions"
-            )
-        )
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Изменить текст вопроса", callback_data="edit_action_text")
+        builder.button(text="Редактировать варианты", callback_data="edit_action_options")
+        builder.button(text="Назад к вопросам", callback_data="edit_action_back_to_questions")
+        builder.adjust(1)
+        keyboard = builder.as_markup()
         
         await message.edit_text(
             details,
@@ -301,11 +294,12 @@ class EditQuestionPlugin:
         action = callback_query.data.split('_')[2]
         
         if action == "text":
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Отмена", callback_data="edit_action_cancel")
+            builder.adjust(1)
             await callback_query.message.edit_text(
                 "Введите новый текст вопроса:",
-                reply_markup=InlineKeyboardMarkup().add(
-                    InlineKeyboardButton(text="Отмена", callback_data="edit_action_cancel")
-                )
+                reply_markup=builder.as_markup()
             )
             await state.set_state(EditQuestionStates.EditQuestionText)
             
@@ -314,12 +308,12 @@ class EditQuestionPlugin:
             state_data = await state.get_data()
             question = state_data.get('selected_question')
             
-            keyboard = InlineKeyboardMarkup(row_width=1)
-            keyboard.add(
-                InlineKeyboardButton(text="Добавить вариант", callback_data="edit_action_add_option"),
-                InlineKeyboardButton(text="Удалить вариант", callback_data="edit_action_remove_option"),
-                InlineKeyboardButton(text="Назад", callback_data="edit_action_back")
-            )
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Добавить вариант", callback_data="edit_action_add_option")
+            builder.button(text="Удалить вариант", callback_data="edit_action_remove_option")
+            builder.button(text="Назад", callback_data="edit_action_back")
+            builder.adjust(1)
+            keyboard = builder.as_markup()
             
             options_text = "Текущие варианты:\n"
             if 'options' in question and question['options']:
@@ -335,11 +329,12 @@ class EditQuestionPlugin:
             await state.set_state(EditQuestionStates.EditQuestionOptions)
             
         elif action == "add_option":
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Отмена", callback_data="edit_action_cancel_option")
+            builder.adjust(1)
             await callback_query.message.edit_text(
                 "Введите текст нового варианта:",
-                reply_markup=InlineKeyboardMarkup().add(
-                    InlineKeyboardButton(text="Отмена", callback_data="edit_action_cancel_option")
-                )
+                reply_markup=builder.as_markup()
             )
             await state.set_state(EditQuestionStates.AddOption)
             
@@ -349,30 +344,28 @@ class EditQuestionPlugin:
             question = state_data.get('selected_question')
             
             if not question.get('options'):
+                builder = InlineKeyboardBuilder()
+                builder.button(text="Назад", callback_data="edit_action_back")
+                builder.adjust(1)
                 await callback_query.message.edit_text(
                     "У этого вопроса нет вариантов для удаления.",
-                    reply_markup=InlineKeyboardMarkup().add(
-                        InlineKeyboardButton(text="Назад", callback_data="edit_action_back")
-                    )
+                    reply_markup=builder.as_markup()
                 )
                 return
                 
-            keyboard = InlineKeyboardMarkup(row_width=1)
-            
+            builder = InlineKeyboardBuilder()
+
             for i, option in enumerate(question['options']):
-                keyboard.add(InlineKeyboardButton(
+                builder.button(
                     text=f"Удалить: {option}",
                     callback_data=f"remove_option_{i}"
-                ))
-                
-            keyboard.add(InlineKeyboardButton(
-                text="Отмена",
-                callback_data="edit_action_cancel_option"
-            ))
-            
+                )
+
+            builder.button(text="Отмена", callback_data="edit_action_cancel_option")
+            builder.adjust(1)
             await callback_query.message.edit_text(
                 "Выберите вариант для удаления:",
-                reply_markup=keyboard
+                reply_markup=builder.as_markup()
             )
             await state.set_state(EditQuestionStates.RemoveOption)
             
@@ -423,18 +416,20 @@ class EditQuestionPlugin:
             success = await update_question(survey['id'], question_index, question)
             
             if success:
+                builder = InlineKeyboardBuilder()
+                builder.button(text="Назад к вопросам", callback_data="edit_action_back_to_questions")
+                builder.adjust(1)
                 await callback_query.message.edit_text(
                     "Вопрос успешно обновлён!",
-                    reply_markup=InlineKeyboardMarkup().add(
-                        InlineKeyboardButton(text="Назад к вопросам", callback_data="edit_action_back_to_questions")
-                    )
+                    reply_markup=builder.as_markup()
                 )
             else:
+                builder = InlineKeyboardBuilder()
+                builder.button(text="Назад", callback_data="edit_action_back")
+                builder.adjust(1)
                 await callback_query.message.edit_text(
                     "Не удалось обновить вопрос. Попробуйте ещё раз.",
-                    reply_markup=InlineKeyboardMarkup().add(
-                        InlineKeyboardButton(text="Назад", callback_data="edit_action_back")
-                    )
+                    reply_markup=builder.as_markup()
                 )
                 
         await callback_query.answer()
@@ -455,11 +450,11 @@ class EditQuestionPlugin:
         await state.update_data(selected_question=question)
         
         # Показываем подтверждение
-        keyboard = InlineKeyboardMarkup(row_width=2)
-        keyboard.add(
-            InlineKeyboardButton(text="Сохранить", callback_data="edit_action_save"),
-            InlineKeyboardButton(text="Отмена", callback_data="edit_action_cancel")
-        )
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Сохранить", callback_data="edit_action_save")
+        builder.button(text="Отмена", callback_data="edit_action_cancel")
+        builder.adjust(2)
+        keyboard = builder.as_markup()
         
         await message.answer(
             f"Текст вопроса обновлён:\n\n{new_text}\n\nСохранить изменения?",
@@ -486,12 +481,12 @@ class EditQuestionPlugin:
         await state.update_data(selected_question=question)
         
         # Показываем подтверждение
-        keyboard = InlineKeyboardMarkup(row_width=2)
-        keyboard.add(
-            InlineKeyboardButton(text="Сохранить", callback_data="edit_action_save"),
-            InlineKeyboardButton(text="Добавить ещё", callback_data="edit_action_add_option"),
-            InlineKeyboardButton(text="Отмена", callback_data="edit_action_cancel")
-        )
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Сохранить", callback_data="edit_action_save")
+        builder.button(text="Добавить ещё", callback_data="edit_action_add_option")
+        builder.button(text="Отмена", callback_data="edit_action_cancel")
+        builder.adjust(2)
+        keyboard = builder.as_markup()
         
         options_text = "Обновлённые варианты:\n"
         for i, option in enumerate(question['options']):
@@ -516,12 +511,12 @@ class EditQuestionPlugin:
             await state.update_data(selected_question=question)
             
             # Показываем подтверждение
-            keyboard = InlineKeyboardMarkup(row_width=2)
-            keyboard.add(
-                InlineKeyboardButton(text="Сохранить", callback_data="edit_action_save"),
-                InlineKeyboardButton(text="Удалить ещё", callback_data="edit_action_remove_option"),
-                InlineKeyboardButton(text="Отмена", callback_data="edit_action_cancel")
-            )
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Сохранить", callback_data="edit_action_save")
+            builder.button(text="Удалить ещё", callback_data="edit_action_remove_option")
+            builder.button(text="Отмена", callback_data="edit_action_cancel")
+            builder.adjust(2)
+            keyboard = builder.as_markup()
             
             options_text = "Обновлённые варианты:\n"
             if question['options']:

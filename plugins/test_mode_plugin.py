@@ -1,6 +1,7 @@
 from aiogram import Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 import logging
@@ -51,15 +52,18 @@ class TestModePlugin:
         if not user_surveys:
             await message.answer("У вас нет опросов для тестирования.")
             return
-        markup = InlineKeyboardMarkup(row_width=1)
+        builder = InlineKeyboardBuilder()
         for survey_id, survey in user_surveys.items():
-            markup.add(
-                InlineKeyboardButton(
-                    text=survey.get("title", "Без названия"),
-                    callback_data=f"test_survey_{survey_id}"
-                )
+            builder.button(
+                text=survey.get("title", "Без названия"),
+                callback_data=f"test_survey_{survey_id}"
             )
-        await message.answer("🧪 Тестовый режим\n\nВыберите опрос для тестирования:", reply_markup=markup)
+        builder.adjust(1)
+        markup = builder.as_markup()
+        await message.answer(
+            "🧪 Тестовый режим\n\nВыберите опрос для тестирования:",
+            reply_markup=markup
+        )
         await state.set_state(TestModeStates.SELECTING_SURVEY)
 
     async def handle_survey_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
@@ -75,12 +79,21 @@ class TestModePlugin:
         test_id = f"test_{survey_id}_{callback_query.from_user.id}"
         self.test_surveys[test_id] = test_survey
         await state.update_data(test_id=test_id)
-        markup = InlineKeyboardMarkup(row_width=1)
-        markup.add(
-            InlineKeyboardButton("▶️ Начать тестирование", callback_data=f"test_action_start_{test_id}"),
-            InlineKeyboardButton("📊 Просмотреть результаты", callback_data=f"test_action_results_{test_id}"),
-            InlineKeyboardButton("❌ Завершить тестирование", callback_data="test_action_exit")
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text="▶️ Начать тестирование",
+            callback_data=f"test_action_start_{test_id}"
         )
+        builder.button(
+            text="📊 Просмотреть результаты",
+            callback_data=f"test_action_results_{test_id}"
+        )
+        builder.button(
+            text="❌ Завершить тестирование",
+            callback_data="test_action_exit"
+        )
+        builder.adjust(1)
+        markup = builder.as_markup()
         await callback_query.message.edit_text(
             f"🧪 Тестовый режим: {test_survey.get('title')}\n\nВ тестовом режиме вы можете пройти опрос и просмотреть результаты без влияния на реальные данные.",
             reply_markup=markup
@@ -118,50 +131,72 @@ class TestModePlugin:
     async def show_test_question(self, message, test_survey, test_id, question_index):
         questions = test_survey.get("questions", [])
         if question_index >= len(questions):
-            markup = InlineKeyboardMarkup()
-            markup.add(
-                InlineKeyboardButton("📊 Просмотреть результаты", callback_data=f"test_action_results_{test_id}"),
-                InlineKeyboardButton("🔄 Пройти заново", callback_data=f"test_action_start_{test_id}"),
-                InlineKeyboardButton("❌ Завершить тестирование", callback_data="test_action_exit")
+            builder = InlineKeyboardBuilder()
+            builder.button(
+                text="📊 Просмотреть результаты",
+                callback_data=f"test_action_results_{test_id}"
             )
-            await message.edit_text("✅ Тестирование опроса завершено!\n\nВы можете просмотреть результаты или пройти опрос заново.", reply_markup=markup)
+            builder.button(
+                text="🔄 Пройти заново",
+                callback_data=f"test_action_start_{test_id}"
+            )
+            builder.button(
+                text="❌ Завершить тестирование",
+                callback_data="test_action_exit"
+            )
+            builder.adjust(1)
+            markup = builder.as_markup()
+            await message.edit_text(
+                "✅ Тестирование опроса завершено!\n\nВы можете просмотреть результаты или пройти опрос заново.",
+                reply_markup=markup
+            )
             return
         question = questions[question_index]
         question_type = question.get("type", "unknown")
         if question_type == "single_choice":
-            markup = InlineKeyboardMarkup(row_width=1)
+            builder = InlineKeyboardBuilder()
             for i, option in enumerate(question.get("options", [])):
-                markup.add(
-                    InlineKeyboardButton(option, callback_data=f"test_response_single_{test_id}_{question_index}_{i}")
+                builder.button(
+                    text=option,
+                    callback_data=f"test_response_single_{test_id}_{question_index}_{i}"
                 )
+            builder.adjust(1)
+            markup = builder.as_markup()
             await message.edit_text(
                 f"Вопрос {question_index+1}/{len(questions)}:\n\n{question.get('text')}\n\nВыберите один вариант:",
                 reply_markup=markup
             )
         elif question_type == "multiple_choice":
-            markup = InlineKeyboardMarkup(row_width=1)
+            builder = InlineKeyboardBuilder()
             for i, option in enumerate(question.get("options", [])):
-                markup.add(
-                    InlineKeyboardButton(option, callback_data=f"test_response_multi_{test_id}_{question_index}_{i}")
+                builder.button(
+                    text=option,
+                    callback_data=f"test_response_multi_{test_id}_{question_index}_{i}"
                 )
-            markup.add(
-                InlineKeyboardButton("✅ Подтвердить выбор", callback_data=f"test_response_submit_{test_id}_{question_index}")
+            builder.button(
+                text="✅ Подтвердить выбор",
+                callback_data=f"test_response_submit_{test_id}_{question_index}"
             )
+            builder.adjust(1)
+            markup = builder.as_markup()
             await message.edit_text(
                 f"Вопрос {question_index+1}/{len(questions)}:\n\n{question.get('text')}\n\nВыберите один или несколько вариантов:",
                 reply_markup=markup
             )
         elif question_type == "text_answer":
-            markup = InlineKeyboardMarkup(row_width=1)
+            builder = InlineKeyboardBuilder()
             test_answers = [
                 "Тестовый ответ 1",
                 "Это пример текстового ответа",
                 "Тестирование функциональности"
             ]
             for i, answer in enumerate(test_answers):
-                markup.add(
-                    InlineKeyboardButton(f"Ответ {i+1}", callback_data=f"test_response_text_{test_id}_{question_index}_{i}")
+                builder.button(
+                    text=f"Ответ {i+1}",
+                    callback_data=f"test_response_text_{test_id}_{question_index}_{i}"
                 )
+            builder.adjust(1)
+            markup = builder.as_markup()
             await message.edit_text(
                 f"Вопрос {question_index+1}/{len(questions)}:\n\n{question.get('text')}\n\nВ тестовом режиме выберите один из предопределенных ответов:",
                 reply_markup=markup
@@ -202,15 +237,19 @@ class TestModePlugin:
             else:
                 selections.append(option_index)
             await state.update_data({selections_key: selections})
-            markup = InlineKeyboardMarkup(row_width=1)
+            builder = InlineKeyboardBuilder()
             for i, option in enumerate(question.get("options", [])):
                 text = f"✅ {option}" if i in selections else option
-                markup.add(
-                    InlineKeyboardButton(text, callback_data=f"test_response_multi_{test_id}_{question_index}_{i}")
+                builder.button(
+                    text=text,
+                    callback_data=f"test_response_multi_{test_id}_{question_index}_{i}"
                 )
-            markup.add(
-                InlineKeyboardButton("✅ Подтвердить выбор", callback_data=f"test_response_submit_{test_id}_{question_index}")
+            builder.button(
+                text="✅ Подтвердить выбор",
+                callback_data=f"test_response_submit_{test_id}_{question_index}"
             )
+            builder.adjust(1)
+            markup = builder.as_markup()
             await callback_query.message.edit_reply_markup(reply_markup=markup)
         elif response_type == "submit":
             state_data = await state.get_data()
@@ -283,11 +322,14 @@ class TestModePlugin:
                 for i, response in enumerate(question_responses):
                     answer = response.get("answer", "")
                     results.append(f"  {i+1}. {answer}")
-        markup = InlineKeyboardMarkup()
-        markup.add(
-            InlineKeyboardButton("🔄 Пройти заново", callback_data=callback_query.data.replace("results", "start")),
-            InlineKeyboardButton("❌ Завершить тестирование", callback_data="test_action_exit")
+        builder = InlineKeyboardBuilder()
+        builder.button(
+            text="🔄 Пройти заново",
+            callback_data=callback_query.data.replace("results", "start")
         )
+        builder.button(text="❌ Завершить тестирование", callback_data="test_action_exit")
+        builder.adjust(1)
+        markup = builder.as_markup()
         results_text = "\n".join(results)
         if len(results_text) > 4000:
             chunks = []
