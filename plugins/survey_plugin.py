@@ -106,6 +106,25 @@ class SurveyPlugin:
             self.process_confirmation,
             StateFilter(SurveyStates.CONFIRMATION)
         )
+        # Дополнительные команды во время ввода вопросов
+        dp.message.register(
+            self.cmd_finish_questions,
+            Command(commands=["finish_questions"]),
+            StateFilter(
+                SurveyStates.QUESTION_TYPE,
+                SurveyStates.QUESTION_TEXT,
+                SurveyStates.ADDING_OPTIONS,
+            ),
+        )
+        dp.message.register(
+            self.cmd_questions_count,
+            Command(commands=["questions_count"]),
+            StateFilter(
+                SurveyStates.QUESTION_TYPE,
+                SurveyStates.QUESTION_TEXT,
+                SurveyStates.ADDING_OPTIONS,
+            ),
+        )
 
         # Обработчики управления опросами
         dp.message.register(
@@ -134,13 +153,15 @@ class SurveyPlugin:
         """Возвращает список команд, предоставляемых плагином"""
         return [
             types.BotCommand(command="create_survey", description="Создать новый опрос"),
-            types.BotCommand(command="view_surveys", description="Просмотреть мои опросы")
+            types.BotCommand(command="view_surveys", description="Просмотреть мои опросы"),
+            types.BotCommand(command="finish_questions", description="Завершить ввод вопросов"),
+            types.BotCommand(command="questions_count", description="Сколько вопросов добавлено")
         ]
 
     async def cmd_create_survey(self, message: types.Message, state: FSMContext):
         """Обработчик команды создания нового опроса"""
         await state.set_state(SurveyStates.TITLE)
-        await state.update_data(creator_id=message.from_user.id)
+        await state.update_data(creator_id=message.from_user.id, questions=[])
         await message.answer("Введите название опроса:")
 
     async def process_title(self, message: types.Message, state: FSMContext):
@@ -161,7 +182,10 @@ class SurveyPlugin:
         builder.adjust(1)
         markup = builder.as_markup()
 
-        await message.answer("Выберите тип вопроса:", reply_markup=markup)
+        await message.answer(
+            "Выберите тип вопроса или отправьте /finish_questions для завершения.",
+            reply_markup=markup,
+        )
 
     async def process_question_type_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
         """Обрабатывает выбор типа вопроса"""
@@ -174,7 +198,7 @@ class SurveyPlugin:
         }
 
         if question_type in question_types:
-            await state.update_data(question_type=question_types[question_type])
+            await state.update_data(current_question_type=question_types[question_type])
             await state.set_state(SurveyStates.QUESTION_TEXT)
 
             await callback_query.message.edit_text(
@@ -230,17 +254,38 @@ class SurveyPlugin:
 
     async def process_question_text(self, message: types.Message, state: FSMContext):
         """Обрабатывает ввод текста вопроса"""
-        await state.update_data(question_text=message.text)
+        await state.update_data(current_question_text=message.text)
         data = await state.get_data()
 
-        if data['question_type'] in ["одиночный выбор", "множественный выбор"]:
+        q_type = data.get('current_question_type')
+
+        if q_type in ["одиночный выбор", "множественный выбор"]:
             await state.set_state(SurveyStates.ADDING_OPTIONS)
             await message.answer(
                 "Введите варианты ответов, каждый с новой строки.\nВведите 'Готово', когда закончите:"
             )
         else:
-            await state.set_state(SurveyStates.DEADLINE)
-            await message.answer("Введите срок действия опроса в часах (например, 24):")
+            questions = data.get('questions', [])
+            questions.append({
+                'id': str(uuid.uuid4()),
+                'text': message.text,
+                'type': q_type,
+                'options': []
+            })
+            await state.update_data(questions=questions, current_question_text=None, current_question_type=None, options=[])
+
+            await state.set_state(SurveyStates.QUESTION_TYPE)
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Одиночный выбор", callback_data="type_single")
+            builder.button(text="Множественный выбор", callback_data="type_multiple")
+            builder.button(text="Текстовый ответ", callback_data="type_text")
+            builder.adjust(1)
+            markup = builder.as_markup()
+
+            await message.answer(
+                f"Вопрос добавлен. Уже {len(questions)}. Выберите тип следующего вопроса или отправьте /finish_questions.",
+                reply_markup=markup,
+            )
 
     async def process_options(self, message: types.Message, state: FSMContext):
         """Обрабатывает ввод вариантов ответов"""
@@ -250,8 +295,31 @@ class SurveyPlugin:
                 await message.answer("Вы не добавили ни одного варианта ответа. Пожалуйста, введите варианты:")
                 return
 
-            await state.set_state(SurveyStates.DEADLINE)
-            await message.answer("Введите срок действия опроса в часах (например, 24):")
+            questions = data.get('questions', [])
+            questions.append({
+                'id': str(uuid.uuid4()),
+                'text': data['current_question_text'],
+                'type': data['current_question_type'],
+                'options': data['options'],
+            })
+            await state.update_data(
+                questions=questions,
+                options=[],
+                current_question_type=None,
+                current_question_text=None,
+            )
+
+            await state.set_state(SurveyStates.QUESTION_TYPE)
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Одиночный выбор", callback_data="type_single")
+            builder.button(text="Множественный выбор", callback_data="type_multiple")
+            builder.button(text="Текстовый ответ", callback_data="type_text")
+            builder.adjust(1)
+            markup = builder.as_markup()
+            await message.answer(
+                f"Вопрос добавлен. Уже {len(questions)}. Выберите тип следующего вопроса или отправьте /finish_questions.",
+                reply_markup=markup,
+            )
         else:
             options = message.text.split('\n')
             data = await state.get_data()
@@ -338,12 +406,7 @@ class SurveyPlugin:
                 'created_at': datetime.now().isoformat(),
                 'deadline': data['deadline'],
                 'is_anonymous': data.get('is_anonymous', False),
-                'questions': [{
-                    'id': str(uuid.uuid4()),
-                    'text': data['question_text'],
-                    'type': data['question_type'],
-                    'options': data.get('options', []) if data['question_type'] != "текстовый ответ" else []
-                }],
+                'questions': data.get('questions', []),
                 'responses': []
             }
 
@@ -380,6 +443,22 @@ class SurveyPlugin:
             await message.answer(f"✅ Опрос '{data['title']}' успешно создан!")
         else:
             await message.answer("Для подтверждения создания опроса введите 'Подтвердить':")
+
+    async def cmd_finish_questions(self, message: types.Message, state: FSMContext):
+        """Завершает ввод вопросов и переходит к указанию срока"""
+        data = await state.get_data()
+        if not data.get('questions'):
+            await message.answer("Вы не добавили ни одного вопроса.")
+            return
+
+        await state.set_state(SurveyStates.DEADLINE)
+        await message.answer("Введите срок действия опроса в часах (например, 24):")
+
+    async def cmd_questions_count(self, message: types.Message, state: FSMContext):
+        """Отображает количество уже добавленных вопросов"""
+        data = await state.get_data()
+        count = len(data.get('questions', []))
+        await message.answer(f"Количество добавленных вопросов: {count}")
 
     async def cmd_view_surveys(self, message: types.Message, state: FSMContext):
         """Обработчик команды просмотра опросов"""
@@ -511,14 +590,14 @@ class SurveyPlugin:
     def _generate_survey_summary(self, data):
         """Генерирует сводку опроса для подтверждения"""
         summary = f"<b>Опрос: {data['title']}</b>\n"
-        summary += f"Описание: {data['description']}\n"
-        summary += f"Тип вопроса: {data['question_type']}\n"
-        summary += f"Вопрос: {data['question_text']}\n"
+        summary += f"Описание: {data['description']}\n\n"
 
-        if data['question_type'] in ["одиночный выбор", "множественный выбор"]:
-            summary += "\nВарианты ответов:\n"
-            for i, option in enumerate(data.get('options', [])):
-                summary += f"{i+1}. {option}\n"
+        for idx, question in enumerate(data.get('questions', []), 1):
+            summary += f"{idx}. {question['text']} ({question['type']})\n"
+            if question['type'] in ["одиночный выбор", "множественный выбор"]:
+                for i, option in enumerate(question.get('options', []), 1):
+                    summary += f"   {i}. {option}\n"
+            summary += "\n"
 
         deadline = datetime.fromisoformat(data['deadline'])
         summary += f"\nСрок действия: до {deadline.strftime('%d.%m.%Y %H:%M')}\n"
