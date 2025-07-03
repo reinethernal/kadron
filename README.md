@@ -93,3 +93,11 @@ await pm.unload_plugin('test_mode_plugin')  # имя без .py
 ```bash
 python main.py
 ```
+
+## Экспорт опросов
+
+Для получения файлов с результатами опросов используйте команду:
+
+```bash
+/export
+```

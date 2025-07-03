@@ -3,6 +3,7 @@ import json
 import csv
 import io
 import datetime
+import pandas as pd
 
 from aiogram import Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -72,6 +73,7 @@ class ExportPlugin:
         builder = InlineKeyboardBuilder()
         builder.button(text="CSV", callback_data=f"export_format_csv_{survey_id}")
         builder.button(text="JSON", callback_data=f"export_format_json_{survey_id}")
+        builder.button(text="Excel", callback_data=f"export_format_excel_{survey_id}")
         builder.button(text="Текстовый отчет", callback_data=f"export_format_text_{survey_id}")
         builder.adjust(2)
         markup = builder.as_markup()
@@ -92,6 +94,8 @@ class ExportPlugin:
             await self.export_json(callback_query, survey)
         elif format_type == "text":
             await self.export_text(callback_query, survey)
+        elif format_type == "excel":
+            await self.export_excel(callback_query, survey)
         else:
             await callback_query.answer("Неподдерживаемый формат")
 
@@ -124,6 +128,36 @@ class ExportPlugin:
         bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.csv"
         await callback_query.message.answer_document(bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}")
         await callback_query.message.edit_text("✅ Экспорт в CSV успешно выполнен.")
+        await callback_query.answer()
+
+    async def export_excel(self, callback_query: types.CallbackQuery, survey):
+        rows = []
+        for response in survey.get("responses", []):
+            question_id = response.get("question_id")
+            question = next((q for q in survey.get("questions", []) if q.get("id") == question_id), {})
+            question_text = question.get("text", "Unknown Question")
+            answer = response.get("answer", "")
+            if question.get("type") == "single_choice" and isinstance(answer, int):
+                options = question.get("options", [])
+                if 0 <= answer < len(options):
+                    answer = options[answer]
+            elif question.get("type") == "multiple_choice" and isinstance(answer, list):
+                options = question.get("options", [])
+                answer = ", ".join([options[i] for i in answer if 0 <= i < len(options)])
+            rows.append({
+                "Question": question_text,
+                "User ID": response.get("user_id", "Anonymous"),
+                "Answer": answer,
+                "Timestamp": response.get("timestamp", "")
+            })
+        df = pd.DataFrame(rows, columns=["Question", "User ID", "Answer", "Timestamp"])
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False)
+        output.seek(0)
+        output.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.xlsx"
+        await callback_query.message.answer_document(output, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}")
+        await callback_query.message.edit_text("✅ Экспорт в Excel успешно выполнен.")
         await callback_query.answer()
 
     async def export_json(self, callback_query: types.CallbackQuery, survey):
