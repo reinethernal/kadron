@@ -15,9 +15,9 @@ from aiogram import Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
-    InlineKeyboardButton, InlineKeyboardMarkup,
     ChatMemberUpdated, Message, CallbackQuery
 )
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import ChatMemberUpdatedFilter, StateFilter
 
 try:
@@ -126,16 +126,16 @@ class CaptchaPlugin:
         self.pending_captchas[user.id] = captcha_text
         
         # Кнопки
-        markup = InlineKeyboardMarkup(row_width=3)
+        builder = InlineKeyboardBuilder()
         options = [captcha_text] + [self._generate_captcha() for _ in range(5)]
         random.shuffle(options)
         for option in options:
-            markup.insert(
-                InlineKeyboardButton(
-                    option,
-                    callback_data=f"captcha_{user.id}_{option}"
-                )
+            builder.button(
+                text=option,
+                callback_data=f"captcha_{user.id}_{option}"
             )
+        builder.adjust(3)
+        markup = builder.as_markup()
 
         chat_id = event.chat.id
         await event.bot.send_message(
@@ -172,8 +172,9 @@ class CaptchaPlugin:
                 del self.warning_tasks[user_id]
             
             # Предлагаем пройти опрос
-            markup = InlineKeyboardMarkup()
-            markup.add(InlineKeyboardButton("Пройти короткий опрос", callback_data="start_primary_survey"))
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Пройти короткий опрос", callback_data="start_primary_survey")
+            markup = builder.as_markup()
             await callback_query.message.edit_text(
                 "✅ Капча успешно пройдена!\n\n"
                 "Пройдите короткий опрос, чтобы мы могли лучше узнать вас:",
@@ -192,11 +193,12 @@ class CaptchaPlugin:
         
         user_id = message.from_user.id
         if user_id in self.pending_captchas:
-            markup = InlineKeyboardMarkup()
-            markup.add(InlineKeyboardButton(
-                "Пройти капчу", 
+            builder = InlineKeyboardBuilder()
+            builder.button(
+                text="Пройти капчу",
                 url=f"https://t.me/{message.bot.username}?start=captcha"
-            ))
+            )
+            markup = builder.as_markup()
             try:
                 await message.answer(
                     "❌ Вы не можете писать, пока не пройдёте капчу!",
@@ -210,11 +212,12 @@ class CaptchaPlugin:
         try:
             await asyncio.sleep(240)
             if user_id in self.pending_captchas:
-                markup = InlineKeyboardMarkup()
-                markup.add(InlineKeyboardButton(
-                    "Пройти капчу сейчас",
+                builder = InlineKeyboardBuilder()
+                builder.button(
+                    text="Пройти капчу сейчас",
                     url=f"https://t.me/{bot.username}?start=captcha"
-                ))
+                )
+                markup = builder.as_markup()
                 await bot.send_message(
                     chat_id,
                     f"⚠️ <a href='tg://user?id={user_id}'>Пользователь</a>, 1 минута на капчу!",
@@ -261,39 +264,44 @@ class CaptchaPlugin:
         question = self.primary_survey_questions[question_index]
         
         if question['type'] == 'text':
-            markup = InlineKeyboardMarkup()
-            markup.add(InlineKeyboardButton(
-                "Ответить",
+            builder = InlineKeyboardBuilder()
+            builder.button(
+                text="Ответить",
                 callback_data=f"primary_text_{question['id']}"
-            ))
+            )
+            markup = builder.as_markup()
             await message.edit_text(
                 f"{question['text']}\n\nНажмите кнопку, чтобы ответить:",
                 reply_markup=markup
             )
         
         elif question['type'] == 'single_choice':
-            markup = InlineKeyboardMarkup(row_width=1)
+            builder = InlineKeyboardBuilder()
             for i, option in enumerate(question['options']):
-                markup.add(InlineKeyboardButton(
-                    option,
+                builder.button(
+                    text=option,
                     callback_data=f"primary_choice_{question['id']}_{i}"
-                ))
+                )
+            builder.adjust(1)
+            markup = builder.as_markup()
             await message.edit_text(
                 f"{question['text']}\n\nВыберите один вариант:",
                 reply_markup=markup
             )
         
         elif question['type'] == 'multiple_choice':
-            markup = InlineKeyboardMarkup(row_width=1)
+            builder = InlineKeyboardBuilder()
             for i, option in enumerate(question['options']):
-                markup.add(InlineKeyboardButton(
-                    option,
+                builder.button(
+                    text=option,
                     callback_data=f"primary_choice_{question['id']}_{i}"
-                ))
-            markup.add(InlineKeyboardButton(
-                "Подтвердить",
+                )
+            builder.button(
+                text="Подтвердить",
                 callback_data=f"primary_submit_{question['id']}"
-            ))
+            )
+            builder.adjust(1)
+            markup = builder.as_markup()
             await message.edit_text(
                 f"{question['text']}\n\nВыберите несколько вариантов:",
                 reply_markup=markup
@@ -344,17 +352,19 @@ class CaptchaPlugin:
                 storage.set_user_state(user_id, selections_key, selections)
                 
                 # Обновляем варианты
-                markup = InlineKeyboardMarkup(row_width=1)
+                builder = InlineKeyboardBuilder()
                 for i, option in enumerate(question['options']):
                     text = f"✅ {option}" if i in selections else option
-                    markup.add(InlineKeyboardButton(
-                        text,
+                    builder.button(
+                        text=text,
                         callback_data=f"primary_choice_{question_id}_{i}"
-                    ))
-                markup.add(InlineKeyboardButton(
-                    "Подтвердить",
+                    )
+                builder.button(
+                    text="Подтвердить",
                     callback_data=f"primary_submit_{question_id}"
-                ))
+                )
+                builder.adjust(1)
+                markup = builder.as_markup()
                 await callback_query.message.edit_reply_markup(reply_markup=markup)
         
         elif parts[0] == 'primary' and parts[1] == 'submit':

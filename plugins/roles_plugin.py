@@ -7,7 +7,7 @@
 
 import logging
 from aiogram import Dispatcher, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
@@ -171,12 +171,12 @@ class RolesPlugin:
     
     async def cmd_roles(self, message: types.Message):
         """Обрабатывает команду /roles"""
-        markup = InlineKeyboardMarkup(row_width=1)
-        markup.add(
-            InlineKeyboardButton("👤 Назначить роль пользователю", callback_data="roles_assign"),
-            InlineKeyboardButton("✏️ Редактировать роли", callback_data="roles_edit"),
-            InlineKeyboardButton("➕ Создать новую роль", callback_data="roles_create")
-        )
+        builder = InlineKeyboardBuilder()
+        builder.button(text="👤 Назначить роль пользователю", callback_data="roles_assign")
+        builder.button(text="✏️ Редактировать роли", callback_data="roles_edit")
+        builder.button(text="➕ Создать новую роль", callback_data="roles_create")
+        builder.adjust(1)
+        markup = builder.as_markup()
         
         await message.answer(
             "🔑 Управление ролями пользователей\n\n"
@@ -230,23 +230,25 @@ class RolesPlugin:
             return
         
         # Создаём клавиатуру с пользователями
-        markup = InlineKeyboardMarkup(row_width=1)
-        
+        builder = InlineKeyboardBuilder()
+
         for user_id, name in all_users.items():
             # Получаем текущую роль
             role = self.get_user_role(user_id)
             roles = self.get_roles()
             role_name = roles.get(role, {}).get('name', role)
-            
-            markup.add(InlineKeyboardButton(
-                f"{name} - {role_name}",
+
+            builder.button(
+                text=f"{name} - {role_name}",
                 callback_data=f"select_user_{user_id}"
-            ))
-        
-        markup.add(InlineKeyboardButton(
-            "⬅️ Назад",
+            )
+
+        builder.button(
+            text="⬅️ Назад",
             callback_data="roles_back"
-        ))
+        )
+        builder.adjust(1)
+        markup = builder.as_markup()
         
         await message.edit_text(
             "Выберите пользователя для назначения роли:",
@@ -257,18 +259,20 @@ class RolesPlugin:
         """Показывает список ролей для редактирования"""
         roles = self.get_roles()
         
-        markup = InlineKeyboardMarkup(row_width=1)
-        
+        builder = InlineKeyboardBuilder()
+
         for role_id, role_data in roles.items():
-            markup.add(InlineKeyboardButton(
-                f"{role_data.get('name', role_id)}",
+            builder.button(
+                text=f"{role_data.get('name', role_id)}",
                 callback_data=f"edit_role_{role_id}"
-            ))
-        
-        markup.add(InlineKeyboardButton(
-            "⬅️ Назад",
+            )
+
+        builder.button(
+            text="⬅️ Назад",
             callback_data="roles_back"
-        ))
+        )
+        builder.adjust(1)
+        markup = builder.as_markup()
         
         await message.edit_text(
             "Выберите роль для редактирования:",
@@ -285,18 +289,20 @@ class RolesPlugin:
         # Показываем роли для выбора
         roles = self.get_roles()
         
-        markup = InlineKeyboardMarkup(row_width=1)
-        
+        builder = InlineKeyboardBuilder()
+
         for role_id, role_data in roles.items():
-            markup.add(InlineKeyboardButton(
-                role_data.get('name', role_id),
+            builder.button(
+                text=role_data.get('name', role_id),
                 callback_data=f"select_role_{role_id}"
-            ))
-        
-        markup.add(InlineKeyboardButton(
-            "⬅️ Назад",
+            )
+
+        builder.button(
+            text="⬅️ Назад",
             callback_data="roles_back_to_users"
-        ))
+        )
+        builder.adjust(1)
+        markup = builder.as_markup()
         
         await callback_query.message.edit_text(
             f"Выберите роль для пользователя {user_id}:",
@@ -386,21 +392,23 @@ class RolesPlugin:
             ('take_surveys', 'Прохождение опросов')
         ]
         
-        markup = InlineKeyboardMarkup(row_width=1)
-        
+        builder = InlineKeyboardBuilder()
+
         for perm_id, perm_name in all_permissions:
             # Проверяем, включено ли разрешение
             status = "✅" if perm_id in role_permissions else "❌"
-            
-            markup.add(InlineKeyboardButton(
-                f"{status} {perm_name}",
+
+            builder.button(
+                text=f"{status} {perm_name}",
                 callback_data=f"toggle_perm_{role_id}_{perm_id}"
-            ))
-        
-        markup.add(InlineKeyboardButton(
-            "💾 Сохранить",
+            )
+
+        builder.button(
+            text="💾 Сохранить",
             callback_data="save_permissions"
-        ))
+        )
+        builder.adjust(1)
+        markup = builder.as_markup()
         
         await message.reply(
             f"Редактирование разрешений для роли {role.get('name', role_id)}:\n\n"
@@ -446,21 +454,23 @@ class RolesPlugin:
             ('take_surveys', 'Прохождение опросов')
         ]
         
-        markup = InlineKeyboardMarkup(row_width=1)
-        
+        builder = InlineKeyboardBuilder()
+
         for perm_id, perm_name in all_permissions:
             # Проверяем, включено ли разрешение
             status = "✅" if perm_id in role_permissions else "❌"
-            
-            markup.add(InlineKeyboardButton(
-                f"{status} {perm_name}",
+
+            builder.button(
+                text=f"{status} {perm_name}",
                 callback_data=f"toggle_perm_{role_id}_{perm_id}"
-            ))
-        
-        markup.add(InlineKeyboardButton(
-            "💾 Сохранить",
+            )
+
+        builder.button(
+            text="💾 Сохранить",
             callback_data="save_permissions"
-        ))
+        )
+        builder.adjust(1)
+        markup = builder.as_markup()
         
         await callback_query.message.edit_reply_markup(reply_markup=markup)
         await callback_query.answer()

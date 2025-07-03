@@ -13,7 +13,7 @@ from aiogram import Dispatcher, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext        # <-- Вместо dispatcher.FSMContext
 from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.filters.state
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Если используем собственное хранилище (storage_plugin)
 try:
@@ -120,15 +120,15 @@ class SchedulerPlugin:
             return
 
         # Формируем клавиатуру со списком опросов
-        markup = InlineKeyboardMarkup(row_width=1)
+        builder = InlineKeyboardBuilder()
         for survey_id, survey in user_surveys.items():
             btn_text = survey.get('title', 'Без названия')
-            markup.add(
-                InlineKeyboardButton(
-                    text=btn_text,
-                    callback_data=f"schedule_survey_{survey_id}"
-                )
+            builder.button(
+                text=btn_text,
+                callback_data=f"schedule_survey_{survey_id}"
             )
+        builder.adjust(1)
+        markup = builder.as_markup()
 
         await message.answer(
             "Выберите опрос для планирования отправки:",
@@ -220,17 +220,17 @@ class SchedulerPlugin:
             )
 
             # Предлагаем подтвердить
-            markup = InlineKeyboardMarkup()
-            markup.add(
-                InlineKeyboardButton(
-                    "✅ Подтвердить",
-                    callback_data=f"schedule_confirm_yes_{survey_id}"
-                ),
-                InlineKeyboardButton(
-                    "❌ Отменить",
-                    callback_data="schedule_confirm_no"
-                )
+            builder = InlineKeyboardBuilder()
+            builder.button(
+                text="✅ Подтвердить",
+                callback_data=f"schedule_confirm_yes_{survey_id}"
             )
+            builder.button(
+                text="❌ Отменить",
+                callback_data="schedule_confirm_no"
+            )
+            builder.adjust(2)
+            markup = builder.as_markup()
 
             await message.answer(
                 f"Подтвердите планирование:\n\n"
@@ -332,11 +332,12 @@ class SchedulerPlugin:
             # Отправляем опрос в каждый чат
             for chat_id in target_chats:
                 try:
-                    markup = InlineKeyboardMarkup()
-                    markup.add(InlineKeyboardButton(
-                        "Пройти опрос",
+                    builder = InlineKeyboardBuilder()
+                    builder.button(
+                        text="Пройти опрос",
                         callback_data=f"start_survey_{survey_id}"
-                    ))
+                    )
+                    markup = builder.as_markup()
                     await bot.send_message(
                         chat_id,
                         f"📊 Новый опрос: {survey.get('title')}\n\n{survey.get('description', '')}",
@@ -400,7 +401,7 @@ class SchedulerPlugin:
             return
 
         text = "📅 Ваши запланированные опросы:\n\n"
-        markup = InlineKeyboardMarkup(row_width=1)
+        builder = InlineKeyboardBuilder()
 
         for i, scheduled in enumerate(user_scheduled):
             sid = scheduled.get('survey_id')
@@ -411,12 +412,13 @@ class SchedulerPlugin:
             scheduled_time = datetime.datetime.fromisoformat(scheduled.get('scheduled_time'))
             text += f"{i+1}. {survey.get('title')}\n"
             text += f"   📆 {scheduled_time.strftime('%d.%m.%Y %H:%M')}\n\n"
-            markup.add(
-                InlineKeyboardButton(
-                    f"❌ Отменить: {survey.get('title')}",
-                    callback_data=f"cancel_scheduled_{sid}"
-                )
+            builder.button(
+                text=f"❌ Отменить: {survey.get('title')}",
+                callback_data=f"cancel_scheduled_{sid}"
             )
+
+        builder.adjust(1)
+        markup = builder.as_markup()
 
         await message.answer(text, reply_markup=markup)
 

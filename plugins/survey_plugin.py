@@ -5,7 +5,7 @@
 
 import logging
 from aiogram import Dispatcher, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
@@ -152,12 +152,12 @@ class SurveyPlugin:
         await state.update_data(description=message.text)
         await state.set_state(SurveyStates.QUESTION_TYPE)
 
-        markup = InlineKeyboardMarkup(row_width=1)
-        markup.add(
-            InlineKeyboardButton("Одиночный выбор", callback_data="type_single"),
-            InlineKeyboardButton("Множественный выбор", callback_data="type_multiple"),
-            InlineKeyboardButton("Текстовый ответ", callback_data="type_text")
-        )
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Одиночный выбор", callback_data="type_single")
+        builder.button(text="Множественный выбор", callback_data="type_multiple")
+        builder.button(text="Текстовый ответ", callback_data="type_text")
+        builder.adjust(1)
+        markup = builder.as_markup()
 
         await message.answer("Выберите тип вопроса:", reply_markup=markup)
 
@@ -225,11 +225,11 @@ class SurveyPlugin:
             await state.update_data(deadline=deadline.isoformat())
 
             await state.set_state(SurveyStates.ANONYMITY)
-            markup = InlineKeyboardMarkup(row_width=2)
-            markup.add(
-                InlineKeyboardButton("Да", callback_data="anon_yes"),
-                InlineKeyboardButton("Нет", callback_data="anon_no")
-            )
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Да", callback_data="anon_yes")
+            builder.button(text="Нет", callback_data="anon_no")
+            builder.adjust(2)
+            markup = builder.as_markup()
             await message.answer("Сделать опрос анонимным?", reply_markup=markup)
         except ValueError:
             await message.answer("Пожалуйста, введите число часов:")
@@ -241,11 +241,11 @@ class SurveyPlugin:
 
         # Запрос о планировании отправки опроса
         await state.set_state(SurveyStates.SCHEDULING)
-        markup = InlineKeyboardMarkup(row_width=2)
-        markup.add(
-            InlineKeyboardButton("Сейчас", callback_data="schedule_now"),
-            InlineKeyboardButton("Запланировать", callback_data="schedule_later")
-        )
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Сейчас", callback_data="schedule_now")
+        builder.button(text="Запланировать", callback_data="schedule_later")
+        builder.adjust(2)
+        markup = builder.as_markup()
 
         anon_status = "Да" if is_anonymous else "Нет"
         await callback_query.message.edit_text(
@@ -322,12 +322,12 @@ class SurveyPlugin:
             deadline = datetime.fromisoformat(survey['deadline'])
             remaining = (deadline - datetime.now()).total_seconds() / 3600
 
-            markup = InlineKeyboardMarkup(row_width=2)
-            markup.add(
-                InlineKeyboardButton("Редактировать", callback_data=f"survey_edit_{survey_id}"),
-                InlineKeyboardButton("Удалить", callback_data=f"survey_delete_{survey_id}"),
-                InlineKeyboardButton("Результаты", callback_data=f"survey_results_{survey_id}")
-            )
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Редактировать", callback_data=f"survey_edit_{survey_id}")
+            builder.button(text="Удалить", callback_data=f"survey_delete_{survey_id}")
+            builder.button(text="Результаты", callback_data=f"survey_results_{survey_id}")
+            builder.adjust(2)
+            markup = builder.as_markup()
 
             await message.answer(
                 f"📊 <b>{survey['title']}</b>\nОписание: {survey['description']}\nСтатус: {status}\nОсталось: {int(remaining)} часов\nВопросов: {len(survey['questions'])}\nОтветов: {len(survey['responses'])}",
@@ -350,16 +350,18 @@ class SurveyPlugin:
             await state.set_state(SurveyStates.EDITING)
             await state.update_data(editing_survey_id=survey_id)
 
-            markup = InlineKeyboardMarkup(row_width=1)
+            builder = InlineKeyboardBuilder()
             for i, question in enumerate(survey['questions']):
                 question_text = question['text']
                 if len(question_text) > 30:
                     question_text = question_text[:30] + "..."
-                markup.add(InlineKeyboardButton(
-                    f"Вопрос {i+1}: {question_text}",
+                builder.button(
+                    text=f"Вопрос {i+1}: {question_text}",
                     callback_data=f"edit_q_{question['id']}"
-                ))
-            markup.add(InlineKeyboardButton("Отмена", callback_data="edit_cancel"))
+                )
+            builder.button(text="Отмена", callback_data="edit_cancel")
+            builder.adjust(1)
+            markup = builder.as_markup()
 
             await callback_query.message.answer(
                 "Выберите вопрос для редактирования:",

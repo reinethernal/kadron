@@ -8,7 +8,8 @@
 import logging
 
 from aiogram import Dispatcher
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import CallbackQuery
 
 # Поправленные импорты для хранилища
 try:
@@ -67,18 +68,20 @@ class MultipleChoicePlugin:
 
     def render_question(self, question, survey_id):
         """Отрисовывает вопрос для ответа пользователя"""
-        markup = InlineKeyboardMarkup(row_width=1)
+        builder = InlineKeyboardBuilder()
 
         for i, option in enumerate(question['options']):
-            markup.add(InlineKeyboardButton(
-                option,
+            builder.button(
+                text=option,
                 callback_data=f"multi_choice_{survey_id}_{question['id']}_{i}"
-            ))
+            )
 
-        markup.add(InlineKeyboardButton(
-            "Подтвердить выбор",
+        builder.button(
+            text="Подтвердить выбор",
             callback_data=f"multi_submit_{survey_id}_{question['id']}"
-        ))
+        )
+        builder.adjust(1)
+        markup = builder.as_markup()
 
         return {
             'text': question['text'] + "\n\nВыберите один или несколько вариантов:",
@@ -121,20 +124,22 @@ class MultipleChoicePlugin:
         question = next((q for q in survey['questions'] if q['id'] == question_id), None)
         if question:
             options = question['options']
-            markup = InlineKeyboardMarkup(row_width=1)
+            builder = InlineKeyboardBuilder()
 
             for i, option in enumerate(options):
                 text = f"✅ {option}" if i in selections else option
-                markup.add(InlineKeyboardButton(
-                    text,
+                builder.button(
+                    text=text,
                     callback_data=f"multi_choice_{survey_id}_{question_id}_{i}"
-                ))
+                )
 
             # Добавляем кнопку подтверждения
-            markup.add(InlineKeyboardButton(
-                "Подтвердить выбор",
+            builder.button(
+                text="Подтвердить выбор",
                 callback_data=f"multi_submit_{survey_id}_{question_id}"
-            ))
+            )
+            builder.adjust(1)
+            markup = builder.as_markup()
 
             await callback_query.message.edit_reply_markup(reply_markup=markup)
 
