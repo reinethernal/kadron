@@ -10,6 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Используем функции из db_manager вместо отсутствующего модуля базы данных
 from core.db_manager import (
@@ -130,23 +131,18 @@ class ViewSurveysPlugin:
             return
             
         # Создаём клавиатуру со списком опросов
-        keyboard = InlineKeyboardMarkup(row_width=1)
-        
+        builder = InlineKeyboardBuilder()
         for survey in surveys:
             status = "✅ Active" if not has_poll_ended(survey) else "❌ Ended"
             button_text = f"{survey['title']} ({status})"
-            keyboard.add(InlineKeyboardButton(
+            builder.button(
                 text=button_text,
                 callback_data=f"view_survey_{survey['id']}"
-            ))
-            
-        # Кнопка фильтрации
-        keyboard.add(InlineKeyboardButton(
-            text="🔍 Filter Surveys",
-            callback_data="filter_menu"
-        ))
-        
-        await message.answer("Доступные опросы:", reply_markup=keyboard)
+            )
+        builder.button(text="🔍 Filter Surveys", callback_data="filter_menu")
+        builder.adjust(1)
+        markup = builder.as_markup()
+        await message.answer("Доступные опросы:", reply_markup=markup)
         await state.set_state(ViewSurveysStates.Viewing)
         
     async def handle_survey_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
@@ -162,20 +158,17 @@ class ViewSurveysPlugin:
         survey_info = await format_survey_info(survey)
         
         # Создаём кнопки действий
-        keyboard = InlineKeyboardMarkup(row_width=2)
-        
-        # В зависимости от статуса добавляем нужные действия
+        builder = InlineKeyboardBuilder()
+
         if not has_poll_ended(survey):
-            keyboard.add(InlineKeyboardButton(
+            builder.button(
                 text="Take Survey",
                 callback_data=f"survey_action_take_{survey_id}"
-            ))
-            
-        # Кнопка возврата к списку
-        keyboard.add(InlineKeyboardButton(
-            text="Back to List",
-            callback_data="survey_action_back"
-        ))
+            )
+
+        builder.button(text="Back to List", callback_data="survey_action_back")
+        builder.adjust(2)
+        keyboard = builder.as_markup()
         
         await callback_query.message.edit_text(
             survey_info,
@@ -192,16 +185,16 @@ class ViewSurveysPlugin:
         
         if filter_type == "menu":
             # Показываем варианты фильтра
-            keyboard = InlineKeyboardMarkup(row_width=1)
-            keyboard.add(
-                InlineKeyboardButton(text="Active Surveys", callback_data="filter_active"),
-                InlineKeyboardButton(text="Completed Surveys", callback_data="filter_completed"),
-                InlineKeyboardButton(text="All Surveys", callback_data="filter_all"),
-                InlineKeyboardButton(text="Back", callback_data="filter_back")
-            )
+            builder = InlineKeyboardBuilder()
+            builder.button(text="Active Surveys", callback_data="filter_active")
+            builder.button(text="Completed Surveys", callback_data="filter_completed")
+            builder.button(text="All Surveys", callback_data="filter_all")
+            builder.button(text="Back", callback_data="filter_back")
+            builder.adjust(1)
+            markup = builder.as_markup()
             await callback_query.message.edit_text(
                 "Выберите вариант фильтра:",
-                reply_markup=keyboard
+                reply_markup=markup
             )
             await state.set_state(ViewSurveysStates.FilterMenu)
             
@@ -219,30 +212,29 @@ class ViewSurveysPlugin:
                 surveys = [s for s in surveys if has_poll_ended(s)]
                 
             # Создаём клавиатуру с отфильтрованными опросами
-            keyboard = InlineKeyboardMarkup(row_width=1)
-            
+            builder = InlineKeyboardBuilder()
+
             if not surveys:
+                back_builder = InlineKeyboardBuilder()
+                back_builder.button(text="Back", callback_data="filter_menu")
+                back_builder.adjust(1)
                 await callback_query.message.edit_text(
                     "Нет опросов, удовлетворяющих фильтру.",
-                    reply_markup=InlineKeyboardMarkup().add(
-                        InlineKeyboardButton(text="Back", callback_data="filter_menu")
-                    )
+                    reply_markup=back_builder.as_markup()
                 )
                 return
-                
+
             for survey in surveys:
                 status = "✅ Active" if not has_poll_ended(survey) else "❌ Ended"
                 button_text = f"{survey['title']} ({status})"
-                keyboard.add(InlineKeyboardButton(
+                builder.button(
                     text=button_text,
                     callback_data=f"view_survey_{survey['id']}"
-                ))
-                
-            # Кнопка фильтрации
-            keyboard.add(InlineKeyboardButton(
-                text="🔍 Filter Surveys",
-                callback_data="filter_menu"
-            ))
+                )
+
+            builder.button(text="🔍 Filter Surveys", callback_data="filter_menu")
+            builder.adjust(1)
+            keyboard = builder.as_markup()
             
             await callback_query.message.edit_text(
                 f"Surveys ({filter_type}):",

@@ -25,6 +25,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
 class PluginStates(StatesGroup):
@@ -60,11 +61,16 @@ class PluginTemplate:
                 ],
                 resize_keyboard=True
             ),
-            "inline": InlineKeyboardMarkup(row_width=2).add(
-                InlineKeyboardButton("Button 1", callback_data="btn1"),
-                InlineKeyboardButton("Button 2", callback_data="btn2")
-            )
+            "inline": self._create_inline_keyboard()
         }
+
+    def _create_inline_keyboard(self) -> types.InlineKeyboardMarkup:
+        """Создаёт пример инлайн-клавиатуры"""
+        builder = InlineKeyboardBuilder()
+        builder.button(text="Button 1", callback_data="btn1")
+        builder.button(text="Button 2", callback_data="btn2")
+        builder.adjust(2)
+        return builder.as_markup()
         
     def on_plugin_load(self):
         """Вызывается при загрузке плагина"""

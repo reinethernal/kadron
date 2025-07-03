@@ -6,6 +6,7 @@ import datetime
 
 from aiogram import Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Импорт хранилища
 try:
@@ -55,25 +56,25 @@ class ExportPlugin:
         if not all_surveys:
             await message.answer("Нет доступных опросов для экспорта.")
             return
-        markup = InlineKeyboardMarkup(row_width=1)
+        builder = InlineKeyboardBuilder()
         for survey_id, survey in all_surveys.items():
             if survey.get("creator_id") == user_id or has_permission(user_id, "export_data"):
-                markup.add(
-                    InlineKeyboardButton(
-                        text=survey.get("title", "Без названия"),
-                        callback_data=f"export_survey_{survey_id}"
-                    )
+                builder.button(
+                    text=survey.get("title", "Без названия"),
+                    callback_data=f"export_survey_{survey_id}"
                 )
+        builder.adjust(1)
+        markup = builder.as_markup()
         await message.answer("Выберите опрос для экспорта данных:", reply_markup=markup)
 
     async def handle_survey_selection(self, callback_query: types.CallbackQuery):
         survey_id = callback_query.data.split("_")[2]
-        markup = InlineKeyboardMarkup(row_width=2)
-        markup.add(
-            InlineKeyboardButton("CSV", callback_data=f"export_format_csv_{survey_id}"),
-            InlineKeyboardButton("JSON", callback_data=f"export_format_json_{survey_id}"),
-            InlineKeyboardButton("Текстовый отчет", callback_data=f"export_format_text_{survey_id}")
-        )
+        builder = InlineKeyboardBuilder()
+        builder.button(text="CSV", callback_data=f"export_format_csv_{survey_id}")
+        builder.button(text="JSON", callback_data=f"export_format_json_{survey_id}")
+        builder.button(text="Текстовый отчет", callback_data=f"export_format_text_{survey_id}")
+        builder.adjust(2)
+        markup = builder.as_markup()
         await callback_query.message.edit_text("Выберите формат экспорта:", reply_markup=markup)
         await callback_query.answer()
 
