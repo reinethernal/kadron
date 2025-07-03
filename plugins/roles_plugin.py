@@ -322,7 +322,7 @@ class RolesPlugin:
         
         if not user_id:
             await callback_query.answer("Ошибка: пользователь не выбран")
-            await state.finish()
+            await state.clear()
             return
         
         # Назначаем роль
@@ -336,7 +336,7 @@ class RolesPlugin:
             f"✅ Роль {role_name} успешно назначена пользователю {user_id}."
         )
         
-        await state.finish()
+        await state.clear()
         await callback_query.answer()
     
     async def process_role_name(self, message: types.Message, state: FSMContext):
@@ -481,7 +481,7 @@ class RolesPlugin:
             "✅ Разрешения роли успешно сохранены."
         )
         
-        await state.finish()
+        await state.clear()
         await callback_query.answer()
     
     def on_plugin_load(self):

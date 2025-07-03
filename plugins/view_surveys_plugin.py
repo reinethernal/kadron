@@ -266,7 +266,7 @@ class ViewSurveysPlugin:
             # Обычно здесь происходит переход к другому плагину
             await callback_query.message.answer(f"Запускаем опрос {survey_id}...")
             # Сбрасываем состояние, чтобы другие хендлеры могли продолжить
-            await state.finish()
+            await state.clear()
             
         await callback_query.answer()
 
