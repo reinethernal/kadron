@@ -6,6 +6,7 @@
 
 import logging
 import os
+import re
 from dotenv import load_dotenv
 from aiogram import Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
@@ -31,9 +32,9 @@ class AdminMenuPlugin:
     def __init__(self):
         self.name = "admin_menu_plugin"
         self.description = "Функциональность административного меню"
-        # Загружаем admin_ids из .env как список целых чисел
-        admin_ids_str = os.getenv("ADMIN_IDS", "123456789")  # Значение по умолчанию, если .env не найден
-        self.admin_ids = [int(id.strip()) for id in admin_ids_str.split(",")]
+        # Загружаем admin_ids из переменной окружения с помощью regex
+        ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
+        self.admin_ids = [int(x) for x in ids]
     
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует все обработчики для плагина"""
