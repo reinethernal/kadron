@@ -207,10 +207,10 @@ class SurveyPlugin:
             await message.answer("Введите срок действия опроса в часах (например, 24):")
         else:
             options = message.text.split('\n')
-            async with state.proxy() as data:
-                if 'options' not in data:
-                    data['options'] = []
-                data['options'].extend(options)
+            data = await state.get_data()
+            updated_options = data.get('options', [])
+            updated_options.extend(options)
+            await state.update_data(options=updated_options)
             await message.answer(f"Добавлено {len(options)} вариантов. Продолжайте добавлять или введите 'Готово':")
 
     async def process_deadline(self, message: types.Message, state: FSMContext):
