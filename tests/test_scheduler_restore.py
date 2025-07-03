@@ -1,0 +1,47 @@
+import importlib
+import asyncio
+from datetime import datetime, timedelta
+
+class DummyStorage:
+    def __init__(self):
+        self.settings = {}
+    def get_survey(self, survey_id):
+        return {
+            'deadline': (datetime.now() + timedelta(hours=2)).isoformat(),
+            'target_chats': []
+        }
+    def save_survey(self, survey_id, data):
+        pass
+    def get_setting(self, key, default=None):
+        return self.settings.get(key, default)
+    def set_setting(self, key, value):
+        self.settings[key] = value
+
+def test_restore_scheduled(monkeypatch):
+    storage = DummyStorage()
+    future = datetime.now() + timedelta(hours=1)
+    storage.set_setting('scheduled_surveys', [{
+        'survey_id': 's1',
+        'scheduled_time': future.isoformat(),
+        'created_by': 1,
+        'created_at': datetime.now().isoformat()
+    }])
+
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    import plugins.scheduler_plugin as scheduler_plugin
+
+    tasks = []
+    def fake_create_task(coro):
+        tasks.append(coro)
+        class Dummy: pass
+        return Dummy()
+    monkeypatch.setattr(asyncio, 'create_task', fake_create_task)
+
+    module = importlib.reload(importlib.import_module('plugins.scheduler_plugin'))
+    monkeypatch.setattr(module, 'storage', storage, raising=False)
+    plugin = module.load_plugin()
+    plugin.on_plugin_load()
+
+    assert 's1' in plugin.scheduled_tasks

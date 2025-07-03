@@ -28,6 +28,7 @@ except ImportError:
     storage = DummyStorage()
 
 logger = logging.getLogger(__name__)
+scheduler_instance = None
 
 class SchedulerStates(StatesGroup):
     """Состояния (States) для функционала планирования"""
@@ -44,6 +45,7 @@ class SchedulerPlugin:
         self.description = "Scheduling functionality for surveys"
         self.scheduled_tasks = {}
         self.reminder_tasks = {}
+        self.close_tasks = {}
 
     async def register_handlers(self, dp: Dispatcher):
         """
@@ -299,12 +301,19 @@ class SchedulerPlugin:
         task = asyncio.create_task(self._send_scheduled_survey(survey_id, time_delta))
         self.scheduled_tasks[survey_id] = task
 
-        # Напоминание за 10 минут до (если есть хотя бы 10 минут)
-        if time_delta > 600:
-            reminder_task = asyncio.create_task(
-                self._send_reminder(survey_id, time_delta - 600)
-            )
-            self.reminder_tasks[survey_id] = reminder_task
+        survey = storage.get_survey(survey_id)
+        if survey:
+            try:
+                deadline = datetime.datetime.fromisoformat(survey.get('deadline'))
+                reminder_time = deadline - datetime.timedelta(minutes=10)
+                reminder_delta = (reminder_time - now).total_seconds()
+                if reminder_delta > 0:
+                    reminder_task = asyncio.create_task(
+                        self._send_reminder(survey_id, reminder_delta)
+                    )
+                    self.reminder_tasks[survey_id] = reminder_task
+            except Exception as e:
+                logger.error(f"Failed to schedule reminder for {survey_id}: {e}")
 
     async def _send_scheduled_survey(self, survey_id, delay_seconds):
         """Ждём delay_seconds, затем отправляем опрос"""
@@ -351,6 +360,18 @@ class SchedulerPlugin:
             scheduled_surveys = [s for s in scheduled_surveys if s.get('survey_id') != survey_id]
             storage.set_setting('scheduled_surveys', scheduled_surveys)
 
+            # Планируем закрытие опроса
+            try:
+                deadline = datetime.datetime.fromisoformat(survey.get('deadline'))
+                close_delta = (deadline - datetime.datetime.now()).total_seconds()
+                if close_delta > 0:
+                    close_task = asyncio.create_task(
+                        self._close_survey(survey_id, close_delta)
+                    )
+                    self.close_tasks[survey_id] = close_task
+            except Exception as e:
+                logger.error(f"Failed to schedule close task for {survey_id}: {e}")
+
             logger.info(f"Successfully sent scheduled survey {survey_id}")
 
         except asyncio.CancelledError:
@@ -359,7 +380,7 @@ class SchedulerPlugin:
             logger.error(f"Error in scheduled task for survey {survey_id}: {e}")
 
     async def _send_reminder(self, survey_id, delay_seconds):
-        """Отправляем напоминание за 10 минут до отправки опроса"""
+        """Отправляем напоминание за 10 минут до окончания опроса"""
         try:
             await asyncio.sleep(delay_seconds)
             survey = storage.get_survey(survey_id)
@@ -384,6 +405,21 @@ class SchedulerPlugin:
             logger.info(f"Reminder task for survey {survey_id} was cancelled")
         except Exception as e:
             logger.error(f"Error in reminder task for survey {survey_id}: {e}")
+
+    async def _close_survey(self, survey_id, delay_seconds):
+        """Закрывает опрос по истечении срока"""
+        try:
+            await asyncio.sleep(delay_seconds)
+            survey = storage.get_survey(survey_id)
+            if not survey or survey.get('status') != 'active':
+                return
+            survey['status'] = 'closed'
+            storage.save_survey(survey_id, survey)
+            logger.info(f"Survey {survey_id} closed due to deadline")
+        except asyncio.CancelledError:
+            logger.info(f"Close task for survey {survey_id} was cancelled")
+        except Exception as e:
+            logger.error(f"Error closing survey {survey_id}: {e}")
 
     async def cmd_list_scheduled(self, message: types.Message):
         """Обработка команды /scheduled — список запланированных опросов для данного пользователя"""
@@ -470,10 +506,14 @@ class SchedulerPlugin:
             task.cancel()
         for task in self.reminder_tasks.values():
             task.cancel()
+        for task in self.close_tasks.values():
+            task.cancel()
 
         logger.info("Scheduler plugin unloaded")
 
 
 def load_plugin():
     """Функция для загрузки плагина (aiogram-style)"""
-    return SchedulerPlugin()
+    global scheduler_instance
+    scheduler_instance = SchedulerPlugin()
+    return scheduler_instance
