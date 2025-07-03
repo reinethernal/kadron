@@ -42,7 +42,7 @@ async def main():
     dp = Dispatcher()
 
     # Инициализация менеджера плагинов
-    plugin_manager = PluginManager(dp)
+    plugin_manager = PluginManager(dp, bot)
 
     # Загружаем плагины
     await plugin_manager.load_plugins()

@@ -9,7 +9,7 @@ import asyncio
 import datetime
 import logging
 
-from aiogram import Dispatcher, types
+from aiogram import Dispatcher, types, Bot
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext        # <-- Вместо dispatcher.FSMContext
 from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.filters.state
@@ -40,12 +40,13 @@ class SchedulerStates(StatesGroup):
 class SchedulerPlugin:
     """Плагин для планирования опросов и отправки сообщений по расписанию"""
 
-    def __init__(self):
+    def __init__(self, bot: "Bot"):
         self.name = "scheduler_plugin"
         self.description = "Scheduling functionality for surveys"
         self.scheduled_tasks = {}
         self.reminder_tasks = {}
         self.close_tasks = {}
+        self.bot = bot
 
     async def register_handlers(self, dp: Dispatcher):
         """
@@ -335,8 +336,8 @@ class SchedulerPlugin:
                 logger.warning(f"No target chats for scheduled survey {survey_id}")
                 return
 
-            # Берём bot из Dispatcher
-            bot = Dispatcher.get_current().bot
+            # Используем сохранённый экземпляр бота
+            bot = self.bot
 
             # Отправляем опрос в каждый чат
             for chat_id in target_chats:
@@ -388,7 +389,7 @@ class SchedulerPlugin:
                 logger.error(f"Survey {survey_id} for reminder not found")
                 return
 
-            bot = Dispatcher.get_current().bot
+            bot = self.bot
             target_chats = survey.get('target_chats', [])
 
             # Рассылаем напоминания по чатам
@@ -512,8 +513,8 @@ class SchedulerPlugin:
         logger.info("Scheduler plugin unloaded")
 
 
-def load_plugin():
+def load_plugin(bot: Bot):
     """Функция для загрузки плагина (aiogram-style)"""
     global scheduler_instance
-    scheduler_instance = SchedulerPlugin()
+    scheduler_instance = SchedulerPlugin(bot)
     return scheduler_instance
