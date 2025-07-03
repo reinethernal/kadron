@@ -302,7 +302,7 @@ class SurveyPlugin:
 
             storage.save_survey(survey_id, survey)
             self._schedule_survey_notifications(survey)
-            await state.finish()
+            await state.clear()
             await message.answer(f"✅ Опрос '{data['title']}' успешно создан!")
         else:
             await message.answer("Для подтверждения создания опроса введите 'Подтвердить':")
@@ -385,7 +385,7 @@ class SurveyPlugin:
     async def process_edit_question(self, callback_query: types.CallbackQuery, state: FSMContext):
         """Обрабатывает выбор вопроса для редактирования"""
         if callback_query.data == "edit_cancel":
-            await state.finish()
+            await state.clear()
             await callback_query.message.answer("Редактирование отменено")
             return
 
@@ -417,7 +417,7 @@ class SurveyPlugin:
         survey = storage.get_survey(survey_id)
         if not survey:
             await message.answer("Опрос не найден")
-            await state.finish()
+            await state.clear()
             return
 
         for question in survey['questions']:
@@ -427,7 +427,7 @@ class SurveyPlugin:
 
         storage.save_survey(survey_id, survey)
         await message.answer("✅ Вопрос успешно обновлен!")
-        await state.finish()
+        await state.clear()
 
     def _generate_survey_summary(self, data):
         """Генерирует сводку опроса для подтверждения"""

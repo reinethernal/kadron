@@ -113,13 +113,13 @@ class TextAnswerPlugin:
         
         if not survey_id or not question_id:
             await message.reply("Произошла ошибка. Пожалуйста, начните заново.")
-            await state.finish()
+            await state.clear()
             return
         
         survey = storage.get_survey(survey_id)
         if not survey or survey['status'] != 'active':
             await message.reply("Этот опрос больше не доступен.")
-            await state.finish()
+            await state.clear()
             return
         
         user_id = message.from_user.id
@@ -137,7 +137,7 @@ class TextAnswerPlugin:
         storage.save_survey(survey_id, survey)
         
         await message.reply("✅ Ваш ответ записан! Спасибо за участие.")
-        await state.finish()
+        await state.clear()
     
     def _add_or_update_response(self, survey, user_id, question_id, new_response):
         """Добавляет или обновляет ответ в опросе"""

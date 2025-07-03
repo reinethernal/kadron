@@ -67,7 +67,7 @@ class TestModePlugin:
         survey = storage.get_survey(survey_id)
         if not survey:
             await callback_query.answer("Опрос не найден.")
-            await state.finish()
+            await state.clear()
             return
         # Создаём копию опроса для тестирования
         test_survey = copy.deepcopy(survey)
@@ -93,14 +93,14 @@ class TestModePlugin:
         action = parts[2]
         if action == "exit":
             await callback_query.message.edit_text("Тестовый режим завершен.")
-            await state.finish()
+            await state.clear()
             await callback_query.answer()
             return
         test_id = parts[3]
         test_survey = self.test_surveys.get(test_id)
         if not test_survey:
             await callback_query.answer("Тестовый опрос не найден.")
-            await state.finish()
+            await state.clear()
             return
         if action == "start":
             await self.start_test_survey(callback_query, test_survey, test_id)
@@ -175,7 +175,7 @@ class TestModePlugin:
         test_survey = self.test_surveys.get(test_id)
         if not test_survey:
             await callback_query.answer("Тестовый опрос не найден.")
-            await state.finish()
+            await state.clear()
             return
         questions = test_survey.get("questions", [])
         if question_index >= len(questions):
