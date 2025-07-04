@@ -29,13 +29,13 @@ class AdminPlugin:
     def get_commands(self):
         return []
     def on_plugin_load(self):
-        logger.info("Admin plugin loaded")
+        logger.info("Плагин администратора загружен")
     def on_plugin_unload(self):
-        logger.info("Admin plugin unloaded")
+        logger.info("Плагин администратора выгружен")
     async def send_survey_to_users(self, poll_id: int, bot: Bot):
         poll = get_poll_by_id(poll_id)
         if not poll:
-            logger.error(f"Poll ID {poll_id} not found.")
+            logger.error(f"Опрос с ID {poll_id} не найден.")
             return
         poll_name = poll.get("name")
         bot_user = await bot.get_me()
@@ -49,9 +49,9 @@ class AdminPlugin:
                     chat_id=group_id,
                     text=f"Внимание! Новый опрос '{poll_name}': {survey_link}"
                 )
-                logger.info(f"Poll '{poll_name}' sent to group {group_id}.")
+                logger.info(f"Опрос '{poll_name}' отправлен в группу {group_id}.")
             except Exception as e:
-                logger.error(f"Failed to send poll to group {group_id}: {e}")
+                logger.error(f"Не удалось отправить опрос в группу {group_id}: {e}")
 
 def load_plugin():
     return AdminPlugin()

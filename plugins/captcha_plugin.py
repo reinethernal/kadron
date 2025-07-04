@@ -396,12 +396,12 @@ class CaptchaPlugin:
         await self.show_primary_survey_question(confirmation, user_id, next_index)
     
     def on_plugin_load(self):
-        logger.info("Captcha plugin loaded")
+        logger.info("Плагин капчи загружен")
     
     def on_plugin_unload(self):
         for task in self.warning_tasks.values():
             task.cancel()
-        logger.info("Captcha plugin unloaded")
+        logger.info("Плагин капчи выгружен")
 
 def load_plugin():
     return CaptchaPlugin()

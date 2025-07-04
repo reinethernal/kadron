@@ -239,11 +239,11 @@ class MultipleChoicePlugin:
 
     def on_plugin_load(self):
         """Вызывается при загрузке плагина"""
-        logger.info("Multiple choice plugin loaded")
+        logger.info("Плагин множественного выбора загружен")
 
     def on_plugin_unload(self):
         """Вызывается при выгрузке плагина"""
-        logger.info("Multiple choice plugin unloaded")
+        logger.info("Плагин множественного выбора выгружен")
 
 def load_plugin():
     """Загружает плагин"""
