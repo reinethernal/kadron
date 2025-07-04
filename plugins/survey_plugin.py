@@ -12,6 +12,8 @@ from aiogram.filters import Command, StateFilter
 import uuid
 from datetime import datetime, timedelta, time
 import asyncio
+import re
+from core.db_manager import get_all_groups
 
 # Импортируем модуль хранилища
 try:
@@ -44,6 +46,7 @@ class SurveyStates(StatesGroup):
     SCHEDULE_TIME = State()
     DEADLINE = State()
     ANONYMITY = State()
+    TARGET_GROUPS = State()
     CONFIRMATION = State()
     EDITING = State()
     EDITING_QUESTION = State()
@@ -96,6 +99,10 @@ class SurveyPlugin:
             self.process_anonymity_selection,
             lambda c: c.data.startswith('anon_'),
             StateFilter(SurveyStates.ANONYMITY)
+        )
+        dp.message.register(
+            self.process_target_groups,
+            StateFilter(SurveyStates.TARGET_GROUPS)
         )
         dp.callback_query.register(
             self.process_scheduling_selection,
@@ -353,22 +360,33 @@ class SurveyPlugin:
         """Обрабатывает выбор анонимности опроса"""
         is_anonymous = callback_query.data.split('_')[1] == "yes"
         await state.update_data(is_anonymous=is_anonymous)
+        groups = get_all_groups()
+        text = "Выберите группы для отправки (ID через пробел):\n"
+        if groups:
+            for g in groups:
+                text += f"{g['group_id']}: {g['title']}\n"
+        else:
+            text += "(нет доступных групп)"
 
-        # Запрос о планировании отправки опроса
-        await state.set_state(SurveyStates.SCHEDULING)
+        anon_status = "Да" if is_anonymous else "Нет"
+        text = f"Анонимный опрос: {anon_status}\n\n" + text
+
+        await state.set_state(SurveyStates.TARGET_GROUPS)
+        await callback_query.message.edit_text(text)
+        await callback_query.answer()
+
+    async def process_target_groups(self, message: types.Message, state: FSMContext):
+        """Сохраняет выбранные группы и предлагает выбрать время отправки"""
+        ids = [int(x) for x in re.findall(r"\d+", message.text)]
+        await state.update_data(target_chats=ids)
+
         builder = InlineKeyboardBuilder()
         builder.button(text="Сейчас", callback_data="schedule_now")
         builder.button(text="Запланировать", callback_data="schedule_later")
         builder.adjust(2)
-        markup = builder.as_markup()
 
-        anon_status = "Да" if is_anonymous else "Нет"
-        await callback_query.message.edit_text(
-            f"Анонимный опрос: {anon_status}\n\nКогда отправить опрос?",
-            reply_markup=markup
-        )
-
-        await callback_query.answer()
+        await state.set_state(SurveyStates.SCHEDULING)
+        await message.answer("Когда отправить опрос?", reply_markup=builder.as_markup())
 
     async def process_scheduling_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
         """Обрабатывает выбор способа отправки опроса (немедленно или с планированием)"""
@@ -407,7 +425,8 @@ class SurveyPlugin:
                 'deadline': data['deadline'],
                 'is_anonymous': data.get('is_anonymous', False),
                 'questions': data.get('questions', []),
-                'responses': []
+                'responses': [],
+                'target_chats': data.get('target_chats', [])
             }
 
             if data.get('scheduled'):
@@ -602,6 +621,10 @@ class SurveyPlugin:
         deadline = datetime.fromisoformat(data['deadline'])
         summary += f"\nСрок действия: до {deadline.strftime('%d.%m.%Y %H:%M')}\n"
         summary += f"Анонимный: {'Да' if data.get('is_anonymous', False) else 'Нет'}"
+
+        if data.get('target_chats'):
+            chats = ', '.join(str(cid) for cid in data['target_chats'])
+            summary += f"\nГруппы: {chats}"
 
         if data.get('scheduled') and data.get('scheduled_datetime'):
             dt = datetime.fromisoformat(data['scheduled_datetime'])
