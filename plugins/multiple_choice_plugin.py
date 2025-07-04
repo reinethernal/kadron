@@ -10,6 +10,7 @@ import logging
 from aiogram import Dispatcher
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import CallbackQuery
+from core.db_manager import add_response
 
 # Поправленные импорты для хранилища
 try:
@@ -178,6 +179,7 @@ class MultipleChoicePlugin:
 
         # Добавляем или обновляем ответ
         self._add_or_update_response(survey, user_id, question_id, response)
+        add_response(survey_id, question_id, response['user_id'], ','.join(map(str, selections)), callback_query.message.date)
         storage.save_survey(survey_id, survey)
 
         # Очищаем выбор пользователя

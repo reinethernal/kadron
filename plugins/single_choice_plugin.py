@@ -4,6 +4,7 @@
 
 from aiogram import Dispatcher, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from core.db_manager import add_response
 import logging
 
 try:
@@ -64,6 +65,7 @@ class SingleChoicePlugin:
             'timestamp': callback_query.message.date.isoformat()
         }
         self._add_or_update_response(survey, user_id, question_id, response)
+        add_response(survey_id, question_id, response['user_id'], option_index, callback_query.message.date)
         storage.save_survey(survey_id, survey)
         question = next((q for q in survey['questions'] if q['id'] == question_id), None)
         if question:
