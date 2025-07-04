@@ -17,12 +17,18 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+OTHER_OPTION = "Другое…"
+
 class SingleChoicePlugin:
     def __init__(self):
         self.name = "single_choice_plugin"
         self.description = "Тип вопроса - одиночный выбор"
     async def register_handlers(self, dp: Dispatcher):
-        dp.callback_query.register(self.process_single_choice_selection, lambda c: c.data.startswith('single_choice_'))
+        dp.callback_query.register(
+            self.process_single_choice_selection,
+            lambda c: c.data.startswith('single_choice_')
+        )
+        dp.message.register(self.process_other_input)
     def get_commands(self):
         return []
     def get_question_type(self):
@@ -58,6 +64,15 @@ class SingleChoicePlugin:
             await callback_query.answer("Этот опрос недоступен")
             return
         user_id = callback_query.from_user.id
+        question = next((q for q in survey['questions'] if q['id'] == question_id), None)
+        if question and question['options'][option_index].startswith('Другое'):
+            state = storage.get_user_state(user_id)
+            state['single_other'] = {'survey_id': survey_id, 'question_id': question_id}
+            storage.set_user_state(user_id, 'single_other', state['single_other'])
+            await callback_query.message.answer('Пожалуйста, введите свой вариант:')
+            await callback_query.answer()
+            return
+
         response = {
             'user_id': None if survey['is_anonymous'] else user_id,
             'question_id': question_id,
@@ -67,7 +82,6 @@ class SingleChoicePlugin:
         self._add_or_update_response(survey, user_id, question_id, response)
         add_response(survey_id, question_id, response['user_id'], option_index, callback_query.message.date)
         storage.save_survey(survey_id, survey)
-        question = next((q for q in survey['questions'] if q['id'] == question_id), None)
         if question:
             options = question['options']
             builder = InlineKeyboardBuilder()
@@ -81,6 +95,30 @@ class SingleChoicePlugin:
             markup = builder.as_markup()
             await callback_query.message.edit_reply_markup(reply_markup=markup)
         await callback_query.answer("Ваш ответ записан!")
+
+    async def process_other_input(self, message: types.Message):
+        user_id = message.from_user.id
+        state = storage.get_user_state(user_id)
+        data = state.get('single_other')
+        if not data:
+            return
+        survey_id = data['survey_id']
+        question_id = data['question_id']
+        survey = storage.get_survey(survey_id)
+        if not survey or survey['status'] != 'active':
+            storage.set_user_state(user_id, 'single_other', None)
+            return
+        response = {
+            'user_id': None if survey['is_anonymous'] else user_id,
+            'question_id': question_id,
+            'answer': message.text,
+            'timestamp': message.date.isoformat()
+        }
+        self._add_or_update_response(survey, user_id, question_id, response)
+        add_response(survey_id, question_id, response['user_id'], message.text, message.date)
+        storage.save_survey(survey_id, survey)
+        storage.set_user_state(user_id, 'single_other', None)
+        await message.answer("✅ Ваш ответ записан!")
     def _add_or_update_response(self, survey, user_id, question_id, new_response):
         if survey['is_anonymous']:
             survey['responses'].append(new_response)
