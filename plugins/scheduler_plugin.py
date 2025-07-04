@@ -42,7 +42,7 @@ class SchedulerPlugin:
 
     def __init__(self, bot: "Bot"):
         self.name = "scheduler_plugin"
-        self.description = "Scheduling functionality for surveys"
+        self.description = "Планирование отправки опросов"
         self.scheduled_tasks = {}
         self.reminder_tasks = {}
         self.close_tasks = {}
@@ -295,7 +295,7 @@ class SchedulerPlugin:
         now = datetime.datetime.now()
         time_delta = (scheduled_time - now).total_seconds()
         if time_delta <= 0:
-            logger.warning(f"Scheduled time for survey {survey_id} is in the past")
+            logger.warning(f"Запланированное время для опроса {survey_id} уже прошло")
             return
 
         # Основная задача
@@ -314,7 +314,7 @@ class SchedulerPlugin:
                     )
                     self.reminder_tasks[survey_id] = reminder_task
             except Exception as e:
-                logger.error(f"Failed to schedule reminder for {survey_id}: {e}")
+                logger.error(f"Не удалось запланировать напоминание для опроса {survey_id}: {e}")
 
     async def _send_scheduled_survey(self, survey_id, delay_seconds):
         """Ждём delay_seconds, затем отправляем опрос"""
@@ -333,7 +333,7 @@ class SchedulerPlugin:
             # Берём список чатов, куда рассылать
             target_chats = survey.get('target_chats', [])
             if not target_chats:
-                logger.warning(f"No target chats for scheduled survey {survey_id}")
+                logger.warning(f"Нет целевых чатов для запланированного опроса {survey_id}")
                 return
 
             # Используем сохранённый экземпляр бота
@@ -355,7 +355,7 @@ class SchedulerPlugin:
                     )
                     await self._try_pin(chat_id, msg.message_id)
                 except Exception as e:
-                    logger.error(f"Failed to send survey to chat {chat_id}: {e}")
+                    logger.error(f"Не удалось отправить опрос в чат {chat_id}: {e}")
 
             # Удаляем запись о запланированном опросе, так как он уже отправлен
             scheduled_surveys = storage.get_setting('scheduled_surveys', [])
@@ -372,14 +372,14 @@ class SchedulerPlugin:
                     )
                     self.close_tasks[survey_id] = close_task
             except Exception as e:
-                logger.error(f"Failed to schedule close task for {survey_id}: {e}")
+                logger.error(f"Не удалось запланировать закрытие опроса {survey_id}: {e}")
 
-            logger.info(f"Successfully sent scheduled survey {survey_id}")
+            logger.info(f"Запланированный опрос {survey_id} успешно отправлен")
 
         except asyncio.CancelledError:
-            logger.info(f"Scheduled task for survey {survey_id} was cancelled")
+            logger.info(f"Задача отправки опроса {survey_id} была отменена")
         except Exception as e:
-            logger.error(f"Error in scheduled task for survey {survey_id}: {e}")
+            logger.error(f"Ошибка в задаче отправки опроса {survey_id}: {e}")
 
     async def _send_reminder(self, survey_id, delay_seconds):
         """Отправляем напоминание за 10 минут до окончания опроса"""
@@ -401,12 +401,12 @@ class SchedulerPlugin:
                         f"⏰ Напоминание: опрос \"{survey.get('title')}\" будет закрыт через 10 минут!"
                     )
                 except Exception as e:
-                    logger.error(f"Failed to send reminder to chat {chat_id}: {e}")
+                    logger.error(f"Не удалось отправить напоминание в чат {chat_id}: {e}")
 
         except asyncio.CancelledError:
-            logger.info(f"Reminder task for survey {survey_id} was cancelled")
+            logger.info(f"Задача напоминания для опроса {survey_id} была отменена")
         except Exception as e:
-            logger.error(f"Error in reminder task for survey {survey_id}: {e}")
+            logger.error(f"Ошибка в задаче напоминания для опроса {survey_id}: {e}")
 
     async def _close_survey(self, survey_id, delay_seconds):
         """Закрывает опрос по истечении срока"""
@@ -417,11 +417,11 @@ class SchedulerPlugin:
                 return
             survey['status'] = 'closed'
             storage.save_survey(survey_id, survey)
-            logger.info(f"Survey {survey_id} closed due to deadline")
+            logger.info(f"Опрос {survey_id} закрыт по истечении срока")
         except asyncio.CancelledError:
-            logger.info(f"Close task for survey {survey_id} was cancelled")
+            logger.info(f"Задача закрытия опроса {survey_id} была отменена")
         except Exception as e:
-            logger.error(f"Error closing survey {survey_id}: {e}")
+            logger.error(f"Ошибка при закрытии опроса {survey_id}: {e}")
 
     async def _try_pin(self, chat_id: int, message_id: int):
         """Пытается закрепить сообщение, если у бота есть такие права"""
@@ -432,9 +432,9 @@ class SchedulerPlugin:
             if can_pin:
                 await self.bot.pin_chat_message(chat_id=chat_id, message_id=message_id, disable_notification=False)
             else:
-                logger.warning(f"Bot has no rights to pin messages in chat {chat_id}")
+                logger.warning(f"У бота нет прав закреплять сообщения в чате {chat_id}")
         except Exception as e:
-            logger.error(f"Failed to pin message in chat {chat_id}: {e}")
+            logger.error(f"Не удалось закрепить сообщение в чате {chat_id}: {e}")
 
     async def cmd_list_scheduled(self, message: types.Message):
         """Обработка команды /scheduled — список запланированных опросов для данного пользователя"""
@@ -501,7 +501,7 @@ class SchedulerPlugin:
 
     def on_plugin_load(self):
         """Вызывается при загрузке плагина"""
-        logger.info("Scheduler plugin loaded")
+        logger.info("Плагин планировщика загружен")
 
         # Загружаем запланированные опросы из хранилища и восстанавливаем задачи
         scheduled_surveys = storage.get_setting('scheduled_surveys', [])
@@ -512,7 +512,7 @@ class SchedulerPlugin:
                 if scheduled_time > datetime.datetime.now():
                     self._create_scheduled_task(sid, scheduled_time)
             except Exception as e:
-                logger.error(f"Failed to load scheduled survey: {e}")
+                logger.error(f"Не удалось загрузить запланированный опрос: {e}")
 
     def on_plugin_unload(self):
         """Вызывается при выгрузке плагина"""
@@ -524,7 +524,7 @@ class SchedulerPlugin:
         for task in self.close_tasks.values():
             task.cancel()
 
-        logger.info("Scheduler plugin unloaded")
+        logger.info("Плагин планировщика выгружен")
 
 
 def load_plugin(bot: Bot):

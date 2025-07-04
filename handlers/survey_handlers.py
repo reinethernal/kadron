@@ -61,7 +61,7 @@ async def send_question(user_id: int, bot: Bot, state: FSMContext):
         ])
 
     await bot.send_message(user_id, question_text, reply_markup=keyboard)
-    logger.info(f"Sent question {current_index + 1} to user {user_id}.")
+    logger.info(f"Отправлен вопрос {current_index + 1} пользователю {user_id}.")
 
 @router.message(Command("start"))
 async def start_handler(message: types.Message, bot: Bot, state: FSMContext):

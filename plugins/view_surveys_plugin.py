@@ -52,9 +52,9 @@ async def get_survey_by_id(survey_id: int) -> Optional[Dict]:
 async def format_survey_info(survey: Dict) -> str:
     """Форматирует информацию об опросе для отображения."""
     info = f"<b>{survey.get('title')}</b>\n"
-    info += f"Questions: {len(survey.get('questions', []))}\n"
+    info += f"Вопросов: {len(survey.get('questions', []))}\n"
     if survey.get("time_limit"):
-        info += f"Ends: {survey['time_limit']}\n"
+        info += f"Завершение: {survey['time_limit']}\n"
     return info
 
 
@@ -82,7 +82,7 @@ class ViewSurveysPlugin:
     
     def __init__(self):
         self.name = "view_surveys"
-        self.description = "View and manage surveys"
+        self.description = "Просмотр и управление опросами"
         
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует все обработчики плагина"""
@@ -108,7 +108,7 @@ class ViewSurveysPlugin:
         return [
             types.BotCommand(
                 command="view_surveys",
-                description="View available surveys",
+                description="Просмотреть доступные опросы",
             )
         ]
         
@@ -126,19 +126,19 @@ class ViewSurveysPlugin:
         surveys = await get_surveys(user_id=user_id)
         
         if not surveys:
-            await message.answer("No surveys available.")
+            await message.answer("Нет доступных опросов.")
             return
             
         # Создаём клавиатуру со списком опросов
         builder = InlineKeyboardBuilder()
         for survey in surveys:
-            status = "✅ Active" if not has_poll_ended(survey) else "❌ Ended"
+            status = "✅ Активен" if not has_poll_ended(survey) else "❌ Завершён"
             button_text = f"{survey['title']} ({status})"
             builder.button(
                 text=button_text,
                 callback_data=f"view_survey_{survey['id']}"
             )
-        builder.button(text="🔍 Filter Surveys", callback_data="filter_menu")
+        builder.button(text="🔍 Фильтр опросов", callback_data="filter_menu")
         builder.adjust(1)
         markup = builder.as_markup()
         await message.answer("Доступные опросы:", reply_markup=markup)
@@ -150,7 +150,7 @@ class ViewSurveysPlugin:
         survey = await get_survey_by_id(survey_id)
         
         if not survey:
-            await callback_query.answer("Survey not found.")
+            await callback_query.answer("Опрос не найден.")
             return
             
         # Формируем текст с подробной информацией
@@ -161,11 +161,11 @@ class ViewSurveysPlugin:
 
         if not has_poll_ended(survey):
             builder.button(
-                text="Take Survey",
+                text="Пройти опрос",
                 callback_data=f"survey_action_take_{survey_id}"
             )
 
-        builder.button(text="Back to List", callback_data="survey_action_back")
+        builder.button(text="Назад к списку", callback_data="survey_action_back")
         builder.adjust(2)
         keyboard = builder.as_markup()
         
@@ -185,10 +185,10 @@ class ViewSurveysPlugin:
         if filter_type == "menu":
             # Показываем варианты фильтра
             builder = InlineKeyboardBuilder()
-            builder.button(text="Active Surveys", callback_data="filter_active")
-            builder.button(text="Completed Surveys", callback_data="filter_completed")
-            builder.button(text="All Surveys", callback_data="filter_all")
-            builder.button(text="Back", callback_data="filter_back")
+            builder.button(text="Активные опросы", callback_data="filter_active")
+            builder.button(text="Завершённые опросы", callback_data="filter_completed")
+            builder.button(text="Все опросы", callback_data="filter_all")
+            builder.button(text="Назад", callback_data="filter_back")
             builder.adjust(1)
             markup = builder.as_markup()
             await callback_query.message.edit_text(
@@ -215,7 +215,7 @@ class ViewSurveysPlugin:
 
             if not surveys:
                 back_builder = InlineKeyboardBuilder()
-                back_builder.button(text="Back", callback_data="filter_menu")
+                back_builder.button(text="Назад", callback_data="filter_menu")
                 back_builder.adjust(1)
                 await callback_query.message.edit_text(
                     "Нет опросов, удовлетворяющих фильтру.",
@@ -224,19 +224,19 @@ class ViewSurveysPlugin:
                 return
 
             for survey in surveys:
-                status = "✅ Active" if not has_poll_ended(survey) else "❌ Ended"
+                status = "✅ Активен" if not has_poll_ended(survey) else "❌ Завершён"
                 button_text = f"{survey['title']} ({status})"
                 builder.button(
                     text=button_text,
                     callback_data=f"view_survey_{survey['id']}"
                 )
 
-            builder.button(text="🔍 Filter Surveys", callback_data="filter_menu")
+            builder.button(text="🔍 Фильтр опросов", callback_data="filter_menu")
             builder.adjust(1)
             keyboard = builder.as_markup()
             
             await callback_query.message.edit_text(
-                f"Surveys ({filter_type}):",
+                f"Опросы ({filter_type}):",
                 reply_markup=keyboard
             )
             await state.set_state(ViewSurveysStates.Viewing)

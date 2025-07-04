@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 class ExportPlugin:
     def __init__(self):
         self.name = "export_plugin"
-        self.description = "Export survey data to various formats"
+        self.description = "Экспорт данных опросов в разные форматы"
 
     async def register_handlers(self, dp: Dispatcher):
         # Используем новые методы регистрации:
@@ -101,12 +101,12 @@ class ExportPlugin:
     async def export_csv(self, callback_query: types.CallbackQuery, survey):
         output = io.StringIO()
         writer = csv.writer(output)
-        header = ["Question", "User ID", "Answer", "Timestamp"]
+        header = ["Вопрос", "ID пользователя", "Ответ", "Время"]
         writer.writerow(header)
         for response in survey.get("responses", []):
             question_id = response.get("question_id")
             question = next((q for q in survey.get("questions", []) if q.get("id") == question_id), {})
-            question_text = question.get("text", "Unknown Question")
+            question_text = question.get("text", "Неизвестный вопрос")
             answer = response.get("answer", "")
             if question.get("type") == "single_choice" and isinstance(answer, int):
                 options = question.get("options", [])
@@ -117,7 +117,7 @@ class ExportPlugin:
                 answer = ", ".join([options[i] for i in answer if 0 <= i < len(options)])
             writer.writerow([
                 question_text,
-                response.get("user_id", "Anonymous"),
+                response.get("user_id", "Аноним"),
                 answer,
                 response.get("timestamp", "")
             ])
@@ -134,7 +134,7 @@ class ExportPlugin:
         for response in survey.get("responses", []):
             question_id = response.get("question_id")
             question = next((q for q in survey.get("questions", []) if q.get("id") == question_id), {})
-            question_text = question.get("text", "Unknown Question")
+            question_text = question.get("text", "Неизвестный вопрос")
             answer = response.get("answer", "")
             if question.get("type") == "single_choice" and isinstance(answer, int):
                 options = question.get("options", [])
@@ -144,12 +144,12 @@ class ExportPlugin:
                 options = question.get("options", [])
                 answer = ", ".join([options[i] for i in answer if 0 <= i < len(options)])
             rows.append({
-                "Question": question_text,
-                "User ID": response.get("user_id", "Anonymous"),
-                "Answer": answer,
-                "Timestamp": response.get("timestamp", "")
+                "Вопрос": question_text,
+                "ID пользователя": response.get("user_id", "Аноним"),
+                "Ответ": answer,
+                "Время": response.get("timestamp", "")
             })
-        df = pd.DataFrame(rows, columns=["Question", "User ID", "Answer", "Timestamp"])
+        df = pd.DataFrame(rows, columns=["Вопрос", "ID пользователя", "Ответ", "Время"])
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False)
@@ -230,10 +230,10 @@ class ExportPlugin:
         await callback_query.answer()
 
     def on_plugin_load(self):
-        logger.info("Export plugin loaded")
+        logger.info("Плагин экспорта загружен")
 
     def on_plugin_unload(self):
-        logger.info("Export plugin unloaded")
+        logger.info("Плагин экспорта выгружен")
 
 def load_plugin():
     return ExportPlugin()

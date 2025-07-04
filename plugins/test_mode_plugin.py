@@ -354,11 +354,11 @@ class TestModePlugin:
             await callback_query.message.edit_text(results_text, reply_markup=markup)
 
     def on_plugin_load(self):
-        logger.info("Test mode plugin loaded")
+        logger.info("Плагин тестового режима загружен")
 
     def on_plugin_unload(self):
         self.test_surveys.clear()
-        logger.info("Test mode plugin unloaded")
+        logger.info("Плагин тестового режима выгружен")
 
 def load_plugin():
     return TestModePlugin()

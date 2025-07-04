@@ -176,11 +176,11 @@ class TextAnswerPlugin:
     
     def on_plugin_load(self):
         """Вызывается при загрузке плагина"""
-        logger.info("Text answer plugin loaded")
+        logger.info("Плагин текстовых ответов загружен")
     
     def on_plugin_unload(self):
         """Вызывается при выгрузке плагина"""
-        logger.info("Text answer plugin unloaded")
+        logger.info("Плагин текстовых ответов выгружен")
 
 def load_plugin():
     """Загружает плагин"""

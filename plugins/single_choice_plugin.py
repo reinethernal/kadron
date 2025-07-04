@@ -89,8 +89,8 @@ class SingleChoicePlugin:
                 return
         survey['responses'].append(new_response)
     def on_plugin_load(self):
-        logger.info("Single choice plugin loaded")
+        logger.info("Плагин одиночного выбора загружен")
     def on_plugin_unload(self):
-        logger.info("Single choice plugin unloaded")
+        logger.info("Плагин одиночного выбора выгружен")
 def load_plugin():
     return SingleChoicePlugin()
