@@ -348,11 +348,12 @@ class SchedulerPlugin:
                         callback_data=f"start_survey_{survey_id}"
                     )
                     markup = builder.as_markup()
-                    await bot.send_message(
+                    msg = await bot.send_message(
                         chat_id,
                         f"📊 Новый опрос: {survey.get('title')}\n\n{survey.get('description', '')}",
                         reply_markup=markup
                     )
+                    await self._try_pin(chat_id, msg.message_id)
                 except Exception as e:
                     logger.error(f"Failed to send survey to chat {chat_id}: {e}")
 
@@ -421,6 +422,19 @@ class SchedulerPlugin:
             logger.info(f"Close task for survey {survey_id} was cancelled")
         except Exception as e:
             logger.error(f"Error closing survey {survey_id}: {e}")
+
+    async def _try_pin(self, chat_id: int, message_id: int):
+        """Пытается закрепить сообщение, если у бота есть такие права"""
+        try:
+            me = await self.bot.get_me()
+            member = await self.bot.get_chat_member(chat_id, me.id)
+            can_pin = getattr(member, 'can_pin_messages', False) or member.status == 'creator'
+            if can_pin:
+                await self.bot.pin_chat_message(chat_id=chat_id, message_id=message_id, disable_notification=False)
+            else:
+                logger.warning(f"Bot has no rights to pin messages in chat {chat_id}")
+        except Exception as e:
+            logger.error(f"Failed to pin message in chat {chat_id}: {e}")
 
     async def cmd_list_scheduled(self, message: types.Message):
         """Обработка команды /scheduled — список запланированных опросов для данного пользователя"""

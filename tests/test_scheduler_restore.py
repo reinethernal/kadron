@@ -21,9 +21,30 @@ class DummyStorage:
 class DummyBot:
     def __init__(self):
         self.sent = []
+        self.pinned = []
+        self.id = 99
 
     async def send_message(self, chat_id, text, **kwargs):
         self.sent.append((chat_id, text))
+        class DummyMsg:
+            def __init__(self, message_id):
+                self.message_id = message_id
+        return DummyMsg(len(self.sent))
+
+    async def get_me(self):
+        class Me:
+            def __init__(self, id_):
+                self.id = id_
+        return Me(self.id)
+
+    async def get_chat_member(self, chat_id, user_id):
+        class Member:
+            status = 'administrator'
+            can_pin_messages = True
+        return Member()
+
+    async def pin_chat_message(self, chat_id, message_id, **kwargs):
+        self.pinned.append((chat_id, message_id))
 
 def test_restore_scheduled(monkeypatch):
     storage = DummyStorage()
@@ -94,3 +115,5 @@ def test_scheduled_send(monkeypatch):
     asyncio.run(plugin._send_scheduled_survey('s1', 0))
 
     assert bot.sent
+    assert bot.pinned
+
