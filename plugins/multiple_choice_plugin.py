@@ -30,7 +30,7 @@ class MultipleChoicePlugin:
 
     def __init__(self):
         self.name = "multiple_choice_plugin"
-        self.description = "Multiple choice question type"
+        self.description = "Тип вопроса - множественный выбор"
 
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует обработчики плагина (стиль aiogram 3.x)"""

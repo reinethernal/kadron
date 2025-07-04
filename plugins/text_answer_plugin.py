@@ -33,7 +33,7 @@ class TextAnswerPlugin:
     
     def __init__(self):
         self.name = "text_answer_plugin"
-        self.description = "Text answer question type"
+        self.description = "Тип вопроса - текстовый ответ"
     
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует все обработчики плагина"""

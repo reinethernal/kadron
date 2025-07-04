@@ -4,6 +4,8 @@
 Файл задаёт базовую структуру для новых плагинов. В примере показана
 регистрация обработчиков и создание инлайн‑клавиатур через
 ``InlineKeyboardBuilder``.
+Команды бота создаются с использованием именованных аргументов,
+например ``BotCommand(command="name", description="описание")``.
 
 Использование:
 1. Скопируйте этот шаблон;
@@ -43,14 +45,22 @@ class PluginTemplate:
         
     async def register_handlers(self, dp: Dispatcher):
         """Регистрация всех обработчиков плагина"""
-        dp.message.register(self.command_handler, Command("template_command"))
+        dp.message.register(
+            self.command_handler,
+            Command(commands=["template_command"]),
+        )
+        dp.callback_query.register(
+            self.handle_button,
+            lambda c: c.data in {"btn1", "btn2"},
+        )
         # Добавляйте другие обработчики при необходимости
         
     def get_commands(self):
         """Возвращает список команд, предоставляемых плагином"""
         return [
             types.BotCommand(
-                command="template_command", description="Шаблонная команда"
+                command="template_command",
+                description="Шаблонная команда",
             )
         ]
         
@@ -74,7 +84,7 @@ class PluginTemplate:
         builder.button(text="Кнопка 2", callback_data="btn2")
         builder.adjust(2)
         return builder.as_markup()
-        
+
     def on_plugin_load(self):
         """Вызывается при загрузке плагина"""
         print(f"Плагин {self.name} загружен")
@@ -82,7 +92,11 @@ class PluginTemplate:
     def on_plugin_unload(self):
         """Вызывается при выгрузке плагина"""
         print(f"Плагин {self.name} выгружен")
-        
+
+    async def handle_button(self, callback_query: types.CallbackQuery):
+        """Обработчик нажатий на кнопки"""
+        await callback_query.answer(f"Нажата кнопка: {callback_query.data}")
+
     async def command_handler(self, message: types.Message, state: FSMContext):
         """Пример обработчика команды (стиль aiogram 3.x)"""
         await message.answer(
