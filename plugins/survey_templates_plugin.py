@@ -46,10 +46,18 @@ class SurveyTemplatesPlugin:
 
     def get_commands(self):
         return [
-            types.BotCommand("save_template", "Создать шаблон из опроса"),
-            types.BotCommand("list_templates", "Список шаблонов"),
-            types.BotCommand("delete_template", "Удалить шаблон"),
-            types.BotCommand("use_template", "Новый опрос из шаблона"),
+            types.BotCommand(
+                command="save_template", description="Создать шаблон из опроса"
+            ),
+            types.BotCommand(
+                command="list_templates", description="Список шаблонов"
+            ),
+            types.BotCommand(
+                command="delete_template", description="Удалить шаблон"
+            ),
+            types.BotCommand(
+                command="use_template", description="Новый опрос из шаблона"
+            ),
         ]
 
     def _get_templates(self):

@@ -49,7 +49,9 @@ class PluginTemplate:
     def get_commands(self):
         """Возвращает список команд, предоставляемых плагином"""
         return [
-            types.BotCommand("template_command", "Template command")
+            types.BotCommand(
+                command="template_command", description="Template command"
+            )
         ]
         
     def get_keyboards(self):
