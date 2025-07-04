@@ -47,17 +47,15 @@ python main.py
 
 ## Запуск тестов
 
-Перед выполнением `pytest` убедитесь, что установлены все пакеты из
-`requirements.txt`. Для этого можно запустить скрипт
-`scripts/setup_tests.sh` или выполнить команду вручную:
+Перед запуском тестов установите зависимости из `requirements.txt` вручную или через скрипт:
 
 ```bash
-./scripts/setup_tests.sh  # устанавливает зависимости
-# или
 pip install -r requirements.txt
+# или
+./scripts/setup_tests.sh
 ```
 
-После установки зависимостей запустите тесты:
+После установки запустите:
 
 ```bash
 pytest
@@ -94,11 +92,6 @@ await pm.unload_plugin('test_mode_plugin')  # имя без .py
 
 Загрузить его снова можно вызовом `load_plugin('test_mode_plugin')`.
 
-## Пример запуска
-
-```bash
-python main.py
-```
 
 ## Экспорт опросов
 
