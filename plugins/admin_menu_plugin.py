@@ -35,6 +35,18 @@ class AdminMenuPlugin:
         # Загружаем admin_ids из переменной окружения с помощью regex
         ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
         self.admin_ids = [int(x) for x in ids]
+        # Экземпляры вспомогательных плагинов
+        from plugins.survey_plugin import SurveyPlugin
+        from plugins.export_plugin import ExportPlugin
+        from plugins.test_mode_plugin import TestModePlugin
+        from plugins.survey_templates_plugin import SurveyTemplatesPlugin
+        from plugins.roles_plugin import RolesPlugin
+
+        self.survey_plugin = SurveyPlugin()
+        self.export_plugin = ExportPlugin()
+        self.test_mode_plugin = TestModePlugin()
+        self.templates_plugin = SurveyTemplatesPlugin()
+        self.roles_plugin = RolesPlugin()
     
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует все обработчики для плагина"""
@@ -51,6 +63,36 @@ class AdminMenuPlugin:
             self.handle_back,
             lambda msg: msg.text == "🔙 Назад",
             StateFilter(AdminMenuStates.SURVEYS_MENU, AdminMenuStates.ANALYTICS_MENU, AdminMenuStates.SETTINGS_MENU)
+        )
+        dp.message.register(
+            self.handle_surveys_menu,
+            lambda msg: msg.text in [
+                "Создать опрос",
+                "Мои опросы",
+                "Шаблоны вопросов",
+                "Настройки опросов",
+            ],
+            StateFilter(AdminMenuStates.SURVEYS_MENU),
+        )
+        dp.message.register(
+            self.handle_analytics_menu,
+            lambda msg: msg.text in [
+                "Статистика опросов",
+                "Экспорт данных",
+                "Активность группы",
+                "Рейтинги",
+            ],
+            StateFilter(AdminMenuStates.ANALYTICS_MENU),
+        )
+        dp.message.register(
+            self.handle_settings_menu,
+            lambda msg: msg.text in [
+                "Общие настройки",
+                "Настройки уведомлений",
+                "Управление доступом",
+                "Тестовый режим",
+            ],
+            StateFilter(AdminMenuStates.SETTINGS_MENU),
         )
     
     def get_commands(self):
@@ -118,6 +160,37 @@ class AdminMenuPlugin:
         elif message.text == "⚙ Настройки":
             await state.set_state(AdminMenuStates.SETTINGS_MENU)
             await message.answer("Меню настроек:", reply_markup=self.get_keyboards()['admin_settings'])
+
+    async def handle_surveys_menu(self, message: types.Message, state: FSMContext):
+        """Выбор пунктов в меню опросов"""
+        if message.text == "Создать опрос":
+            await self.survey_plugin.cmd_create_survey(message, state)
+        elif message.text == "Мои опросы":
+            await self.survey_plugin.cmd_view_surveys(message, state)
+        elif message.text == "Шаблоны вопросов":
+            await self.templates_plugin.cmd_list_templates(message)
+        elif message.text == "Настройки опросов":
+            await message.answer("Функция в разработке")
+
+    async def handle_analytics_menu(self, message: types.Message, state: FSMContext):
+        """Выбор пунктов в меню аналитики"""
+        if message.text == "Экспорт данных":
+            await self.export_plugin.cmd_export(message)
+        elif message.text == "Статистика опросов":
+            await message.answer("Функция в разработке")
+        elif message.text == "Активность группы":
+            await message.answer("Функция в разработке")
+        elif message.text == "Рейтинги":
+            await message.answer("Функция в разработке")
+
+    async def handle_settings_menu(self, message: types.Message, state: FSMContext):
+        """Выбор пунктов в меню настроек"""
+        if message.text == "Тестовый режим":
+            await self.test_mode_plugin.cmd_test_mode(message, state)
+        elif message.text == "Управление доступом":
+            await self.roles_plugin.cmd_roles(message, state)
+        else:
+            await message.answer("Функция в разработке")
     
     async def handle_back(self, message: types.Message, state: FSMContext):
         """Обрабатывает кнопку 'Назад'"""
