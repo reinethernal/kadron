@@ -27,7 +27,7 @@ class TestModeStates(StatesGroup):
 class TestModePlugin:
     def __init__(self):
         self.name = "test_mode_plugin"
-        self.description = "Test mode for surveys"
+        self.description = "Тестовый режим для опросов"
         self.test_surveys = {}
 
     async def register_handlers(self, dp: Dispatcher):
