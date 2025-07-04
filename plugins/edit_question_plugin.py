@@ -102,7 +102,7 @@ class EditQuestionPlugin:
     
     def __init__(self):
         self.name = "edit_question"
-        self.description = "Edit questions in existing surveys"
+        self.description = "Редактировать вопросы в существующих опросах"
         
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует все обработчики плагина"""
@@ -156,7 +156,7 @@ class EditQuestionPlugin:
         return [
             types.BotCommand(
                 command="edit_question",
-                description="Edit questions in existing surveys",
+                description="Редактировать вопросы в существующих опросах",
             )
         ]
         
@@ -176,7 +176,7 @@ class EditQuestionPlugin:
         surveys = await get_surveys(creator_id=user_id)
         
         if not surveys:
-            await message.answer("You don't have any surveys to edit.")
+            await message.answer("У вас нет опросов для редактирования.")
             return
             
         builder = InlineKeyboardBuilder()
@@ -198,7 +198,7 @@ class EditQuestionPlugin:
         survey = await get_survey_by_id(survey_id)
         
         if not survey:
-            await callback_query.answer("Survey not found.")
+            await callback_query.answer("Опрос не найден.")
             return
             
         # Сохраняем выбранный опрос в состоянии
@@ -209,7 +209,7 @@ class EditQuestionPlugin:
         
         if not questions:
             builder = InlineKeyboardBuilder()
-            builder.button(text="Back", callback_data="edit_action_back_to_surveys")
+            builder.button(text="Назад", callback_data="edit_action_back_to_surveys")
             builder.adjust(1)
             await callback_query.message.edit_text(
                 "У этого опроса нет вопросов для редактирования.",
@@ -246,7 +246,7 @@ class EditQuestionPlugin:
         survey = state_data.get('selected_survey')
         
         if not survey or question_index >= len(survey.get('questions', [])):
-            await callback_query.answer("Question not found.")
+            await callback_query.answer("Вопрос не найден.")
             return
             
         question = survey['questions'][question_index]
@@ -267,10 +267,10 @@ class EditQuestionPlugin:
         question_text = question['text']
         question_type = question['type']
         
-        details = f"<b>Question:</b> {question_text}\n<b>Type:</b> {question_type}\n"
+        details = f"<b>Вопрос:</b> {question_text}\n<b>Тип:</b> {question_type}\n"
         
         if 'options' in question and question['options']:
-            details += "\n<b>Options:</b>\n"
+            details += "\n<b>Варианты:</b>\n"
             for i, option in enumerate(question['options']):
                 details += f"{i+1}. {option}\n"
                 
@@ -411,7 +411,7 @@ class EditQuestionPlugin:
             
             # Обновляем вопрос в базе данных
             survey['questions'][question_index] = question
-            # Update the question in the database
+            # Обновляем вопрос непосредственно в базе данных
             success = await update_question(survey['id'], question_index, question)
             
             if success:
