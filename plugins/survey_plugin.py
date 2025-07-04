@@ -648,18 +648,30 @@ class SurveyPlugin:
             else:
                 options = question['options']
                 counts = [0] * len(options)
+                other = 0
                 for response in survey['responses']:
                     if response['question_id'] == question['id']:
+                        ans = response['answer']
                         if question['type'] == "одиночный выбор":
-                            counts[response['answer']] += 1
+                            if isinstance(ans, int):
+                                counts[ans] += 1
+                            else:
+                                other += 1
                         else:
-                            for option_index in response['answer']:
-                                counts[option_index] += 1
-                total = sum(counts)
+                            if isinstance(ans, list):
+                                for option_index in ans:
+                                    if 0 <= option_index < len(options):
+                                        counts[option_index] += 1
+                            else:
+                                other += 1
+                total = sum(counts) + other
                 results += f"<b>Результаты ({total} ответов):</b>\n"
                 for i, option in enumerate(options):
                     percentage = (counts[i] / total * 100) if total > 0 else 0
                     results += f"{option}: {counts[i]} ({percentage:.1f}%)\n"
+                if other:
+                    percentage = (other / total * 100) if total > 0 else 0
+                    results += f"Другое: {other} ({percentage:.1f}%)\n"
             results += "\n"
 
         return results

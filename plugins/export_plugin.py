@@ -195,26 +195,39 @@ class ExportPlugin:
             if question.get("type") == "single_choice":
                 options = question.get("options", [])
                 counts = [0] * len(options)
+                other = 0
                 for response in question_responses:
                     answer = response.get("answer")
                     if isinstance(answer, int) and 0 <= answer < len(options):
                         counts[answer] += 1
-                total = sum(counts)
+                    else:
+                        other += 1
+                total = sum(counts) + other
                 for i, option in enumerate(options):
                     percentage = (counts[i] / total * 100) if total > 0 else 0
                     report.append(f"  {option}: {counts[i]} ({percentage:.1f}%)")
+                if other:
+                    percentage = (other / total * 100) if total > 0 else 0
+                    report.append(f"  Другое: {other} ({percentage:.1f}%)")
             elif question.get("type") == "multiple_choice":
                 options = question.get("options", [])
                 counts = [0] * len(options)
+                other = 0
                 for response in question_responses:
                     answer = response.get("answer", [])
                     if isinstance(answer, list):
                         for option_index in answer:
                             if 0 <= option_index < len(options):
                                 counts[option_index] += 1
+                    else:
+                        other += 1
+                total = len(question_responses)
                 for i, option in enumerate(options):
-                    percentage = (counts[i] / len(question_responses) * 100) if question_responses else 0
+                    percentage = (counts[i] / total * 100) if total else 0
                     report.append(f"  {option}: {counts[i]} ({percentage:.1f}%)")
+                if other:
+                    percentage = (other / total * 100) if total else 0
+                    report.append(f"  Другое: {other} ({percentage:.1f}%)")
             elif question.get("type") == "text_answer":
                 report.append("Текстовые ответы:")
                 for i, response in enumerate(question_responses):

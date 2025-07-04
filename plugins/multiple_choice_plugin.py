@@ -9,7 +9,7 @@ import logging
 
 from aiogram import Dispatcher
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message
 from core.db_manager import add_response
 
 # Поправленные импорты для хранилища
@@ -43,6 +43,7 @@ class MultipleChoicePlugin:
             self.process_multiple_choice_submit,
             lambda c: c.data.startswith('multi_submit_')
         )
+        dp.message.register(self.process_other_input)
 
     def get_commands(self):
         """Возвращает список команд плагина"""
@@ -104,6 +105,16 @@ class MultipleChoicePlugin:
 
         user_id = callback_query.from_user.id
 
+        question = next((q for q in survey['questions'] if q['id'] == question_id), None)
+        if question and question['options'][option_index].startswith('Другое'):
+            state = storage.get_user_state(user_id)
+            state[f'multi_other_{survey_id}_{question_id}'] = True
+            storage.set_user_state(user_id, f'multi_other_{survey_id}_{question_id}', True)
+            storage.set_user_state(user_id, f"multi_{survey_id}_{question_id}", None)
+            await callback_query.message.answer('Пожалуйста, введите свой вариант:')
+            await callback_query.answer()
+            return
+
         # Получаем или создаём выбор пользователя для данного вопроса
         user_state = storage.get_user_state(user_id)
         selection_key = f"multi_{survey_id}_{question_id}"
@@ -160,6 +171,11 @@ class MultipleChoicePlugin:
 
         user_id = callback_query.from_user.id
 
+        # Проверяем, не ожидается ли текстовый вариант
+        if storage.get_user_state(user_id).get(f'multi_other_{survey_id}_{question_id}'):
+            await callback_query.answer("Пожалуйста, сначала введите свой вариант")
+            return
+
         # Получаем выбор пользователя
         user_state = storage.get_user_state(user_id)
         selection_key = f"multi_{survey_id}_{question_id}"
@@ -193,6 +209,29 @@ class MultipleChoicePlugin:
             f"{old_text}\n\n✅ Ваш ответ принят!"
         )
 
+    async def process_other_input(self, message: Message):
+        user_id = message.from_user.id
+        state = storage.get_user_state(user_id)
+        key = next((k for k in state.keys() if k.startswith('multi_other_')), None)
+        if not key:
+            return
+        survey_id, question_id = key.split('_')[2], key.split('_')[3]
+        survey = storage.get_survey(survey_id)
+        if not survey or survey['status'] != 'active':
+            storage.set_user_state(user_id, key, None)
+            return
+        response = {
+            'user_id': None if survey.get('is_anonymous') else user_id,
+            'question_id': question_id,
+            'answer': message.text,
+            'timestamp': message.date.isoformat(),
+        }
+        self._add_or_update_response(survey, user_id, question_id, response)
+        add_response(survey_id, question_id, response['user_id'], message.text, message.date)
+        storage.save_survey(survey_id, survey)
+        storage.set_user_state(user_id, key, None)
+        await message.answer("✅ Ваш ответ записан!")
+
     def _add_or_update_response(self, survey, user_id, question_id, new_response):
         """Добавляет или обновляет ответ в опросе"""
         # Для анонимных опросов всегда добавляем новый ответ
@@ -214,12 +253,16 @@ class MultipleChoicePlugin:
         """Обрабатывает результаты для этого типа вопроса"""
         options = question['options']
         counts = [0] * len(options)
+        other = 0
 
         for response in responses:
-            if isinstance(response.get('answer'), list):
-                for option_index in response['answer']:
+            ans = response.get('answer')
+            if isinstance(ans, list):
+                for option_index in ans:
                     if 0 <= option_index < len(options):
                         counts[option_index] += 1
+            else:
+                other += 1
 
         total_responses = len(responses)
         results = {
@@ -236,6 +279,10 @@ class MultipleChoicePlugin:
                 'count': counts[i],
                 'percentage': round(percentage, 1)
             })
+
+        if other:
+            percentage = (other / total_responses * 100) if total_responses > 0 else 0
+            results['options'].append({'text': 'Другое', 'count': other, 'percentage': round(percentage, 1)})
 
         return results
 
