@@ -15,10 +15,12 @@ from aiogram import Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import (
-    ChatMemberUpdated, Message, CallbackQuery
+    ChatMemberUpdated, Message, CallbackQuery, ChatPermissions
 )
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import ChatMemberUpdatedFilter, StateFilter
+from core.db_manager import add_user_to_pending
+from plugins.group_event_plugin import unrestrict_user_if_needed
 
 try:
     from plugins.storage_plugin import storage
@@ -120,7 +122,26 @@ class CaptchaPlugin:
         user = event.from_user
         if user.is_bot:
             return
-        
+
+        chat_id = event.chat.id
+        # Ограничиваем права нового пользователя
+        try:
+            await event.bot.restrict_chat_member(
+                chat_id=chat_id,
+                user_id=user.id,
+                permissions=ChatPermissions(
+                    can_send_messages=False,
+                    can_send_media_messages=False,
+                    can_send_other_messages=False,
+                    can_add_web_page_previews=False
+                )
+            )
+        except Exception as e:
+            logger.error(f"Не удалось ограничить пользователя {user.id}: {e}")
+
+        # Добавляем в список ожидающих прохождения капчи
+        add_user_to_pending(user.id, chat_id)
+
         # Генерация капчи
         captcha_text = self._generate_captcha()
         self.pending_captchas[user.id] = captcha_text
@@ -137,7 +158,6 @@ class CaptchaPlugin:
         builder.adjust(3)
         markup = builder.as_markup()
 
-        chat_id = event.chat.id
         await event.bot.send_message(
             chat_id,
             f"Привет, {user.first_name}! Пожалуйста, пройдите капчу.\nВыберите: {captcha_text}",
@@ -259,6 +279,7 @@ class CaptchaPlugin:
         if question_index >= len(self.primary_survey_questions):
             storage.set_user_state(user_id, 'passed_primary_survey', True)
             await message.edit_text("✅ Спасибо за заполнение опроса! Теперь у вас полный доступ.")
+            await unrestrict_user_if_needed(message.bot, user_id)
             return
         
         question = self.primary_survey_questions[question_index]
