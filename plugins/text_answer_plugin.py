@@ -11,6 +11,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import StateFilter  # Добавляем фильтр состояния
 import logging
+from core.db_manager import add_response
 
 # Импорт хранилища из storage_plugin
 try:
@@ -131,9 +132,10 @@ class TextAnswerPlugin:
             'answer': message.text,
             'timestamp': message.date.isoformat()
         }
-        
+
         # Добавляем либо обновляем ответ
         self._add_or_update_response(survey, user_id, question_id, response)
+        add_response(survey_id, question_id, response['user_id'], message.text, message.date)
         storage.save_survey(survey_id, survey)
         
         await message.reply("✅ Ваш ответ записан! Спасибо за участие.")

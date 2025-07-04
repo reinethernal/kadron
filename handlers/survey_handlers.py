@@ -6,7 +6,12 @@ from aiogram import Router, Bot, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
-from core.db_manager import get_poll_by_id, get_welcome_message, update_user_activity
+from core.db_manager import (
+    get_poll_by_id,
+    get_welcome_message,
+    update_user_activity,
+    add_response,
+)
 from plugins.survey_plugin import get_questions
 from utils.data_manager import save_to_excel
 
@@ -35,8 +40,8 @@ async def send_question(user_id: int, bot: Bot, state: FSMContext):
         return
 
     question = questions[current_index]
-    # Сохраняем текущий текст вопроса (для текстовых ответов)
-    await state.update_data(current_question_text=question['text'])
+    # Сохраняем текущий текст и id вопроса (для текстовых ответов)
+    await state.update_data(current_question_text=question['text'], current_question_id=question['id'])
     question_text = question['text']
     q_type = question['type']
     options = question['options']
@@ -129,6 +134,9 @@ async def answer_callback_handler(callback_query: types.CallbackQuery, state: FS
     responses = current_data.get('responses', [])
     responses.append({"question": question['text'], "answer": option})
     await state.update_data(responses=responses, current_question_index=q_index + 1)
+    poll_info = get_poll_by_id(poll_id)
+    db_user_id = None if poll_info and poll_info.get("anonymous") else callback_query.from_user.id
+    add_response(poll_id, question['id'], db_user_id, option, datetime.utcnow())
     await bot.send_message(callback_query.from_user.id, f"Вы выбрали: {option}")
     await send_question(callback_query.from_user.id, bot, state)
 
@@ -194,6 +202,9 @@ async def confirm_multiple_handler(callback_query: types.CallbackQuery, state: F
     responses = current_data.get('responses', [])
     responses.append({"question": question['text'], "answer": answer_text})
     await state.update_data(responses=responses, current_question_index=q_index + 1)
+    poll_info = get_poll_by_id(poll_id)
+    db_user_id = None if poll_info and poll_info.get("anonymous") else callback_query.from_user.id
+    add_response(poll_id, question['id'], db_user_id, answer_text, datetime.utcnow())
     selected_options_all = current_data.get('selected_options', {})
     selected_options_all[str(q_index)] = []
     await state.update_data(selected_options=selected_options_all)
@@ -222,9 +233,15 @@ async def handle_text_answer(message: types.Message, state: FSMContext, bot: Bot
     answer = message.text.strip()
     data = await state.get_data()
     current_question_text = data.get('current_question_text', "Неизвестный вопрос")
+    question_id = data.get('current_question_id')
     responses = data.get('responses', [])
     responses.append({"question": current_question_text, "answer": answer})
     await state.update_data(responses=responses)
+    poll_id = data.get('poll_id')
+    poll_info = get_poll_by_id(poll_id)
+    db_user_id = None if poll_info and poll_info.get("anonymous") else user_id
+    if question_id is not None:
+        add_response(poll_id, question_id, db_user_id, answer, datetime.utcnow())
     await send_question(user_id, bot, state)
 
 def register_survey_handlers(dp: Bot):

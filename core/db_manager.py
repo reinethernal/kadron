@@ -93,6 +93,18 @@ def initialize_db():
             PRIMARY KEY (user_id, chat_id)
         )
     ''')
+    # Таблица ответов пользователей на вопросы опросов
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS responses (
+            poll_id INTEGER,
+            question_id INTEGER,
+            user_id INTEGER,
+            answer TEXT,
+            timestamp DATETIME,
+            FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
+            FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+        )
+    ''')
     # Настройки: тестовый режим, приветствие
     cursor.execute('''
         INSERT OR IGNORE INTO settings (key, value) VALUES ('test_mode', '0')
@@ -445,3 +457,39 @@ def get_scheduled_surveys() -> List[Dict]:
         })
     conn.close()
     return polls
+
+# --- Responses ---
+def add_response(poll_id: int, question_id: int, user_id: Optional[int], answer: str, timestamp: datetime):
+    """Сохраняет ответ пользователя на вопрос."""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    ts = timestamp.strftime("%Y-%m-%d %H:%M:%S") if isinstance(timestamp, datetime) else str(timestamp)
+    cursor.execute(
+        'INSERT INTO responses (poll_id, question_id, user_id, answer, timestamp) VALUES (?, ?, ?, ?, ?)',
+        (poll_id, question_id, user_id, answer, ts)
+    )
+    conn.commit()
+    conn.close()
+    logger.info(f"Response added for poll {poll_id}, question {question_id}.")
+
+
+def get_responses_by_poll(poll_id: int) -> List[Dict]:
+    """Возвращает все ответы для указанного опроса."""
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT poll_id, question_id, user_id, answer, timestamp FROM responses WHERE poll_id = ?',
+        (poll_id,)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    responses = []
+    for row in rows:
+        responses.append({
+            'poll_id': row[0],
+            'question_id': row[1],
+            'user_id': row[2],
+            'answer': row[3],
+            'timestamp': row[4],
+        })
+    return responses
