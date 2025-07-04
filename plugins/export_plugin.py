@@ -6,7 +6,6 @@ import datetime
 import pandas as pd
 
 from aiogram import Dispatcher, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Импорт хранилища

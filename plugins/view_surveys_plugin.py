@@ -9,7 +9,6 @@ from aiogram import Dispatcher, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Используем функции из db_manager вместо отсутствующего модуля базы данных
