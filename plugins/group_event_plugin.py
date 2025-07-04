@@ -16,11 +16,21 @@ from core.db_manager import (
 )
 from dotenv import load_dotenv
 
+try:
+    from plugins.storage_plugin import storage
+except ImportError:
+    class DummyStorage:
+        def get_setting(self, key, default=None):
+            return default
+
+    storage = DummyStorage()
+
 load_dotenv()
 
 ENABLE_CAPTCHA = os.getenv('ENABLE_CAPTCHA', 'False').lower() == "true"
 CAPTCHA_TIMEOUT = int(os.getenv('CAPTCHA_TIMEOUT', '5'))
 INACTIVITY_DAYS = int(os.getenv('INACTIVITY_DAYS', '30'))
+ENABLE_INACTIVE_CLEANUP = os.getenv('ENABLE_INACTIVE_CLEANUP', 'True').lower() == 'true'
 DEFAULT_WELCOME_MESSAGE = 'Привет, {username}!'
 
 logger = logging.getLogger(__name__)
@@ -73,7 +83,7 @@ async def unrestrict_user_if_needed(bot: Bot, user_id: int):
 
 async def remove_inactive_users(bot: Bot):
     while True:
-        inactive_users = get_inactive_users()
+        inactive_users = get_inactive_users(INACTIVITY_DAYS)
         groups = get_all_groups()
         for user in inactive_users:
             for group in groups:
@@ -89,9 +99,11 @@ async def remove_inactive_users(bot: Bot):
 # Оборачиваем функциональность в класс-плагин
 
 class GroupEventPlugin:
-    def __init__(self):
+    def __init__(self, bot: Bot):
         self.name = "group_event_plugin"
         self.description = "Обработка событий в группе"
+        self.bot = bot
+        self.cleanup_task = None
     async def register_handlers(self, dp):
         # При необходимости здесь можно зарегистрировать обработчики событий группы.
         pass
@@ -99,8 +111,13 @@ class GroupEventPlugin:
         return []
     def on_plugin_load(self):
         logger.info("Group Event plugin loaded")
+        enabled = storage.get_setting('enable_inactive_cleanup', ENABLE_INACTIVE_CLEANUP)
+        if enabled:
+            self.cleanup_task = asyncio.create_task(remove_inactive_users(self.bot))
     def on_plugin_unload(self):
+        if self.cleanup_task:
+            self.cleanup_task.cancel()
         logger.info("Group Event plugin unloaded")
 
-def load_plugin():
-    return GroupEventPlugin()
+def load_plugin(bot: Bot):
+    return GroupEventPlugin(bot)
