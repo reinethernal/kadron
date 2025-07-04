@@ -343,9 +343,18 @@ class SchedulerPlugin:
             for chat_id in target_chats:
                 try:
                     builder = InlineKeyboardBuilder()
+                    username = getattr(bot, "username", None)
+                    if not username:
+                        try:
+                            me = await bot.get_me()
+                            username = getattr(me, "username", "")
+                        except Exception:
+                            username = ""
+                    url_base = f"https://t.me/{username}" if username else "https://t.me"
+                    url = f"{url_base}?start=survey_{survey_id}"
                     builder.button(
                         text="Пройти опрос",
-                        callback_data=f"start_survey_{survey_id}"
+                        url=url,
                     )
                     markup = builder.as_markup()
                     msg = await bot.send_message(
