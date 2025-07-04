@@ -3,7 +3,7 @@ import json
 import csv
 import io
 import datetime
-import pandas as pd
+import os
 
 from aiogram import Dispatcher, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -130,7 +130,9 @@ class ExportPlugin:
         await callback_query.answer()
 
     async def export_excel(self, callback_query: types.CallbackQuery, survey):
-        rows = []
+        from utils.data_manager import save_to_excel
+
+        responses = []
         for response in survey.get("responses", []):
             question_id = response.get("question_id")
             question = next((q for q in survey.get("questions", []) if q.get("id") == question_id), {})
@@ -143,19 +145,16 @@ class ExportPlugin:
             elif question.get("type") == "multiple_choice" and isinstance(answer, list):
                 options = question.get("options", [])
                 answer = ", ".join([options[i] for i in answer if 0 <= i < len(options)])
-            rows.append({
-                "Вопрос": question_text,
-                "ID пользователя": response.get("user_id", "Аноним"),
-                "Ответ": answer,
-                "Время": response.get("timestamp", "")
-            })
-        df = pd.DataFrame(rows, columns=["Вопрос", "ID пользователя", "Ответ", "Время"])
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False)
-        output.seek(0)
-        output.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.xlsx"
-        await callback_query.message.answer_document(output, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}")
+            responses.append({"question": question_text, "answer": answer})
+
+        filename = save_to_excel(
+            "", "", "", "", "", "", "", responses, survey.get("title", "survey")
+        )
+
+        with open(filename, "rb") as f:
+            bio = io.BytesIO(f.read())
+        bio.name = os.path.basename(filename)
+        await callback_query.message.answer_document(bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}")
         await callback_query.message.edit_text("✅ Экспорт в Excel успешно выполнен.")
         await callback_query.answer()
 
