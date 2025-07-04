@@ -8,6 +8,8 @@
 import asyncio
 import datetime
 import logging
+import re
+from core.db_manager import get_all_groups
 
 from aiogram import Dispatcher, types, Bot
 from aiogram.filters import Command
@@ -33,6 +35,7 @@ scheduler_instance = None
 class SchedulerStates(StatesGroup):
     """Состояния (States) для функционала планирования"""
     SELECTING_SURVEY = State()
+    SELECTING_GROUPS = State()
     SELECTING_DATE = State()
     SELECTING_TIME = State()
     CONFIRMING = State()
@@ -65,6 +68,11 @@ class SchedulerPlugin:
             self.handle_survey_selection,
             lambda c: c.data.startswith('schedule_survey_'),
             SchedulerStates.SELECTING_SURVEY
+        )
+
+        dp.message.register(
+            self.process_group_input,
+            SchedulerStates.SELECTING_GROUPS
         )
 
         # Хендлер на ввод даты (состояние SELECTING_DATE)
@@ -153,13 +161,34 @@ class SchedulerPlugin:
         # Сохраняем ID опроса в данные стейта
         await state.update_data(selected_survey_id=survey_id)
 
+        groups = get_all_groups()
+        text = "Выберите группы для отправки (ID через пробел):\n"
+        if groups:
+            for g in groups:
+                text += f"{g['group_id']}: {g['title']}\n"
+        else:
+            text += "(нет доступных групп)"
+
+        await state.set_state(SchedulerStates.SELECTING_GROUPS)
         await callback_query.message.edit_text(
-            f"Выбран опрос: {survey.get('title', 'Без названия')}\n\n"
-            "Введите дату для отправки в формате ДД.ММ.ГГГГ (например, 31.12.2025):"
+            f"Выбран опрос: {survey.get('title', 'Без названия')}\n\n" + text
         )
-        # Теперь ждём, что пользователь введёт дату
-        await state.set_state(SchedulerStates.SELECTING_DATE)
         await callback_query.answer()
+
+    async def process_group_input(self, message: types.Message, state: FSMContext):
+        """Сохраняем выбранные группы и переходим к выбору даты"""
+        ids = [int(x) for x in re.findall(r"\d+", message.text)]
+        data = await state.get_data()
+        survey_id = data.get('selected_survey_id')
+        if survey_id:
+            survey = storage.get_survey(survey_id)
+            if survey is not None:
+                survey['target_chats'] = ids
+                storage.save_survey(survey_id, survey)
+
+        await state.update_data(target_chats=ids)
+        await message.answer("Введите дату для отправки в формате ДД.ММ.ГГГГ (например, 31.12.2025):")
+        await state.set_state(SchedulerStates.SELECTING_DATE)
 
     async def process_date_input(self, message: types.Message, state: FSMContext):
         """Принимаем дату от пользователя"""
