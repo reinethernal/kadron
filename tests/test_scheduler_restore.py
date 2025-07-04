@@ -59,12 +59,12 @@ def test_restore_scheduled(monkeypatch):
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-    import plugins.scheduler_plugin as scheduler_plugin
 
     tasks = []
     def fake_create_task(coro):
         tasks.append(coro)
-        class Dummy: pass
+        class Dummy:
+            pass
         return Dummy()
     monkeypatch.setattr(asyncio, 'create_task', fake_create_task)
 
