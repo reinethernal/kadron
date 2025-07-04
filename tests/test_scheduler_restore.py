@@ -17,6 +17,14 @@ class DummyStorage:
     def set_setting(self, key, value):
         self.settings[key] = value
 
+
+class DummyBot:
+    def __init__(self):
+        self.sent = []
+
+    async def send_message(self, chat_id, text, **kwargs):
+        self.sent.append((chat_id, text))
+
 def test_restore_scheduled(monkeypatch):
     storage = DummyStorage()
     future = datetime.now() + timedelta(hours=1)
@@ -41,7 +49,48 @@ def test_restore_scheduled(monkeypatch):
 
     module = importlib.reload(importlib.import_module('plugins.scheduler_plugin'))
     monkeypatch.setattr(module, 'storage', storage, raising=False)
-    plugin = module.load_plugin()
+    bot = DummyBot()
+    plugin = module.load_plugin(bot)
     plugin.on_plugin_load()
 
     assert 's1' in plugin.scheduled_tasks
+
+
+def test_scheduled_send(monkeypatch):
+    storage = DummyStorage()
+    storage.surveys = {
+        's1': {
+            'title': 'T',
+            'description': 'D',
+            'deadline': (datetime.now() + timedelta(hours=1)).isoformat(),
+            'target_chats': [42],
+            'status': 'pending',
+        }
+    }
+    storage.settings['scheduled_surveys'] = [{'survey_id': 's1'}]
+    monkeypatch.setattr(storage, 'get_survey', lambda sid: storage.surveys.get(sid))
+
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+    module = importlib.reload(importlib.import_module('plugins.scheduler_plugin'))
+    monkeypatch.setattr(module, 'storage', storage, raising=False)
+
+    bot = DummyBot()
+    plugin = module.load_plugin(bot)
+
+    async def fake_sleep(delay):
+        pass
+
+    monkeypatch.setattr(module.asyncio, 'sleep', fake_sleep)
+    def fake_task(coro):
+        class Dummy:
+            def cancel(self):
+                pass
+        return Dummy()
+    monkeypatch.setattr(module.asyncio, 'create_task', fake_task)
+
+    asyncio.run(plugin._send_scheduled_survey('s1', 0))
+
+    assert bot.sent

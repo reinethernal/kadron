@@ -6,6 +6,7 @@
 """
 
 import importlib
+import inspect
 import os
 import logging
 from typing import Dict, List, Any, Optional
@@ -18,8 +19,9 @@ logger = logging.getLogger(__name__)
 class PluginManager:
     """Управляет всеми плагинами бота"""
     
-    def __init__(self, dp: Dispatcher):
+    def __init__(self, dp: Dispatcher, bot: Bot):
         self.dp = dp
+        self.bot = bot
         self.plugins = {}
         self.plugin_dir = "plugins"
         
@@ -43,7 +45,10 @@ class PluginManager:
             
         try:
             module = importlib.import_module(f"{self.plugin_dir}.{plugin_name}")
-            plugin = module.load_plugin()
+            if 'bot' in inspect.signature(module.load_plugin).parameters:
+                plugin = module.load_plugin(self.bot)
+            else:
+                plugin = module.load_plugin()
             
             # Регистрируем обработчики плагина
             await plugin.register_handlers(self.dp)
