@@ -39,7 +39,7 @@ class PluginTemplate:
     
     def __init__(self):
         self.name = "template_plugin"
-        self.description = "Template Plugin"
+        self.description = "Шаблонный плагин"
         
     async def register_handlers(self, dp: Dispatcher):
         """Регистрация всех обработчиков плагина"""
@@ -50,7 +50,7 @@ class PluginTemplate:
         """Возвращает список команд, предоставляемых плагином"""
         return [
             types.BotCommand(
-                command="template_command", description="Template command"
+                command="template_command", description="Шаблонная команда"
             )
         ]
         
@@ -59,8 +59,8 @@ class PluginTemplate:
         return {
             "main": ReplyKeyboardMarkup(
                 keyboard=[
-                    [KeyboardButton("Template Button")],
-                    [KeyboardButton("Another Button")]
+                    [KeyboardButton("Шаблонная кнопка")],
+                    [KeyboardButton("Другая кнопка")]
                 ],
                 resize_keyboard=True
             ),
@@ -70,18 +70,18 @@ class PluginTemplate:
     def _create_inline_keyboard(self) -> types.InlineKeyboardMarkup:
         """Создаёт пример инлайн-клавиатуры через ``InlineKeyboardBuilder``"""
         builder = InlineKeyboardBuilder()
-        builder.button(text="Button 1", callback_data="btn1")
-        builder.button(text="Button 2", callback_data="btn2")
+        builder.button(text="Кнопка 1", callback_data="btn1")
+        builder.button(text="Кнопка 2", callback_data="btn2")
         builder.adjust(2)
         return builder.as_markup()
         
     def on_plugin_load(self):
         """Вызывается при загрузке плагина"""
-        print(f"Plugin {self.name} loaded")
+        print(f"Плагин {self.name} загружен")
         
     def on_plugin_unload(self):
         """Вызывается при выгрузке плагина"""
-        print(f"Plugin {self.name} unloaded")
+        print(f"Плагин {self.name} выгружен")
         
     async def command_handler(self, message: types.Message, state: FSMContext):
         """Пример обработчика команды (стиль aiogram 3.x)"""
