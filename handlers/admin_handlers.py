@@ -32,7 +32,8 @@ from core.db_manager import (
 )
 
 load_dotenv()
-ADMIN_IDS = [int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x]
+ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
+ADMIN_IDS = [int(x) for x in ids]
 
 logger = logging.getLogger(__name__)
 router = Router()
