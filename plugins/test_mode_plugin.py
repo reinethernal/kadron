@@ -41,6 +41,7 @@ class TestModePlugin:
         return [types.BotCommand(command="test_mode", description="Тестовый режим для опросов")]
 
     async def cmd_test_mode(self, message: types.Message, state: FSMContext):
+        logger.debug(f"{message.text} from {message.from_user.id}")
         user_id = message.from_user.id
         # Получаем все опросы пользователя
         all_surveys = storage.get_all_surveys()

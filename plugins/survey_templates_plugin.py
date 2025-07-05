@@ -64,6 +64,7 @@ class SurveyTemplatesPlugin:
         return storage.data.setdefault("templates", {})
 
     async def cmd_save_template(self, message: types.Message):
+        logger.debug(f"{message.text} from {message.from_user.id}")
         parts = message.text.split(maxsplit=2)
         if len(parts) < 3:
             await message.answer(
@@ -88,6 +89,7 @@ class SurveyTemplatesPlugin:
         await message.answer(f"Шаблон '{name}' сохранён")
 
     async def cmd_list_templates(self, message: types.Message):
+        logger.debug(f"{message.text} from {message.from_user.id}")
         templates = self._get_templates()
         if not templates:
             await message.answer("Шаблоны отсутствуют")
@@ -96,6 +98,7 @@ class SurveyTemplatesPlugin:
         await message.answer(text)
 
     async def cmd_delete_template(self, message: types.Message):
+        logger.debug(f"{message.text} from {message.from_user.id}")
         parts = message.text.split(maxsplit=1)
         if len(parts) < 2:
             await message.answer("Использование: /delete_template <template_name>")
@@ -110,6 +113,7 @@ class SurveyTemplatesPlugin:
             await message.answer("Шаблон не найден")
 
     async def cmd_use_template(self, message: types.Message):
+        logger.debug(f"{message.text} from {message.from_user.id}")
         parts = message.text.split(maxsplit=2)
         if len(parts) < 3:
             await message.answer(

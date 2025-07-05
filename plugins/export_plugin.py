@@ -51,6 +51,7 @@ class ExportPlugin:
         return [types.BotCommand(command="export", description="Экспорт данных опросов")]
 
     async def cmd_export(self, message: types.Message):
+        logger.debug(f"{message.text} from {message.from_user.id}")
         user_id = message.from_user.id
         all_surveys = storage.get_all_surveys()
         if not all_surveys:

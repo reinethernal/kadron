@@ -144,6 +144,7 @@ class AdminMenuPlugin:
     
     async def cmd_admin_menu(self, message: types.Message, state: FSMContext):
         """Обрабатывает команду /admin"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
         if message.from_user.id not in self.admin_ids:
             await message.answer("У вас нет доступа к меню администратора.")
             return

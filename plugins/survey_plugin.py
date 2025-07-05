@@ -167,6 +167,7 @@ class SurveyPlugin:
 
     async def cmd_create_survey(self, message: types.Message, state: FSMContext):
         """Обработчик команды создания нового опроса"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
         await state.set_state(SurveyStates.TITLE)
         await state.update_data(creator_id=message.from_user.id, questions=[])
         await message.answer("Введите название опроса:")
@@ -465,6 +466,7 @@ class SurveyPlugin:
 
     async def cmd_finish_questions(self, message: types.Message, state: FSMContext):
         """Завершает ввод вопросов и переходит к указанию срока"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
         data = await state.get_data()
         if not data.get('questions'):
             await message.answer("Вы не добавили ни одного вопроса.")
@@ -475,12 +477,14 @@ class SurveyPlugin:
 
     async def cmd_questions_count(self, message: types.Message, state: FSMContext):
         """Отображает количество уже добавленных вопросов"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
         data = await state.get_data()
         count = len(data.get('questions', []))
         await message.answer(f"Количество добавленных вопросов: {count}")
 
     async def cmd_view_surveys(self, message: types.Message, state: FSMContext):
         """Обработчик команды просмотра опросов"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
         user_id = message.from_user.id
         surveys = storage.get_all_surveys()
         user_surveys = {k: v for k, v in surveys.items() if v.get('creator_id') == user_id}

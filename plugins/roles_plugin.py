@@ -171,6 +171,7 @@ class RolesPlugin:
     
     async def cmd_roles(self, message: types.Message):
         """Обрабатывает команду /roles"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
         builder = InlineKeyboardBuilder()
         builder.button(text="👤 Назначить роль пользователю", callback_data="roles_assign")
         builder.button(text="✏️ Редактировать роли", callback_data="roles_edit")
