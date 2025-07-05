@@ -34,6 +34,7 @@ class PluginManager:
             
         for filename in os.listdir(self.plugin_dir):
             if filename.endswith("_plugin.py") and not filename.startswith("__"):
+                logger.debug(f"Loading plugin file: {filename}")
                 plugin_name = filename[:-3]  # убираем расширение .py
                 await self.load_plugin(plugin_name)
                 
@@ -59,10 +60,11 @@ class PluginManager:
                 
             self.plugins[plugin_name] = plugin
             logger.info(f"Плагин {plugin_name} успешно загружен")
+            logger.debug(f"Plugin {plugin_name} imported successfully")
             return True
-            
+
         except Exception as e:
-            logger.error(f"Не удалось загрузить плагин {plugin_name}: {e}")
+            logger.exception(f"Не удалось загрузить плагин {plugin_name}: {e}")
             return False
             
     async def unload_plugin(self, plugin_name: str) -> bool:
