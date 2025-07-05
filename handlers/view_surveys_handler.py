@@ -1,5 +1,5 @@
 import logging
-from aiogram import Router, Bot, types
+from aiogram import Router, Dispatcher, types
 from aiogram.filters import Command
 from core.db_manager import get_all_polls
 
@@ -14,5 +14,5 @@ async def view_surveys_handler(message: types.Message):
     else:
         await message.answer("Опросы не найдены.")
 
-def register_view_surveys_handler(dp: Bot):
+def register_view_surveys_handler(dp: Dispatcher):
     dp.include_router(router)

@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime
-from aiogram import Router, Bot, types
+from aiogram import Router, Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
@@ -244,5 +244,5 @@ async def handle_text_answer(message: types.Message, state: FSMContext, bot: Bot
         add_response(poll_id, question_id, db_user_id, answer, datetime.utcnow())
     await send_question(user_id, bot, state)
 
-def register_survey_handlers(dp: Bot):
+def register_survey_handlers(dp: Dispatcher):
     dp.include_router(router)

@@ -4,7 +4,7 @@ import logging
 import os
 from dotenv import load_dotenv
 
-from aiogram import Router, Bot, F
+from aiogram import Router, Bot, Dispatcher, F
 from aiogram.types import (
     Message,
     ReplyKeyboardMarkup,
@@ -664,5 +664,5 @@ async def choose_join_poll_name_handler(message: Message, state: FSMContext):
 # -------------------------
 # Регистрация роутера
 # -------------------------
-def register_admin_handlers(dp: Bot):
+def register_admin_handlers(dp: Dispatcher):
     dp.include_router(router)
