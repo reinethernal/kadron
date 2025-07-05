@@ -5,7 +5,7 @@ import logging
 import os
 
 from aiogram import Dispatcher
-from dotenv import load_dotenv
+from utils.logging_utils import configure_logging
 
 # Здесь пытаемся импортировать DefaultBotProperties, если его нет – игнорируем
 try:
@@ -20,7 +20,7 @@ except ImportError:
 from core.db_manager import initialize_db
 from plugin_manager import PluginManager
 
-load_dotenv()
+configure_logging()
 
 from aiogram import __version__ as aiogram_version
 from packaging.version import parse as parse_version
@@ -45,11 +45,7 @@ if not ADMIN_IDS:
         "ADMIN_IDS не задан – команда /admin будет недоступна"
     )
 
-# Настройка логирования
-ENABLE_LOGGING = os.getenv("ENABLE_LOGGING", "True").lower() == "true"
-LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "INFO").upper()
-level = getattr(logging, LOGGING_LEVEL, logging.INFO) if ENABLE_LOGGING else logging.WARNING
-logging.basicConfig(level=level, force=True)
+# Логгер приложения
 logger = logging.getLogger(__name__)
 logger.debug(f"ADMIN_IDS parsed: {ADMIN_IDS}")
 
