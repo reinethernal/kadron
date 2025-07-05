@@ -22,6 +22,14 @@ from plugin_manager import PluginManager
 
 load_dotenv()
 
+from aiogram import __version__ as aiogram_version
+from packaging.version import parse as parse_version
+
+if parse_version(aiogram_version).major != 3:
+    raise RuntimeError(
+        "Kadron requires aiogram 3.x. Install dependencies via pip install -r requirements.txt."
+    )
+
 if not os.path.exists(".env"):
     logging.warning(
         "Файл .env не найден; переменные окружения не загружены"
