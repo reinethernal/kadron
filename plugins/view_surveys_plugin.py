@@ -122,6 +122,7 @@ class ViewSurveysPlugin:
     
     async def cmd_view_surveys(self, message: types.Message, state: FSMContext):
         """Обрабатывает команду /view_surveys"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
         user_id = message.from_user.id
         surveys = await get_surveys(user_id=user_id)
         

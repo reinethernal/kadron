@@ -115,6 +115,7 @@ class SchedulerPlugin:
 
     async def cmd_schedule(self, message: types.Message, state: FSMContext):
         """Обработка команды /schedule — начать процесс планирования опроса"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
 
         user_id = message.from_user.id
         all_surveys = storage.get_all_surveys()
@@ -476,6 +477,7 @@ class SchedulerPlugin:
 
     async def cmd_list_scheduled(self, message: types.Message):
         """Обработка команды /scheduled — список запланированных опросов для данного пользователя"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
         user_id = message.from_user.id
         scheduled_surveys = storage.get_setting('scheduled_surveys', [])
 

@@ -170,6 +170,7 @@ class EditQuestionPlugin:
     
     async def cmd_edit_question(self, message: types.Message, state: FSMContext):
         """Обрабатывает команду /edit_question"""
+        logger.debug(f"{message.text} from {message.from_user.id}")
         user_id = message.from_user.id
         
         # Получаем опросы, созданные этим администратором
