@@ -45,8 +45,13 @@ if not ADMIN_IDS:
         "ADMIN_IDS не задан – команда /admin будет недоступна"
     )
 
-logging.basicConfig(level=logging.INFO)
+# Настройка логирования
+ENABLE_LOGGING = os.getenv("ENABLE_LOGGING", "True").lower() == "true"
+LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "INFO").upper()
+level = getattr(logging, LOGGING_LEVEL, logging.INFO) if ENABLE_LOGGING else logging.WARNING
+logging.basicConfig(level=level, force=True)
 logger = logging.getLogger(__name__)
+logger.debug(f"ADMIN_IDS parsed: {ADMIN_IDS}")
 
 async def main():
     # Инициализация БД

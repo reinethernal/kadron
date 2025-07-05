@@ -14,8 +14,8 @@ from dotenv import load_dotenv
 load_dotenv()
 ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
 ADMIN_IDS = [int(x) for x in ids]
-
 logger = logging.getLogger(__name__)
+logger.debug(f"Parsed ADMIN_IDS: {ADMIN_IDS}")
 
 # Оборачиваем административные функции в плагин
 
