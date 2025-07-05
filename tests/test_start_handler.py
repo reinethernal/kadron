@@ -44,12 +44,8 @@ class DummyBot:
 
 
 def test_start_handler_with_survey(monkeypatch):
-    import sys
-    import types
-    fake_mod = types.ModuleType('plugins.survey_plugin')
-    fake_mod.get_questions = lambda pid: ["Q1"]
-    monkeypatch.setitem(sys.modules, 'plugins.survey_plugin', fake_mod)
     module = importlib.reload(importlib.import_module("handlers.survey_handlers"))
+    monkeypatch.setattr(module, "get_questions", lambda pid: ["Q1"])
 
     monkeypatch.setattr(module, "get_welcome_message", lambda: None)
     monkeypatch.setattr(module, "update_user_activity", lambda u, x=None: None)

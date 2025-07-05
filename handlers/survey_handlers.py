@@ -12,7 +12,7 @@ from core.db_manager import (
     update_user_activity,
     add_response,
 )
-from plugins.survey_plugin import get_questions
+from core.db_manager import get_questions_by_poll as get_questions
 from utils.data_manager import save_to_excel
 
 router = Router()
