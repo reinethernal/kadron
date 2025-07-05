@@ -22,9 +22,20 @@ from plugin_manager import PluginManager
 
 load_dotenv()
 
+if not os.path.exists(".env"):
+    logging.warning(
+        "Файл .env не найден; переменные окружения не загружены"
+    )
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN не установлен в .env")
+
+ADMIN_IDS = os.getenv("ADMIN_IDS", "")
+if not ADMIN_IDS:
+    logging.warning(
+        "ADMIN_IDS не задан – команда /admin будет недоступна"
+    )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
