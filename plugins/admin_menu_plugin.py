@@ -35,6 +35,7 @@ class AdminMenuPlugin:
         # Загружаем admin_ids из переменной окружения с помощью regex
         ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
         self.admin_ids = [int(x) for x in ids]
+        logger.debug(f"Parsed admin_ids: {self.admin_ids}")
         # Экземпляры вспомогательных плагинов
         from plugins.survey_plugin import SurveyPlugin
         from plugins.export_plugin import ExportPlugin

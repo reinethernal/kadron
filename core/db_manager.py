@@ -10,7 +10,10 @@ from dotenv import load_dotenv
 load_dotenv()
 DATABASE = os.getenv("DATABASE", "database.db")
 
-logging.basicConfig(level=logging.INFO)
+ENABLE_LOGGING = os.getenv("ENABLE_LOGGING", "True").lower() == "true"
+LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "INFO").upper()
+level = getattr(logging, LOGGING_LEVEL, logging.INFO) if ENABLE_LOGGING else logging.WARNING
+logging.basicConfig(level=level)
 logger = logging.getLogger(__name__)
 
 def initialize_db():
