@@ -19,6 +19,9 @@ except ImportError:
 
 from core.db_manager import initialize_db
 from plugin_manager import PluginManager
+from handlers.survey_handlers import register_survey_handlers
+from handlers.group_handlers import register_group_handlers
+from handlers.view_surveys_handler import register_view_surveys_handler
 
 configure_logging()
 
@@ -66,6 +69,11 @@ async def main():
 
     # Загружаем плагины
     await plugin_manager.load_plugins()
+
+    # Регистрируем основные хендлеры
+    register_survey_handlers(dp)
+    register_group_handlers(dp)
+    register_view_surveys_handler(dp)
 
     # Регистрируем команды из плагинов
     await plugin_manager.setup_bot_commands(bot)
