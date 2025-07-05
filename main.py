@@ -72,8 +72,10 @@ async def main():
 
     logger.info("Бот запущен и ожидает обновлений...")
 
+    allowed_updates = dp.resolve_used_update_types()
+
     try:
-        await dp.start_polling(bot)
+        await dp.start_polling(bot, allowed_updates=allowed_updates)
     finally:
         await bot.session.close()
 
