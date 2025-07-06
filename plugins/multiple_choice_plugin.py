@@ -11,6 +11,7 @@ from aiogram import Dispatcher
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import CallbackQuery, Message
 from core.db_manager import add_response
+from plugins.response_mixin import ResponseMixin
 
 # Поправленные импорты для хранилища
 try:
@@ -26,7 +27,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-class MultipleChoicePlugin:
+class MultipleChoicePlugin(ResponseMixin):
     """Плагин для вопросов с множественным выбором"""
 
     def __init__(self):
@@ -232,22 +233,6 @@ class MultipleChoicePlugin:
         storage.set_user_state(user_id, key, None)
         await message.answer("✅ Ваш ответ записан!")
 
-    def _add_or_update_response(self, survey, user_id, question_id, new_response):
-        """Добавляет или обновляет ответ в опросе"""
-        # Для анонимных опросов всегда добавляем новый ответ
-        if survey.get('is_anonymous'):
-            survey['responses'].append(new_response)
-            return
-
-        # Для неанонимных опросов обновляем существующий ответ, если есть
-        for i, response in enumerate(survey['responses']):
-            if (response.get('user_id') == user_id and
-                response.get('question_id') == question_id):
-                survey['responses'][i] = new_response
-                return
-
-        # Если ответа ещё нет, добавляем новый
-        survey['responses'].append(new_response)
 
     def process_results(self, question, responses):
         """Обрабатывает результаты для этого типа вопроса"""

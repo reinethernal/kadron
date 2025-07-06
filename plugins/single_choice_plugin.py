@@ -5,6 +5,7 @@
 from aiogram import Dispatcher, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from core.db_manager import add_response
+from plugins.response_mixin import ResponseMixin
 import logging
 
 try:
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 OTHER_OPTION = "Другое…"
 
-class SingleChoicePlugin:
+class SingleChoicePlugin(ResponseMixin):
     def __init__(self):
         self.name = "single_choice_plugin"
         self.description = "Тип вопроса - одиночный выбор"
@@ -119,15 +120,6 @@ class SingleChoicePlugin:
         storage.save_survey(survey_id, survey)
         storage.set_user_state(user_id, 'single_other', None)
         await message.answer("✅ Ваш ответ записан!")
-    def _add_or_update_response(self, survey, user_id, question_id, new_response):
-        if survey['is_anonymous']:
-            survey['responses'].append(new_response)
-            return
-        for i, response in enumerate(survey['responses']):
-            if response.get('user_id') == user_id and response.get('question_id') == question_id:
-                survey['responses'][i] = new_response
-                return
-        survey['responses'].append(new_response)
     def on_plugin_load(self):
         logger.info("Плагин одиночного выбора загружен")
     def on_plugin_unload(self):
