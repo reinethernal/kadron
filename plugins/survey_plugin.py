@@ -110,6 +110,14 @@ class SurveyPlugin:
             StateFilter(SurveyStates.SCHEDULING)
         )
         dp.message.register(
+            self.process_schedule_date,
+            StateFilter(SurveyStates.SCHEDULE_DATE)
+        )
+        dp.message.register(
+            self.process_schedule_time,
+            StateFilter(SurveyStates.SCHEDULE_TIME)
+        )
+        dp.message.register(
             self.process_confirmation,
             StateFilter(SurveyStates.CONFIRMATION)
         )
