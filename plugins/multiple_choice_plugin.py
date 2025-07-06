@@ -107,6 +107,9 @@ class MultipleChoicePlugin(ResponseMixin):
         user_id = callback_query.from_user.id
 
         question = next((q for q in survey['questions'] if q['id'] == question_id), None)
+        if question and not (0 <= option_index < len(question['options'])):
+            await callback_query.answer("Неверный вариант")
+            return
         if question and question['options'][option_index].startswith('Другое'):
             state = storage.get_user_state(user_id)
             state[f'multi_other_{survey_id}_{question_id}'] = True
