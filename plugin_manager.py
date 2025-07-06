@@ -32,7 +32,7 @@ class PluginManager:
             os.makedirs(self.plugin_dir)
             return
             
-        for filename in os.listdir(self.plugin_dir):
+        for filename in sorted(os.listdir(self.plugin_dir)):
             if filename.endswith("_plugin.py") and not filename.startswith("__"):
                 logger.debug(f"Loading plugin file: {filename}")
                 plugin_name = filename[:-3]  # убираем расширение .py
