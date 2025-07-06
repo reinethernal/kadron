@@ -5,6 +5,7 @@
 свойства уже созданных опросов.
 """
 
+import logging
 from aiogram import Dispatcher, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -23,6 +24,8 @@ import sqlite3
 from dotenv import load_dotenv
 from utils.env_utils import parse_admin_ids
 from typing import List, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 ADMIN_IDS = parse_admin_ids()
