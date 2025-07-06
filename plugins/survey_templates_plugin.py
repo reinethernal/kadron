@@ -9,6 +9,9 @@ from aiogram import Dispatcher, types
 from aiogram.filters import Command
 from datetime import datetime
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Используем хранилище из storage_plugin
 try:
