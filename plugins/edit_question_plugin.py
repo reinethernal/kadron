@@ -20,14 +20,12 @@ from core.db_manager import (
     get_questions_by_poll,
 )
 import sqlite3
-import os
-import re
 from dotenv import load_dotenv
+from utils.env_utils import parse_admin_ids
 from typing import List, Dict, Optional
 
 load_dotenv()
-ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
-ADMIN_IDS = [int(x) for x in ids]
+ADMIN_IDS = parse_admin_ids()
 
 
 def is_admin(user_id: int) -> bool:

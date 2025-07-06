@@ -7,13 +7,11 @@ Admin Plugin для Telegram бота.
 import logging
 from aiogram.client.bot import Bot
 from core.db_manager import get_all_groups, get_poll_by_id
-import os
-import re
 from dotenv import load_dotenv
+from utils.env_utils import parse_admin_ids
 
 load_dotenv()
-ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
-ADMIN_IDS = [int(x) for x in ids]
+ADMIN_IDS = parse_admin_ids()
 logger = logging.getLogger(__name__)
 logger.debug(f"Parsed ADMIN_IDS: {ADMIN_IDS}")
 
