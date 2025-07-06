@@ -105,35 +105,56 @@ class AdminMenuPlugin:
         return {
             'admin_main': ReplyKeyboardMarkup(
                 keyboard=[
-                    [KeyboardButton("📊 Опросы"), KeyboardButton("📈 Аналитика")],
-                    [KeyboardButton("⚙ Настройки")]
+                    [
+                        KeyboardButton(text="📊 Опросы"),
+                        KeyboardButton(text="📈 Аналитика"),
+                    ],
+                    [KeyboardButton(text="⚙ Настройки")]
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=False
             ),
             'admin_surveys': ReplyKeyboardMarkup(
                 keyboard=[
-                    [KeyboardButton("Создать опрос"), KeyboardButton("Мои опросы")],
-                    [KeyboardButton("Шаблоны вопросов"), KeyboardButton("Настройки опросов")],
-                    [KeyboardButton("🔙 Назад")]
+                    [
+                        KeyboardButton(text="Создать опрос"),
+                        KeyboardButton(text="Мои опросы"),
+                    ],
+                    [
+                        KeyboardButton(text="Шаблоны вопросов"),
+                        KeyboardButton(text="Настройки опросов"),
+                    ],
+                    [KeyboardButton(text="🔙 Назад")]
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=False
             ),
             'admin_analytics': ReplyKeyboardMarkup(
                 keyboard=[
-                    [KeyboardButton("Статистика опросов"), KeyboardButton("Экспорт данных")],
-                    [KeyboardButton("Активность группы"), KeyboardButton("Рейтинги")],
-                    [KeyboardButton("🔙 Назад")]
+                    [
+                        KeyboardButton(text="Статистика опросов"),
+                        KeyboardButton(text="Экспорт данных"),
+                    ],
+                    [
+                        KeyboardButton(text="Активность группы"),
+                        KeyboardButton(text="Рейтинги"),
+                    ],
+                    [KeyboardButton(text="🔙 Назад")]
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=False
             ),
             'admin_settings': ReplyKeyboardMarkup(
                 keyboard=[
-                    [KeyboardButton("Общие настройки"), KeyboardButton("Настройки уведомлений")],
-                    [KeyboardButton("Управление доступом"), KeyboardButton("Тестовый режим")],
-                    [KeyboardButton("🔙 Назад")]
+                    [
+                        KeyboardButton(text="Общие настройки"),
+                        KeyboardButton(text="Настройки уведомлений"),
+                    ],
+                    [
+                        KeyboardButton(text="Управление доступом"),
+                        KeyboardButton(text="Тестовый режим"),
+                    ],
+                    [KeyboardButton(text="🔙 Назад")]
                 ],
                 resize_keyboard=True,
                 one_time_keyboard=False

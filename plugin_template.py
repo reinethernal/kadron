@@ -69,8 +69,8 @@ class PluginTemplate:
         return {
             "main": ReplyKeyboardMarkup(
                 keyboard=[
-                    [KeyboardButton("Шаблонная кнопка")],
-                    [KeyboardButton("Другая кнопка")]
+                    [KeyboardButton(text="Шаблонная кнопка")],
+                    [KeyboardButton(text="Другая кнопка")]
                 ],
                 resize_keyboard=True
             ),
