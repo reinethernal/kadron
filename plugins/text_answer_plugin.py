@@ -12,6 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import StateFilter  # Добавляем фильтр состояния
 import logging
 from core.db_manager import add_response
+from plugins.response_mixin import ResponseMixin
 
 # Импорт хранилища из storage_plugin
 try:
@@ -29,7 +30,7 @@ class TextAnswerStates(StatesGroup):
     """Состояния обработки текстового ответа"""
     WAITING_FOR_ANSWER = State()
 
-class TextAnswerPlugin:
+class TextAnswerPlugin(ResponseMixin):
     """Плагин для вопросов с текстовым ответом"""
     
     def __init__(self):
@@ -141,22 +142,6 @@ class TextAnswerPlugin:
         await message.reply("✅ Ваш ответ записан! Спасибо за участие.")
         await state.clear()
     
-    def _add_or_update_response(self, survey, user_id, question_id, new_response):
-        """Добавляет или обновляет ответ в опросе"""
-        # Для анонимных опросов всегда добавляем новый ответ
-        if survey['is_anonymous']:
-            survey['responses'].append(new_response)
-            return
-        
-        # Для неанонимных опросов обновляем имеющийся ответ, если он есть
-        for i, response in enumerate(survey['responses']):
-            if (response.get('user_id') == user_id and 
-                response.get('question_id') == question_id):
-                survey['responses'][i] = new_response
-                return
-        
-        # Если ответа нет, добавляем новый
-        survey['responses'].append(new_response)
     
     def process_results(self, question, responses):
         """Обрабатывает результаты для этого типа вопроса"""
