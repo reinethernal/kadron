@@ -10,6 +10,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+import logging
 
 # Используем функции из db_manager вместо отсутствующего модуля базы данных
 from core.db_manager import (
@@ -20,6 +21,8 @@ from core.db_manager import (
 )
 from datetime import datetime
 from typing import List, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 
 async def get_surveys(user_id: Optional[int] = None) -> List[Dict]:
