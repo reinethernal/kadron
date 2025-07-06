@@ -83,10 +83,11 @@ class CaptchaPlugin:
             lambda c: c.data.startswith("captcha_")
         )
         
-        # 3) Удаляем сообщения, если капча не пройдена
+        # 3) Ограничиваем пользователей в группах, если капча не пройдена
         dp.message.register(
             self.check_access,
-            lambda msg: not self.is_access_granted(msg.from_user.id)
+            lambda msg: msg.chat.type in ["group", "supergroup"]
+            and not self.is_access_granted(msg.from_user.id)
         )
         
         # 4) Запуск короткого опроса после капчи
@@ -205,13 +206,22 @@ class CaptchaPlugin:
             await callback_query.answer("Неверно, попробуйте ещё раз!")
     
     async def check_access(self, message: Message):
-        """Удаляем сообщение, если капча не пройдена."""
-        try:
-            await message.delete()
-        except Exception as e:
-            logger.error(f"Не удалось удалить сообщение: {e}")
-        
+        """Предотвращаем отправку сообщений без прохождения капчи."""
+        if message.chat.type == "private":
+            return
+
         user_id = message.from_user.id
+
+        # Пытаемся повторно ограничить пользователя, если это не сделано
+        try:
+            await message.bot.restrict_chat_member(
+                chat_id=message.chat.id,
+                user_id=user_id,
+                permissions=ChatPermissions(can_send_messages=False),
+            )
+        except Exception as e:
+            logger.error(f"Не удалось ограничить пользователя {user_id}: {e}")
+
         if user_id in self.pending_captchas:
             builder = InlineKeyboardBuilder()
             builder.button(
@@ -222,7 +232,7 @@ class CaptchaPlugin:
             try:
                 await message.answer(
                     "❌ Вы не можете писать, пока не пройдёте капчу!",
-                    reply_markup=markup
+                    reply_markup=markup,
                 )
             except Exception as e:
                 logger.error(f"Ошибка отправки напоминания: {e}")
