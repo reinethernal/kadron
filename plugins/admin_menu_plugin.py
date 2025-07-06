@@ -5,9 +5,8 @@
 """
 
 import logging
-import os
-import re
 from dotenv import load_dotenv
+from utils.env_utils import parse_admin_ids
 from aiogram import Dispatcher, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
@@ -32,9 +31,8 @@ class AdminMenuPlugin:
     def __init__(self):
         self.name = "admin_menu_plugin"
         self.description = "Функциональность административного меню"
-        # Загружаем admin_ids из переменной окружения с помощью regex
-        ids = re.findall(r"\d+", os.getenv("ADMIN_IDS", ""))
-        self.admin_ids = [int(x) for x in ids]
+        # Загружаем admin_ids из переменной окружения
+        self.admin_ids = parse_admin_ids()
         logger.debug(f"Parsed admin_ids: {self.admin_ids}")
         # Экземпляры вспомогательных плагинов
         from plugins.survey_plugin import SurveyPlugin
