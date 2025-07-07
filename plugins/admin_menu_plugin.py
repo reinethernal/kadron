@@ -53,7 +53,9 @@ class AdminMenuPlugin:
         self.survey_plugin = self._get_or_create("survey_plugin", SurveyPlugin)
         self.export_plugin = self._get_or_create("export_plugin", ExportPlugin)
         self.test_mode_plugin = self._get_or_create("test_mode_plugin", TestModePlugin)
-        self.templates_plugin = self._get_or_create("survey_templates_plugin", SurveyTemplatesPlugin)
+        self.templates_plugin = self._get_or_create(
+            "survey_templates_plugin", SurveyTemplatesPlugin
+        )
         self.roles_plugin = self._get_or_create("roles_plugin", RolesPlugin)
 
     def _get_or_create(self, plugin_name: str, cls):
@@ -196,7 +198,7 @@ class AdminMenuPlugin:
                 if text:
                     buttons.append(KeyboardButton(text=text))
 
-        rows = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+        rows = [buttons[i : i + 2] for i in range(0, len(buttons), 2)]
         rows.append([KeyboardButton(text="🔙 Назад")])
 
         return {

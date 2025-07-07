@@ -1,9 +1,11 @@
 import importlib
 import asyncio
 
+
 class DummyUser:
     def __init__(self, id_):
         self.id = id_
+
 
 class DummyMessage:
     def __init__(self, text, user_id=1):
@@ -14,9 +16,11 @@ class DummyMessage:
     async def answer(self, text, **kwargs):
         self.responses.append(text)
 
+
 class DummyState:
     async def set_state(self, state):
         pass
+
 
 def test_admin_access_denied(monkeypatch):
     monkeypatch.setenv("ADMIN_IDS", "123")

@@ -13,7 +13,7 @@ from core.db_manager import get_all_groups
 
 from aiogram import Dispatcher, types, Bot
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext        # <-- Вместо dispatcher.FSMContext
+from aiogram.fsm.context import FSMContext  # <-- Вместо dispatcher.FSMContext
 from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.filters.state
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -23,22 +23,33 @@ try:
 except ImportError:
     # Для тестов, fallback
     class DummyStorage:
-        def get_survey(self, survey_id): return {}
-        def save_survey(self, survey_id, data): pass
-        def get_setting(self, key, default=None): return default
-        def set_setting(self, key, value): pass
+        def get_survey(self, survey_id):
+            return {}
+
+        def save_survey(self, survey_id, data):
+            pass
+
+        def get_setting(self, key, default=None):
+            return default
+
+        def set_setting(self, key, value):
+            pass
+
     storage = DummyStorage()
 
 logger = logging.getLogger(__name__)
 scheduler_instance = None
 
+
 class SchedulerStates(StatesGroup):
     """Состояния (States) для функционала планирования"""
+
     SELECTING_SURVEY = State()
     SELECTING_GROUPS = State()
     SELECTING_DATE = State()
     SELECTING_TIME = State()
     CONFIRMING = State()
+
 
 class SchedulerPlugin:
     """Плагин для планирования опросов и отправки сообщений по расписанию"""
@@ -59,58 +70,50 @@ class SchedulerPlugin:
         # Вместо dp.register_message_handler(...), используем dp.message.register(...)
         dp.message.register(
             self.cmd_schedule,
-            Command(commands=["schedule"])  # Разрешаем команду /schedule
+            Command(commands=["schedule"]),  # Разрешаем команду /schedule
         )
 
         # Вместо dp.register_callback_query_handler(...), используем dp.callback_query.register(...)
         # Дополнительно учитываем, что нам нужно вызывать этот хендлер в состоянии SchedulerStates.SELECTING_SURVEY
         dp.callback_query.register(
             self.handle_survey_selection,
-            lambda c: c.data.startswith('schedule_survey_'),
-            SchedulerStates.SELECTING_SURVEY
+            lambda c: c.data.startswith("schedule_survey_"),
+            SchedulerStates.SELECTING_SURVEY,
         )
 
-        dp.message.register(
-            self.process_group_input,
-            SchedulerStates.SELECTING_GROUPS
-        )
+        dp.message.register(self.process_group_input, SchedulerStates.SELECTING_GROUPS)
 
         # Хендлер на ввод даты (состояние SELECTING_DATE)
-        dp.message.register(
-            self.process_date_input,
-            SchedulerStates.SELECTING_DATE
-        )
+        dp.message.register(self.process_date_input, SchedulerStates.SELECTING_DATE)
 
         # Хендлер на ввод времени (состояние SELECTING_TIME)
-        dp.message.register(
-            self.process_time_input,
-            SchedulerStates.SELECTING_TIME
-        )
+        dp.message.register(self.process_time_input, SchedulerStates.SELECTING_TIME)
 
         # Хендлер на подтверждение планирования (callback) в состоянии CONFIRMING
         dp.callback_query.register(
             self.handle_confirmation,
-            lambda c: c.data.startswith('schedule_confirm_'),
-            SchedulerStates.CONFIRMING
+            lambda c: c.data.startswith("schedule_confirm_"),
+            SchedulerStates.CONFIRMING,
         )
 
         # Команда /scheduled (без конкретного состояния)
-        dp.message.register(
-            self.cmd_list_scheduled,
-            Command(commands=["scheduled"])
-        )
+        dp.message.register(self.cmd_list_scheduled, Command(commands=["scheduled"]))
 
         # Хендлер на отмену запланированного (любой стейт, или без стейта)
         dp.callback_query.register(
             self.handle_cancel_scheduled,
-            lambda c: c.data.startswith('cancel_scheduled_')
+            lambda c: c.data.startswith("cancel_scheduled_"),
         )
 
     def get_commands(self):
         """Возвращаем список команд, которые добавляет этот плагин (для /help и т.п.)"""
         return [
-            types.BotCommand(command="schedule", description="Запланировать отправку опроса"),
-            types.BotCommand(command="scheduled", description="Список запланированных опросов")
+            types.BotCommand(
+                command="schedule", description="Запланировать отправку опроса"
+            ),
+            types.BotCommand(
+                command="scheduled", description="Список запланированных опросов"
+            ),
         ]
 
     async def cmd_schedule(self, message: types.Message, state: FSMContext):
@@ -124,7 +127,7 @@ class SchedulerPlugin:
         user_surveys = {
             survey_id: s
             for survey_id, s in all_surveys.items()
-            if s.get('creator_id') == user_id and s.get('status') == 'active'
+            if s.get("creator_id") == user_id and s.get("status") == "active"
         }
 
         if not user_surveys:
@@ -134,24 +137,22 @@ class SchedulerPlugin:
         # Формируем клавиатуру со списком опросов
         builder = InlineKeyboardBuilder()
         for survey_id, survey in user_surveys.items():
-            btn_text = survey.get('title', 'Без названия')
-            builder.button(
-                text=btn_text,
-                callback_data=f"schedule_survey_{survey_id}"
-            )
+            btn_text = survey.get("title", "Без названия")
+            builder.button(text=btn_text, callback_data=f"schedule_survey_{survey_id}")
         builder.adjust(1)
         markup = builder.as_markup()
 
         await message.answer(
-            "Выберите опрос для планирования отправки:",
-            reply_markup=markup
+            "Выберите опрос для планирования отправки:", reply_markup=markup
         )
         # Устанавливаем состояние — ожидаем, что пользователь выберет опрос
         await state.set_state(SchedulerStates.SELECTING_SURVEY)
 
-    async def handle_survey_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def handle_survey_selection(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Обработка выбора опроса, который хотим запланировать"""
-        survey_id = callback_query.data.split('_')[2]
+        survey_id = callback_query.data.split("_")[2]
         survey = storage.get_survey(survey_id)
 
         if not survey:
@@ -180,15 +181,17 @@ class SchedulerPlugin:
         """Сохраняем выбранные группы и переходим к выбору даты"""
         ids = [int(x) for x in re.findall(r"\d+", message.text)]
         data = await state.get_data()
-        survey_id = data.get('selected_survey_id')
+        survey_id = data.get("selected_survey_id")
         if survey_id:
             survey = storage.get_survey(survey_id)
             if survey is not None:
-                survey['target_chats'] = ids
+                survey["target_chats"] = ids
                 storage.save_survey(survey_id, survey)
 
         await state.update_data(target_chats=ids)
-        await message.answer("Введите дату для отправки в формате ДД.ММ.ГГГГ (например, 31.12.2025):")
+        await message.answer(
+            "Введите дату для отправки в формате ДД.ММ.ГГГГ (например, 31.12.2025):"
+        )
         await state.set_state(SchedulerStates.SELECTING_DATE)
 
     async def process_date_input(self, message: types.Message, state: FSMContext):
@@ -196,7 +199,7 @@ class SchedulerPlugin:
         date_str = message.text.strip()
 
         try:
-            day, month, year = map(int, date_str.split('.'))
+            day, month, year = map(int, date_str.split("."))
             selected_date = datetime.date(year, month, day)
 
             # Дата должна быть в будущем
@@ -221,15 +224,15 @@ class SchedulerPlugin:
         time_str = message.text.strip()
 
         try:
-            hour, minute = map(int, time_str.split(':'))
+            hour, minute = map(int, time_str.split(":"))
             if not (0 <= hour < 24 and 0 <= minute < 60):
                 await message.answer("Часы: 0–23, минуты: 0–59. Повторите ввод:")
                 return
 
             # Получаем дату из стейта
             data = await state.get_data()
-            date_str = data.get('selected_date')
-            survey_id = data.get('selected_survey_id')
+            date_str = data.get("selected_date")
+            survey_id = data.get("selected_survey_id")
 
             if not date_str or not survey_id:
                 await message.answer("Произошла ошибка. Начните заново.")
@@ -238,8 +241,7 @@ class SchedulerPlugin:
 
             selected_date = datetime.date.fromisoformat(date_str)
             selected_datetime = datetime.datetime.combine(
-                selected_date,
-                datetime.time(hour, minute)
+                selected_date, datetime.time(hour, minute)
             )
 
             if selected_datetime <= datetime.datetime.now():
@@ -249,19 +251,15 @@ class SchedulerPlugin:
             # Сохраняем в стейт
             await state.update_data(
                 selected_time=f"{hour:02d}:{minute:02d}",
-                selected_datetime=selected_datetime.isoformat()
+                selected_datetime=selected_datetime.isoformat(),
             )
 
             # Предлагаем подтвердить
             builder = InlineKeyboardBuilder()
             builder.button(
-                text="✅ Подтвердить",
-                callback_data=f"schedule_confirm_yes_{survey_id}"
+                text="✅ Подтвердить", callback_data=f"schedule_confirm_yes_{survey_id}"
             )
-            builder.button(
-                text="❌ Отменить",
-                callback_data="schedule_confirm_no"
-            )
+            builder.button(text="❌ Отменить", callback_data="schedule_confirm_no")
             builder.adjust(2)
             markup = builder.as_markup()
 
@@ -271,7 +269,7 @@ class SchedulerPlugin:
                 f"Дата: {selected_date.strftime('%d.%m.%Y')}\n"
                 f"Время: {hour:02d}:{minute:02d}\n\n"
                 "Опрос будет отправлен автоматически в указанное время.",
-                reply_markup=markup
+                reply_markup=markup,
             )
             await state.set_state(SchedulerStates.CONFIRMING)
 
@@ -280,9 +278,11 @@ class SchedulerPlugin:
                 "Неверный формат времени. Используйте ЧЧ:ММ (например, 14:30)."
             )
 
-    async def handle_confirmation(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def handle_confirmation(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Подтверждаем или отменяем планирование"""
-        action = callback_query.data.split('_')[2]
+        action = callback_query.data.split("_")[2]
 
         if action == "no":
             await callback_query.message.edit_text("Планирование отменено.")
@@ -291,8 +291,8 @@ class SchedulerPlugin:
             return
 
         data = await state.get_data()
-        survey_id = data.get('selected_survey_id')
-        datetime_str = data.get('selected_datetime')
+        survey_id = data.get("selected_survey_id")
+        datetime_str = data.get("selected_datetime")
 
         if not survey_id or not datetime_str:
             await callback_query.message.edit_text("Ошибка. Начните заново.")
@@ -301,15 +301,17 @@ class SchedulerPlugin:
             return
 
         scheduled_datetime = datetime.datetime.fromisoformat(datetime_str)
-        scheduled_surveys = storage.get_setting('scheduled_surveys', [])
+        scheduled_surveys = storage.get_setting("scheduled_surveys", [])
 
-        scheduled_surveys.append({
-            'survey_id': survey_id,
-            'scheduled_time': datetime_str,
-            'created_by': callback_query.from_user.id,
-            'created_at': datetime.datetime.now().isoformat()
-        })
-        storage.set_setting('scheduled_surveys', scheduled_surveys)
+        scheduled_surveys.append(
+            {
+                "survey_id": survey_id,
+                "scheduled_time": datetime_str,
+                "created_by": callback_query.from_user.id,
+                "created_at": datetime.datetime.now().isoformat(),
+            }
+        )
+        storage.set_setting("scheduled_surveys", scheduled_surveys)
 
         # Создаём задачу на выполнение
         self._create_scheduled_task(survey_id, scheduled_datetime)
@@ -335,7 +337,7 @@ class SchedulerPlugin:
         survey = storage.get_survey(survey_id)
         if survey:
             try:
-                deadline = datetime.datetime.fromisoformat(survey.get('deadline'))
+                deadline = datetime.datetime.fromisoformat(survey.get("deadline"))
                 reminder_time = deadline - datetime.timedelta(minutes=10)
                 reminder_delta = (reminder_time - now).total_seconds()
                 if reminder_delta > 0:
@@ -344,7 +346,9 @@ class SchedulerPlugin:
                     )
                     self.reminder_tasks[survey_id] = reminder_task
             except Exception as e:
-                logger.error(f"Не удалось запланировать напоминание для опроса {survey_id}: {e}")
+                logger.error(
+                    f"Не удалось запланировать напоминание для опроса {survey_id}: {e}"
+                )
 
     async def _send_scheduled_survey(self, survey_id, delay_seconds):
         """Ждём delay_seconds, затем отправляем опрос"""
@@ -356,14 +360,16 @@ class SchedulerPlugin:
                 return
 
             # Помечаем опрос как активный, если он ещё не активен
-            if survey.get('status') != 'active':
-                survey['status'] = 'active'
+            if survey.get("status") != "active":
+                survey["status"] = "active"
                 storage.save_survey(survey_id, survey)
 
             # Берём список чатов, куда рассылать
-            target_chats = survey.get('target_chats', [])
+            target_chats = survey.get("target_chats", [])
             if not target_chats:
-                logger.warning(f"Нет целевых чатов для запланированного опроса {survey_id}")
+                logger.warning(
+                    f"Нет целевых чатов для запланированного опроса {survey_id}"
+                )
                 return
 
             # Используем сохранённый экземпляр бота
@@ -380,7 +386,9 @@ class SchedulerPlugin:
                             username = getattr(me, "username", "")
                         except Exception:
                             username = ""
-                    url_base = f"https://t.me/{username}" if username else "https://t.me"
+                    url_base = (
+                        f"https://t.me/{username}" if username else "https://t.me"
+                    )
                     url = f"{url_base}?start=survey_{survey_id}"
                     builder.button(
                         text="Пройти опрос",
@@ -390,20 +398,22 @@ class SchedulerPlugin:
                     msg = await bot.send_message(
                         chat_id,
                         f"📊 Новый опрос: {survey.get('title')}\n\n{survey.get('description', '')}",
-                        reply_markup=markup
+                        reply_markup=markup,
                     )
                     await self._try_pin(chat_id, msg.message_id)
                 except Exception as e:
                     logger.error(f"Не удалось отправить опрос в чат {chat_id}: {e}")
 
             # Удаляем запись о запланированном опросе, так как он уже отправлен
-            scheduled_surveys = storage.get_setting('scheduled_surveys', [])
-            scheduled_surveys = [s for s in scheduled_surveys if s.get('survey_id') != survey_id]
-            storage.set_setting('scheduled_surveys', scheduled_surveys)
+            scheduled_surveys = storage.get_setting("scheduled_surveys", [])
+            scheduled_surveys = [
+                s for s in scheduled_surveys if s.get("survey_id") != survey_id
+            ]
+            storage.set_setting("scheduled_surveys", scheduled_surveys)
 
             # Планируем закрытие опроса
             try:
-                deadline = datetime.datetime.fromisoformat(survey.get('deadline'))
+                deadline = datetime.datetime.fromisoformat(survey.get("deadline"))
                 close_delta = (deadline - datetime.datetime.now()).total_seconds()
                 if close_delta > 0:
                     close_task = asyncio.create_task(
@@ -411,7 +421,9 @@ class SchedulerPlugin:
                     )
                     self.close_tasks[survey_id] = close_task
             except Exception as e:
-                logger.error(f"Не удалось запланировать закрытие опроса {survey_id}: {e}")
+                logger.error(
+                    f"Не удалось запланировать закрытие опроса {survey_id}: {e}"
+                )
 
             logger.info(f"Запланированный опрос {survey_id} успешно отправлен")
 
@@ -430,17 +442,19 @@ class SchedulerPlugin:
                 return
 
             bot = self.bot
-            target_chats = survey.get('target_chats', [])
+            target_chats = survey.get("target_chats", [])
 
             # Рассылаем напоминания по чатам
             for chat_id in target_chats:
                 try:
                     await bot.send_message(
                         chat_id,
-                        f"⏰ Напоминание: опрос \"{survey.get('title')}\" будет закрыт через 10 минут!"
+                        f"⏰ Напоминание: опрос \"{survey.get('title')}\" будет закрыт через 10 минут!",
                     )
                 except Exception as e:
-                    logger.error(f"Не удалось отправить напоминание в чат {chat_id}: {e}")
+                    logger.error(
+                        f"Не удалось отправить напоминание в чат {chat_id}: {e}"
+                    )
 
         except asyncio.CancelledError:
             logger.info(f"Задача напоминания для опроса {survey_id} была отменена")
@@ -452,9 +466,9 @@ class SchedulerPlugin:
         try:
             await asyncio.sleep(delay_seconds)
             survey = storage.get_survey(survey_id)
-            if not survey or survey.get('status') != 'active':
+            if not survey or survey.get("status") != "active":
                 return
-            survey['status'] = 'closed'
+            survey["status"] = "closed"
             storage.save_survey(survey_id, survey)
             logger.info(f"Опрос {survey_id} закрыт по истечении срока")
         except asyncio.CancelledError:
@@ -467,9 +481,13 @@ class SchedulerPlugin:
         try:
             me = await self.bot.get_me()
             member = await self.bot.get_chat_member(chat_id, me.id)
-            can_pin = getattr(member, 'can_pin_messages', False) or member.status == 'creator'
+            can_pin = (
+                getattr(member, "can_pin_messages", False) or member.status == "creator"
+            )
             if can_pin:
-                await self.bot.pin_chat_message(chat_id=chat_id, message_id=message_id, disable_notification=False)
+                await self.bot.pin_chat_message(
+                    chat_id=chat_id, message_id=message_id, disable_notification=False
+                )
             else:
                 logger.warning(f"У бота нет прав закреплять сообщения в чате {chat_id}")
         except Exception as e:
@@ -479,12 +497,11 @@ class SchedulerPlugin:
         """Обработка команды /scheduled — список запланированных опросов для данного пользователя"""
         logger.debug(f"{message.text} from {message.from_user.id}")
         user_id = message.from_user.id
-        scheduled_surveys = storage.get_setting('scheduled_surveys', [])
+        scheduled_surveys = storage.get_setting("scheduled_surveys", [])
 
         # Оставляем только те, что созданы этим пользователем
         user_scheduled = [
-            s for s in scheduled_surveys
-            if s.get('created_by') == user_id
+            s for s in scheduled_surveys if s.get("created_by") == user_id
         ]
 
         if not user_scheduled:
@@ -495,17 +512,19 @@ class SchedulerPlugin:
         builder = InlineKeyboardBuilder()
 
         for i, scheduled in enumerate(user_scheduled):
-            sid = scheduled.get('survey_id')
+            sid = scheduled.get("survey_id")
             survey = storage.get_survey(sid)
             if not survey:
                 continue
 
-            scheduled_time = datetime.datetime.fromisoformat(scheduled.get('scheduled_time'))
+            scheduled_time = datetime.datetime.fromisoformat(
+                scheduled.get("scheduled_time")
+            )
             text += f"{i+1}. {survey.get('title')}\n"
             text += f"   📆 {scheduled_time.strftime('%d.%m.%Y %H:%M')}\n\n"
             builder.button(
                 text=f"❌ Отменить: {survey.get('title')}",
-                callback_data=f"cancel_scheduled_{sid}"
+                callback_data=f"cancel_scheduled_{sid}",
             )
 
         builder.adjust(1)
@@ -515,12 +534,15 @@ class SchedulerPlugin:
 
     async def handle_cancel_scheduled(self, callback_query: types.CallbackQuery):
         """Отмена запланированного опроса"""
-        survey_id = callback_query.data.split('_')[2]
+        survey_id = callback_query.data.split("_")[2]
         user_id = callback_query.from_user.id
 
-        scheduled_surveys = storage.get_setting('scheduled_surveys', [])
+        scheduled_surveys = storage.get_setting("scheduled_surveys", [])
         for i, scheduled in enumerate(scheduled_surveys):
-            if scheduled.get('survey_id') == survey_id and scheduled.get('created_by') == user_id:
+            if (
+                scheduled.get("survey_id") == survey_id
+                and scheduled.get("created_by") == user_id
+            ):
                 del scheduled_surveys[i]
 
                 # Отменяем задачи, если они существуют
@@ -532,8 +554,10 @@ class SchedulerPlugin:
                     self.reminder_tasks[survey_id].cancel()
                     del self.reminder_tasks[survey_id]
 
-                storage.set_setting('scheduled_surveys', scheduled_surveys)
-                await callback_query.message.edit_text("✅ Запланированный опрос отменен.")
+                storage.set_setting("scheduled_surveys", scheduled_surveys)
+                await callback_query.message.edit_text(
+                    "✅ Запланированный опрос отменен."
+                )
                 await callback_query.answer("Опрос отменен")
                 return
 
@@ -544,11 +568,13 @@ class SchedulerPlugin:
         logger.info("Плагин планировщика загружен")
 
         # Загружаем запланированные опросы из хранилища и восстанавливаем задачи
-        scheduled_surveys = storage.get_setting('scheduled_surveys', [])
+        scheduled_surveys = storage.get_setting("scheduled_surveys", [])
         for scheduled in scheduled_surveys:
             try:
-                sid = scheduled.get('survey_id')
-                scheduled_time = datetime.datetime.fromisoformat(scheduled.get('scheduled_time'))
+                sid = scheduled.get("survey_id")
+                scheduled_time = datetime.datetime.fromisoformat(
+                    scheduled.get("scheduled_time")
+                )
                 if scheduled_time > datetime.datetime.now():
                     self._create_scheduled_task(sid, scheduled_time)
             except Exception as e:

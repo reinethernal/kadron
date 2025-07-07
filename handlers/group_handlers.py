@@ -10,6 +10,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 router = Router()
 
+
 @router.chat_member()
 async def handle_chat_member_update(event: types.ChatMemberUpdated):
     """
@@ -25,6 +26,7 @@ async def handle_chat_member_update(event: types.ChatMemberUpdated):
     # Здесь можно добавить логику приветствия, капчи и т.д.
     await bot.send_message(chat.id, f"Привет, {user.full_name}!")
 
+
 @router.message(lambda msg: msg.chat.type in ["group", "supergroup"])
 async def handle_group_message(message: Message):
     """
@@ -32,6 +34,7 @@ async def handle_group_message(message: Message):
     """
     update_user_activity(message.from_user.id, message.from_user.username)
     add_group(message.chat.id, message.chat.title)
+
 
 def register_group_handlers(dp: Dispatcher):
     """

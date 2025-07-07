@@ -7,7 +7,6 @@
 
 import importlib
 import inspect
-import os
 import logging
 import sys
 from pathlib import Path
@@ -43,7 +42,9 @@ class PluginManager:
         plugin_files = [
             f.name
             for f in sorted(self.plugin_dir.iterdir())
-            if f.is_file() and f.name.endswith("_plugin.py") and not f.name.startswith("__")
+            if f.is_file()
+            and f.name.endswith("_plugin.py")
+            and not f.name.startswith("__")
         ]
 
         # Загружаем admin_menu_plugin последним, т.к. он зависит от других
