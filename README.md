@@ -69,9 +69,7 @@ PLUGIN_DIR=/path/to/plugins python /absolute/path/to/main.py
 
 Команду `/admin` нужно отправить боту в Telegram, а не вводить в терминале.
 
-Административные функции реализованы плагином `admin_menu_plugin`. Файл
-`handlers/admin_handlers.py` больше не используется и оставлен только для
-истории.
+Административные функции реализованы плагином `admin_menu_plugin`.
 
 ## Запуск тестов
 
