@@ -8,7 +8,7 @@ import copy
 
 # Импорт хранилища
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except ImportError:
     class DummyStorage:
         def get_survey(self, survey_id): return {}

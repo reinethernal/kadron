@@ -19,7 +19,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Если используем собственное хранилище (storage_plugin)
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except ImportError:
     # Для тестов, fallback
     class DummyStorage:

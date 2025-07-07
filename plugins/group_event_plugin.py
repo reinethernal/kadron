@@ -17,7 +17,7 @@ from core.db_manager import (
 from dotenv import load_dotenv
 
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except ImportError:
     class DummyStorage:
         def get_setting(self, key, default=None):

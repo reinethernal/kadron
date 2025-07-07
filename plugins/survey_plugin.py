@@ -17,7 +17,7 @@ from core.db_manager import get_all_groups
 
 # Импортируем модуль хранилища
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except ImportError:
     # Запасной вариант для тестирования
     class DummyStorage:
@@ -575,7 +575,7 @@ class SurveyPlugin:
                 })
                 storage.set_setting('scheduled_surveys', scheduled_surveys)
                 try:
-                    from plugins import scheduler_plugin
+                    from . import scheduler_plugin
                     if getattr(scheduler_plugin, 'scheduler_instance', None):
                         scheduler_plugin.scheduler_instance._create_scheduled_task(
                             survey_id,

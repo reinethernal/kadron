@@ -2,6 +2,7 @@ import asyncio
 from pathlib import Path
 import sys
 import os
+import shutil
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -74,3 +75,34 @@ def test_plugins_load_from_env_dir(tmp_path, monkeypatch):
     asyncio.run(pm.load_plugins())
 
     assert 'ext_plugin' in pm.plugins
+
+
+def test_builtin_plugins_load_from_custom_package(tmp_path, monkeypatch):
+    src_dir = Path(__file__).resolve().parents[1] / 'plugins'
+    pkg_dir = tmp_path / 'ext_plugins'
+    shutil.copytree(src_dir, pkg_dir)
+    monkeypatch.setenv('PLUGIN_DIR', str(pkg_dir))
+    monkeypatch.setenv('ENABLE_INACTIVE_CLEANUP', 'False')
+
+    class DummyHandler:
+        def __call__(self, *args, **kwargs):
+            def decorator(func):
+                return func
+            return decorator
+        register = __call__
+
+    class DummyDispatcher:
+        def __init__(self):
+            self.message = DummyHandler()
+            self.callback_query = DummyHandler()
+            self.chat_member = DummyHandler()
+
+    monkeypatch.setattr(aiogram, 'Dispatcher', DummyDispatcher, raising=False)
+
+    dp = aiogram.Dispatcher()
+    bot = DummyBot()
+    pm = PluginManager(dp, bot, plugin_dir=os.getenv('PLUGIN_DIR'))
+
+    asyncio.run(pm.load_plugins())
+
+    assert 'admin_menu_plugin' in pm.plugins
