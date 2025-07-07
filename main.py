@@ -48,6 +48,9 @@ if not ADMIN_IDS:
         "ADMIN_IDS не задан – команда /admin будет недоступна"
     )
 
+# Позволяет задать альтернативный каталог с плагинами
+PLUGIN_DIR = os.getenv("PLUGIN_DIR")
+
 # Логгер приложения
 logger = logging.getLogger(__name__)
 logger.debug(f"ADMIN_IDS parsed: {ADMIN_IDS}")
@@ -65,7 +68,7 @@ async def main():
     dp = Dispatcher()
 
     # Инициализация менеджера плагинов
-    plugin_manager = PluginManager(dp, bot)
+    plugin_manager = PluginManager(dp, bot, plugin_dir=PLUGIN_DIR)
 
     # Загружаем плагины
     await plugin_manager.load_plugins()
