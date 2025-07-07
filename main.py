@@ -4,7 +4,9 @@ import asyncio
 import logging
 import os
 
+from aiogram import __version__ as aiogram_version
 from aiogram import Dispatcher
+from packaging.version import parse as parse_version
 from utils.logging_utils import configure_logging
 
 # Здесь пытаемся импортировать DefaultBotProperties, если его нет – игнорируем
@@ -12,6 +14,7 @@ try:
     from aiogram.client.bot import Bot, DefaultBotProperties
 except ImportError:
     from aiogram.client.bot import Bot
+
     DefaultBotProperties = None
     logging.warning(
         "DefaultBotProperties not found – bot will be created without parse_mode."
@@ -25,18 +28,13 @@ from handlers.view_surveys_handler import register_view_surveys_handler
 
 configure_logging()
 
-from aiogram import __version__ as aiogram_version
-from packaging.version import parse as parse_version
-
 if parse_version(aiogram_version).major != 3:
     raise RuntimeError(
         "Kadron requires aiogram 3.x. Install dependencies via pip install -r requirements.txt."
     )
 
 if not os.path.exists(".env"):
-    logging.warning(
-        "Файл .env не найден; переменные окружения не загружены"
-    )
+    logging.warning("Файл .env не найден; переменные окружения не загружены")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
@@ -44,9 +42,7 @@ if not BOT_TOKEN:
 
 ADMIN_IDS = os.getenv("ADMIN_IDS", "")
 if not ADMIN_IDS:
-    logging.warning(
-        "ADMIN_IDS не задан – команда /admin будет недоступна"
-    )
+    logging.warning("ADMIN_IDS не задан – команда /admin будет недоступна")
 
 # Позволяет задать альтернативный каталог с плагинами
 PLUGIN_DIR = os.getenv("PLUGIN_DIR")
@@ -54,6 +50,7 @@ PLUGIN_DIR = os.getenv("PLUGIN_DIR")
 # Логгер приложения
 logger = logging.getLogger(__name__)
 logger.debug(f"ADMIN_IDS parsed: {ADMIN_IDS}")
+
 
 async def main():
     # Инициализация БД
@@ -89,6 +86,7 @@ async def main():
         await dp.start_polling(bot, allowed_updates=allowed_updates)
     finally:
         await bot.session.close()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

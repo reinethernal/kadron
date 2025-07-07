@@ -52,12 +52,8 @@ class SurveyTemplatesPlugin:
             types.BotCommand(
                 command="save_template", description="Создать шаблон из опроса"
             ),
-            types.BotCommand(
-                command="list_templates", description="Список шаблонов"
-            ),
-            types.BotCommand(
-                command="delete_template", description="Удалить шаблон"
-            ),
+            types.BotCommand(command="list_templates", description="Список шаблонов"),
+            types.BotCommand(command="delete_template", description="Удалить шаблон"),
             types.BotCommand(
                 command="use_template", description="Новый опрос из шаблона"
             ),

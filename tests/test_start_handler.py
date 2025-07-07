@@ -1,12 +1,14 @@
 import importlib
 import asyncio
 
+
 class DummyUser:
     def __init__(self, id_=1, username="user"):
         self.id = id_
         self.first_name = "F"
         self.last_name = "L"
         self.username = username
+
 
 class DummyMessage:
     def __init__(self, text):
@@ -16,6 +18,7 @@ class DummyMessage:
 
     async def answer(self, text, **kwargs):
         self.responses.append(text)
+
 
 class DummyState:
     def __init__(self):
@@ -34,6 +37,7 @@ class DummyState:
     async def clear(self):
         self.data.clear()
         self.state = None
+
 
 class DummyBot:
     def __init__(self):

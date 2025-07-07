@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 import sys
 
+
 def test_add_and_get_responses(tmp_path, monkeypatch):
     db_path = tmp_path / "test.db"
     monkeypatch.setenv("DATABASE", str(db_path))

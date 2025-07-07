@@ -9,4 +9,3 @@ def configure_logging():
     level_name = os.getenv("LOGGING_LEVEL", "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)
     logging.basicConfig(level=level, force=True)
-

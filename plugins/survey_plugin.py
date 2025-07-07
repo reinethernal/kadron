@@ -21,17 +21,34 @@ try:
 except ImportError:
     # Запасной вариант для тестирования
     class DummyStorage:
-        def get_survey(self, survey_id): return {}
-        def save_survey(self, survey_id, data): pass
-        def get_all_surveys(self): return {}
-        def delete_survey(self, survey_id): pass
-        def get_user_state(self, user_id): return {}
-        def set_user_state(self, user_id, key, value): pass
-        def get_setting(self, key, default=None): return default
-        def set_setting(self, key, value): pass
+        def get_survey(self, survey_id):
+            return {}
+
+        def save_survey(self, survey_id, data):
+            pass
+
+        def get_all_surveys(self):
+            return {}
+
+        def delete_survey(self, survey_id):
+            pass
+
+        def get_user_state(self, user_id):
+            return {}
+
+        def set_user_state(self, user_id, key, value):
+            pass
+
+        def get_setting(self, key, default=None):
+            return default
+
+        def set_setting(self, key, value):
+            pass
+
     storage = DummyStorage()
 
 logger = logging.getLogger(__name__)
+
 
 async def _state_info(state: FSMContext):
     """Safely get current state name and data from FSM context."""
@@ -47,8 +64,10 @@ async def _state_info(state: FSMContext):
         data = getattr(state, "data", {})
     return state_name, data
 
+
 class SurveyStates(StatesGroup):
     """Состояния для создания и управления опросами"""
+
     CREATING = State()
     TITLE = State()
     DESCRIPTION = State()
@@ -65,6 +84,7 @@ class SurveyStates(StatesGroup):
     EDITING = State()
     EDITING_QUESTION = State()
 
+
 class SurveyPlugin:
     """Плагин для создания и управления опросами"""
 
@@ -76,64 +96,47 @@ class SurveyPlugin:
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует все обработчики для плагина опросов"""
         # Обработчики создания опроса
+        dp.message.register(self.cmd_create_survey, Command(commands=["create_survey"]))
         dp.message.register(
-            self.cmd_create_survey,
-            Command(commands=["create_survey"])
+            self.cmd_create_survey, lambda msg: msg.text == "Создать опрос"
         )
+        dp.message.register(self.process_title, StateFilter(SurveyStates.TITLE))
         dp.message.register(
-            self.cmd_create_survey,
-            lambda msg: msg.text == "Создать опрос"
-        )
-        dp.message.register(
-            self.process_title,
-            StateFilter(SurveyStates.TITLE)
-        )
-        dp.message.register(
-            self.process_description,
-            StateFilter(SurveyStates.DESCRIPTION)
+            self.process_description, StateFilter(SurveyStates.DESCRIPTION)
         )
         dp.callback_query.register(
             self.process_question_type_selection,
-            lambda c: c.data.startswith('type_'),
-            StateFilter(SurveyStates.QUESTION_TYPE)
+            lambda c: c.data.startswith("type_"),
+            StateFilter(SurveyStates.QUESTION_TYPE),
         )
         dp.message.register(
-            self.process_question_text,
-            StateFilter(SurveyStates.QUESTION_TEXT)
+            self.process_question_text, StateFilter(SurveyStates.QUESTION_TEXT)
         )
         dp.message.register(
-            self.process_options,
-            StateFilter(SurveyStates.ADDING_OPTIONS)
+            self.process_options, StateFilter(SurveyStates.ADDING_OPTIONS)
         )
-        dp.message.register(
-            self.process_deadline,
-            StateFilter(SurveyStates.DEADLINE)
-        )
+        dp.message.register(self.process_deadline, StateFilter(SurveyStates.DEADLINE))
         dp.callback_query.register(
             self.process_anonymity_selection,
-            lambda c: c.data.startswith('anon_'),
-            StateFilter(SurveyStates.ANONYMITY)
+            lambda c: c.data.startswith("anon_"),
+            StateFilter(SurveyStates.ANONYMITY),
         )
         dp.message.register(
-            self.process_target_groups,
-            StateFilter(SurveyStates.TARGET_GROUPS)
+            self.process_target_groups, StateFilter(SurveyStates.TARGET_GROUPS)
         )
         dp.callback_query.register(
             self.process_scheduling_selection,
-            lambda c: c.data.startswith('schedule_'),
-            StateFilter(SurveyStates.SCHEDULING)
+            lambda c: c.data.startswith("schedule_"),
+            StateFilter(SurveyStates.SCHEDULING),
         )
         dp.message.register(
-            self.process_schedule_date,
-            StateFilter(SurveyStates.SCHEDULE_DATE)
+            self.process_schedule_date, StateFilter(SurveyStates.SCHEDULE_DATE)
         )
         dp.message.register(
-            self.process_schedule_time,
-            StateFilter(SurveyStates.SCHEDULE_TIME)
+            self.process_schedule_time, StateFilter(SurveyStates.SCHEDULE_TIME)
         )
         dp.message.register(
-            self.process_confirmation,
-            StateFilter(SurveyStates.CONFIRMATION)
+            self.process_confirmation, StateFilter(SurveyStates.CONFIRMATION)
         )
         # Дополнительные команды во время ввода вопросов
         dp.message.register(
@@ -156,35 +159,35 @@ class SurveyPlugin:
         )
 
         # Обработчики управления опросами
-        dp.message.register(
-            self.cmd_view_surveys,
-            Command(commands=["view_surveys"])
-        )
-        dp.message.register(
-            self.cmd_view_surveys,
-            lambda msg: msg.text == "Мои опросы"
-        )
+        dp.message.register(self.cmd_view_surveys, Command(commands=["view_surveys"]))
+        dp.message.register(self.cmd_view_surveys, lambda msg: msg.text == "Мои опросы")
         dp.callback_query.register(
-            self.process_survey_action,
-            lambda c: c.data.startswith('survey_')
+            self.process_survey_action, lambda c: c.data.startswith("survey_")
         )
         dp.callback_query.register(
             self.process_edit_question,
-            lambda c: c.data.startswith('edit_q_'),
-            StateFilter(SurveyStates.EDITING)
+            lambda c: c.data.startswith("edit_q_"),
+            StateFilter(SurveyStates.EDITING),
         )
         dp.message.register(
-            self.process_edited_question,
-            StateFilter(SurveyStates.EDITING_QUESTION)
+            self.process_edited_question, StateFilter(SurveyStates.EDITING_QUESTION)
         )
 
     def get_commands(self):
         """Возвращает список команд, предоставляемых плагином"""
         return [
-            types.BotCommand(command="create_survey", description="Создать новый опрос"),
-            types.BotCommand(command="view_surveys", description="Просмотреть мои опросы"),
-            types.BotCommand(command="finish_questions", description="Завершить ввод вопросов"),
-            types.BotCommand(command="questions_count", description="Сколько вопросов добавлено")
+            types.BotCommand(
+                command="create_survey", description="Создать новый опрос"
+            ),
+            types.BotCommand(
+                command="view_surveys", description="Просмотреть мои опросы"
+            ),
+            types.BotCommand(
+                command="finish_questions", description="Завершить ввод вопросов"
+            ),
+            types.BotCommand(
+                command="questions_count", description="Сколько вопросов добавлено"
+            ),
         ]
 
     async def cmd_create_survey(self, message: types.Message, state: FSMContext):
@@ -238,14 +241,16 @@ class SurveyPlugin:
             reply_markup=markup,
         )
 
-    async def process_question_type_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def process_question_type_selection(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Обрабатывает выбор типа вопроса"""
-        question_type = callback_query.data.split('_')[1]
+        question_type = callback_query.data.split("_")[1]
 
         question_types = {
             "single": "одиночный выбор",
             "multiple": "множественный выбор",
-            "text": "текстовый ответ"
+            "text": "текстовый ответ",
         }
 
         if question_type in question_types:
@@ -269,7 +274,7 @@ class SurveyPlugin:
         """Обрабатывает ввод даты от пользователя"""
         date_str = message.text.strip()
         try:
-            day, month, year = map(int, date_str.split('.'))
+            day, month, year = map(int, date_str.split("."))
             selected_date = datetime(year, month, day)
             if selected_date.date() < datetime.now().date():
                 await message.answer("Дата должна быть в будущем. Введите ещё раз:")
@@ -291,12 +296,12 @@ class SurveyPlugin:
         """Обрабатывает ввод времени от пользователя"""
         time_str = message.text.strip()
         try:
-            hour, minute = map(int, time_str.split(':'))
+            hour, minute = map(int, time_str.split(":"))
             if not (0 <= hour < 24 and 0 <= minute < 60):
                 await message.answer("Часы 0-23, минуты 0-59. Повторите ввод:")
                 return
             data = await state.get_data()
-            date_iso = data.get('scheduled_date')
+            date_iso = data.get("scheduled_date")
             if not date_iso:
                 await message.answer("Произошла ошибка. Попробуйте заново.")
                 await state.clear()
@@ -316,7 +321,7 @@ class SurveyPlugin:
                 data_dump,
             )
 
-            data.update({'scheduled_datetime': send_datetime.isoformat()})
+            data.update({"scheduled_datetime": send_datetime.isoformat()})
             summary = self._generate_survey_summary(data)
             await message.answer(
                 f"{summary}\n\nДля подтверждения создания опроса введите 'Подтвердить':"
@@ -329,7 +334,7 @@ class SurveyPlugin:
         await state.update_data(current_question_text=message.text)
         data = await state.get_data()
 
-        q_type = data.get('current_question_type')
+        q_type = data.get("current_question_type")
 
         if q_type in ["одиночный выбор", "множественный выбор"]:
             await state.set_state(SurveyStates.ADDING_OPTIONS)
@@ -344,14 +349,21 @@ class SurveyPlugin:
                 "Введите варианты ответов, каждый с новой строки.\nВведите 'Готово', когда закончите:"
             )
         else:
-            questions = data.get('questions', [])
-            questions.append({
-                'id': str(uuid.uuid4()),
-                'text': message.text,
-                'type': q_type,
-                'options': []
-            })
-            await state.update_data(questions=questions, current_question_text=None, current_question_type=None, options=[])
+            questions = data.get("questions", [])
+            questions.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "text": message.text,
+                    "type": q_type,
+                    "options": [],
+                }
+            )
+            await state.update_data(
+                questions=questions,
+                current_question_text=None,
+                current_question_type=None,
+                options=[],
+            )
 
             await state.set_state(SurveyStates.QUESTION_TYPE)
             state_name, data_dump = await _state_info(state)
@@ -377,17 +389,21 @@ class SurveyPlugin:
         """Обрабатывает ввод вариантов ответов"""
         if message.text.lower() == "готово":
             data = await state.get_data()
-            if 'options' not in data or not data['options']:
-                await message.answer("Вы не добавили ни одного варианта ответа. Пожалуйста, введите варианты:")
+            if "options" not in data or not data["options"]:
+                await message.answer(
+                    "Вы не добавили ни одного варианта ответа. Пожалуйста, введите варианты:"
+                )
                 return
 
-            questions = data.get('questions', [])
-            questions.append({
-                'id': str(uuid.uuid4()),
-                'text': data['current_question_text'],
-                'type': data['current_question_type'],
-                'options': data['options'],
-            })
+            questions = data.get("questions", [])
+            questions.append(
+                {
+                    "id": str(uuid.uuid4()),
+                    "text": data["current_question_text"],
+                    "type": data["current_question_type"],
+                    "options": data["options"],
+                }
+            )
             await state.update_data(
                 questions=questions,
                 options=[],
@@ -414,9 +430,9 @@ class SurveyPlugin:
                 reply_markup=markup,
             )
         else:
-            options = message.text.split('\n')
+            options = message.text.split("\n")
             data = await state.get_data()
-            updated_options = data.get('options', [])
+            updated_options = data.get("options", [])
             updated_options.extend(options)
             await state.update_data(options=updated_options)
             state_name, data_dump = await _state_info(state)
@@ -426,7 +442,9 @@ class SurveyPlugin:
                 state_name,
                 data_dump,
             )
-            await message.answer(f"Добавлено {len(options)} вариантов. Продолжайте добавлять или введите 'Готово':")
+            await message.answer(
+                f"Добавлено {len(options)} вариантов. Продолжайте добавлять или введите 'Готово':"
+            )
 
     async def process_deadline(self, message: types.Message, state: FSMContext):
         """Обрабатывает ввод срока действия опроса"""
@@ -456,9 +474,11 @@ class SurveyPlugin:
         except ValueError:
             await message.answer("Пожалуйста, введите число часов:")
 
-    async def process_anonymity_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def process_anonymity_selection(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Обрабатывает выбор анонимности опроса"""
-        is_anonymous = callback_query.data.split('_')[1] == "yes"
+        is_anonymous = callback_query.data.split("_")[1] == "yes"
         await state.update_data(is_anonymous=is_anonymous)
         groups = get_all_groups()
         text = "Выберите группы для отправки (ID через пробел):\n"
@@ -502,9 +522,11 @@ class SurveyPlugin:
         )
         await message.answer("Когда отправить опрос?", reply_markup=builder.as_markup())
 
-    async def process_scheduling_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def process_scheduling_selection(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Обрабатывает выбор способа отправки опроса (немедленно или с планированием)"""
-        schedule_type = callback_query.data.split('_')[1]
+        schedule_type = callback_query.data.split("_")[1]
 
         if schedule_type == "now":
             await state.update_data(scheduled=False)
@@ -545,41 +567,44 @@ class SurveyPlugin:
             data = await state.get_data()
             survey_id = str(uuid.uuid4())
             survey = {
-                'id': survey_id,
-                'title': data['title'],
-                'description': data['description'],
-                'creator_id': data['creator_id'],
-                'created_at': datetime.now().isoformat(),
-                'deadline': data['deadline'],
-                'is_anonymous': data.get('is_anonymous', False),
-                'questions': data.get('questions', []),
-                'responses': [],
-                'target_chats': data.get('target_chats', [])
+                "id": survey_id,
+                "title": data["title"],
+                "description": data["description"],
+                "creator_id": data["creator_id"],
+                "created_at": datetime.now().isoformat(),
+                "deadline": data["deadline"],
+                "is_anonymous": data.get("is_anonymous", False),
+                "questions": data.get("questions", []),
+                "responses": [],
+                "target_chats": data.get("target_chats", []),
             }
 
-            if data.get('scheduled'):
-                survey['status'] = 'scheduled'
-                survey['scheduled_time'] = data.get('scheduled_datetime')
+            if data.get("scheduled"):
+                survey["status"] = "scheduled"
+                survey["scheduled_time"] = data.get("scheduled_datetime")
             else:
-                survey['status'] = 'active'
+                survey["status"] = "active"
 
             storage.save_survey(survey_id, survey)
 
-            if data.get('scheduled'):
-                scheduled_surveys = storage.get_setting('scheduled_surveys', [])
-                scheduled_surveys.append({
-                    'survey_id': survey_id,
-                    'scheduled_time': data['scheduled_datetime'],
-                    'created_by': data['creator_id'],
-                    'created_at': datetime.now().isoformat()
-                })
-                storage.set_setting('scheduled_surveys', scheduled_surveys)
+            if data.get("scheduled"):
+                scheduled_surveys = storage.get_setting("scheduled_surveys", [])
+                scheduled_surveys.append(
+                    {
+                        "survey_id": survey_id,
+                        "scheduled_time": data["scheduled_datetime"],
+                        "created_by": data["creator_id"],
+                        "created_at": datetime.now().isoformat(),
+                    }
+                )
+                storage.set_setting("scheduled_surveys", scheduled_surveys)
                 try:
                     from . import scheduler_plugin
-                    if getattr(scheduler_plugin, 'scheduler_instance', None):
+
+                    if getattr(scheduler_plugin, "scheduler_instance", None):
                         scheduler_plugin.scheduler_instance._create_scheduled_task(
                             survey_id,
-                            datetime.fromisoformat(data['scheduled_datetime'])
+                            datetime.fromisoformat(data["scheduled_datetime"]),
                         )
                 except Exception:
                     pass
@@ -596,13 +621,15 @@ class SurveyPlugin:
             )
             await message.answer(f"✅ Опрос '{data['title']}' успешно создан!")
         else:
-            await message.answer("Для подтверждения создания опроса введите 'Подтвердить':")
+            await message.answer(
+                "Для подтверждения создания опроса введите 'Подтвердить':"
+            )
 
     async def cmd_finish_questions(self, message: types.Message, state: FSMContext):
         """Завершает ввод вопросов и переходит к указанию срока"""
         logger.debug(f"{message.text} from {message.from_user.id}")
         data = await state.get_data()
-        if not data.get('questions'):
+        if not data.get("questions"):
             await message.answer("Вы не добавили ни одного вопроса.")
             return
 
@@ -625,7 +652,7 @@ class SurveyPlugin:
             *(await _state_info(state)),
         )
         data = await state.get_data()
-        count = len(data.get('questions', []))
+        count = len(data.get("questions", []))
         await message.answer(f"Количество добавленных вопросов: {count}")
 
     async def cmd_view_surveys(self, message: types.Message, state: FSMContext):
@@ -638,38 +665,46 @@ class SurveyPlugin:
         )
         user_id = message.from_user.id
         surveys = storage.get_all_surveys()
-        user_surveys = {k: v for k, v in surveys.items() if v.get('creator_id') == user_id}
+        user_surveys = {
+            k: v for k, v in surveys.items() if v.get("creator_id") == user_id
+        }
 
         if not user_surveys:
             await message.answer("У вас пока нет созданных опросов.")
             return
 
         for survey_id, survey in user_surveys.items():
-            if survey['status'] == 'active':
+            if survey["status"] == "active":
                 status = "Активен"
-            elif survey['status'] == 'scheduled':
+            elif survey["status"] == "scheduled":
                 status = "Запланирован"
             else:
                 status = "Завершен"
-            deadline = datetime.fromisoformat(survey['deadline'])
+            deadline = datetime.fromisoformat(survey["deadline"])
             remaining = (deadline - datetime.now()).total_seconds() / 3600
 
             builder = InlineKeyboardBuilder()
-            builder.button(text="Редактировать", callback_data=f"survey_edit_{survey_id}")
+            builder.button(
+                text="Редактировать", callback_data=f"survey_edit_{survey_id}"
+            )
             builder.button(text="Удалить", callback_data=f"survey_delete_{survey_id}")
-            builder.button(text="Результаты", callback_data=f"survey_results_{survey_id}")
+            builder.button(
+                text="Результаты", callback_data=f"survey_results_{survey_id}"
+            )
             builder.adjust(2)
             markup = builder.as_markup()
 
             await message.answer(
                 f"📊 <b>{survey['title']}</b>\nОписание: {survey['description']}\nСтатус: {status}\nОсталось: {int(remaining)} часов\nВопросов: {len(survey['questions'])}\nОтветов: {len(survey['responses'])}",
                 reply_markup=markup,
-                parse_mode="HTML"
+                parse_mode="HTML",
             )
 
-    async def process_survey_action(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def process_survey_action(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Обрабатывает действия с опросом (редактирование, удаление, просмотр результатов)"""
-        parts = callback_query.data.split('_')
+        parts = callback_query.data.split("_")
         action = parts[1]
         survey_id = parts[2]
 
@@ -690,21 +725,20 @@ class SurveyPlugin:
             )
 
             builder = InlineKeyboardBuilder()
-            for i, question in enumerate(survey['questions']):
-                question_text = question['text']
+            for i, question in enumerate(survey["questions"]):
+                question_text = question["text"]
                 if len(question_text) > 30:
                     question_text = question_text[:30] + "..."
                 builder.button(
                     text=f"Вопрос {i+1}: {question_text}",
-                    callback_data=f"edit_q_{question['id']}"
+                    callback_data=f"edit_q_{question['id']}",
                 )
             builder.button(text="Отмена", callback_data="edit_cancel")
             builder.adjust(1)
             markup = builder.as_markup()
 
             await callback_query.message.answer(
-                "Выберите вопрос для редактирования:",
-                reply_markup=markup
+                "Выберите вопрос для редактирования:", reply_markup=markup
             )
 
         elif action == "delete":
@@ -721,19 +755,23 @@ class SurveyPlugin:
 
         await callback_query.answer()
 
-    async def process_edit_question(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def process_edit_question(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Обрабатывает выбор вопроса для редактирования"""
         if callback_query.data == "edit_cancel":
             await state.clear()
             await callback_query.message.answer("Редактирование отменено")
             return
 
-        question_id = callback_query.data.split('_')[2]
+        question_id = callback_query.data.split("_")[2]
         data = await state.get_data()
-        survey_id = data['editing_survey_id']
+        survey_id = data["editing_survey_id"]
         survey = storage.get_survey(survey_id)
 
-        question = next((q for q in survey['questions'] if q['id'] == question_id), None)
+        question = next(
+            (q for q in survey["questions"] if q["id"] == question_id), None
+        )
         if not question:
             await callback_query.answer("Вопрос не найден")
             return
@@ -757,8 +795,8 @@ class SurveyPlugin:
     async def process_edited_question(self, message: types.Message, state: FSMContext):
         """Обрабатывает изменённый текст вопроса"""
         data = await state.get_data()
-        survey_id = data['editing_survey_id']
-        question_id = data['editing_question_id']
+        survey_id = data["editing_survey_id"]
+        question_id = data["editing_question_id"]
 
         survey = storage.get_survey(survey_id)
         if not survey:
@@ -766,9 +804,9 @@ class SurveyPlugin:
             await state.clear()
             return
 
-        for question in survey['questions']:
-            if question['id'] == question_id:
-                question['text'] = message.text
+        for question in survey["questions"]:
+            if question["id"] == question_id:
+                question["text"] = message.text
                 break
 
         storage.save_survey(survey_id, survey)
@@ -787,23 +825,23 @@ class SurveyPlugin:
         summary = f"<b>Опрос: {data['title']}</b>\n"
         summary += f"Описание: {data['description']}\n\n"
 
-        for idx, question in enumerate(data.get('questions', []), 1):
+        for idx, question in enumerate(data.get("questions", []), 1):
             summary += f"{idx}. {question['text']} ({question['type']})\n"
-            if question['type'] in ["одиночный выбор", "множественный выбор"]:
-                for i, option in enumerate(question.get('options', []), 1):
+            if question["type"] in ["одиночный выбор", "множественный выбор"]:
+                for i, option in enumerate(question.get("options", []), 1):
                     summary += f"   {i}. {option}\n"
             summary += "\n"
 
-        deadline = datetime.fromisoformat(data['deadline'])
+        deadline = datetime.fromisoformat(data["deadline"])
         summary += f"\nСрок действия: до {deadline.strftime('%d.%m.%Y %H:%M')}\n"
         summary += f"Анонимный: {'Да' if data.get('is_anonymous', False) else 'Нет'}"
 
-        if data.get('target_chats'):
-            chats = ', '.join(str(cid) for cid in data['target_chats'])
+        if data.get("target_chats"):
+            chats = ", ".join(str(cid) for cid in data["target_chats"])
             summary += f"\nГруппы: {chats}"
 
-        if data.get('scheduled') and data.get('scheduled_datetime'):
-            dt = datetime.fromisoformat(data['scheduled_datetime'])
+        if data.get("scheduled") and data.get("scheduled_datetime"):
+            dt = datetime.fromisoformat(data["scheduled_datetime"])
             summary += f"\nЗапланировано на: {dt.strftime('%d.%m.%Y %H:%M')}"
 
         return summary
@@ -812,23 +850,27 @@ class SurveyPlugin:
         """Генерирует отчёт по результатам опроса"""
         results = f"<b>Результаты опроса: {survey['title']}</b>\n\n"
 
-        for question in survey['questions']:
+        for question in survey["questions"]:
             results += f"<b>Вопрос:</b> {question['text']}\n"
-            if question['type'] == "текстовый ответ":
-                text_responses = [r['answer'] for r in survey['responses'] if r['question_id'] == question['id']]
+            if question["type"] == "текстовый ответ":
+                text_responses = [
+                    r["answer"]
+                    for r in survey["responses"]
+                    if r["question_id"] == question["id"]
+                ]
                 results += f"<b>Ответы ({len(text_responses)}):</b>\n"
                 for i, response in enumerate(text_responses[:5]):
                     results += f"{i+1}. {response}\n"
                 if len(text_responses) > 5:
                     results += f"...и еще {len(text_responses) - 5} ответов\n"
             else:
-                options = question['options']
+                options = question["options"]
                 counts = [0] * len(options)
                 other = 0
-                for response in survey['responses']:
-                    if response['question_id'] == question['id']:
-                        ans = response['answer']
-                        if question['type'] == "одиночный выбор":
+                for response in survey["responses"]:
+                    if response["question_id"] == question["id"]:
+                        ans = response["answer"]
+                        if question["type"] == "одиночный выбор":
                             if isinstance(ans, int):
                                 counts[ans] += 1
                             else:
@@ -854,8 +896,8 @@ class SurveyPlugin:
 
     def _schedule_survey_notifications(self, survey):
         """Планирует уведомления для опроса"""
-        survey_id = survey['id']
-        deadline = datetime.fromisoformat(survey['deadline'])
+        survey_id = survey["id"]
+        deadline = datetime.fromisoformat(survey["deadline"])
 
         reminder_time = deadline - timedelta(minutes=10)
         now = datetime.now()
@@ -876,17 +918,19 @@ class SurveyPlugin:
         """Отправляет напоминание о скором завершении опроса"""
         await asyncio.sleep(delay_seconds)
         survey = storage.get_survey(survey_id)
-        if not survey or survey['status'] != 'active':
+        if not survey or survey["status"] != "active":
             return
-        logger.info(f"Напоминание: Опрос '{survey['title']}' закрывается через 10 минут!")
+        logger.info(
+            f"Напоминание: Опрос '{survey['title']}' закрывается через 10 минут!"
+        )
 
     async def _close_survey(self, survey_id, delay_seconds):
         """Закрывает опрос по истечении срока"""
         await asyncio.sleep(delay_seconds)
         survey = storage.get_survey(survey_id)
-        if not survey or survey['status'] != 'active':
+        if not survey or survey["status"] != "active":
             return
-        survey['status'] = 'closed'
+        survey["status"] = "closed"
         storage.save_survey(survey_id, survey)
         results = self._generate_results(survey)
         logger.info(f"Опрос '{survey['title']}' закрыт. Результаты:\n{results}")
@@ -896,7 +940,7 @@ class SurveyPlugin:
         logger.info("Плагин опросов загружен")
         surveys = storage.get_all_surveys()
         for survey_id, survey in surveys.items():
-            if survey['status'] == 'active':
+            if survey["status"] == "active":
                 self._schedule_survey_notifications(survey)
 
     def on_plugin_unload(self):
@@ -904,6 +948,7 @@ class SurveyPlugin:
         for task in self.scheduled_tasks.values():
             task.cancel()
         logger.info("Плагин опросов выгружен")
+
 
 def load_plugin():
     """Загружает плагин"""

@@ -33,12 +33,14 @@ async def get_surveys(user_id: Optional[int] = None) -> List[Dict]:
         poll = get_poll_by_id(poll_id)
         if not poll:
             continue
-        surveys.append({
-            "id": poll_id,
-            "title": poll["name"],
-            "questions": get_questions_by_poll(poll_id),
-            "time_limit": poll.get("time_limit"),
-        })
+        surveys.append(
+            {
+                "id": poll_id,
+                "title": poll["name"],
+                "questions": get_questions_by_poll(poll_id),
+                "time_limit": poll.get("time_limit"),
+            }
+        )
     return surveys
 
 
@@ -75,6 +77,7 @@ def has_poll_ended(survey: Dict) -> bool:
 
 class ViewSurveysStates(StatesGroup):
     """Состояния процесса просмотра опросов"""
+
     Viewing = State()
     FilterMenu = State()
     ViewingDetails = State()
@@ -82,30 +85,30 @@ class ViewSurveysStates(StatesGroup):
 
 class ViewSurveysPlugin:
     """Плагин для просмотра опросов"""
-    
+
     def __init__(self):
         self.name = "view_surveys"
         self.description = "Просмотр и управление опросами"
-        
+
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует все обработчики плагина"""
         dp.message.register(self.cmd_view_surveys, Command("view_surveys"))
         dp.callback_query.register(
             self.handle_survey_selection,
-            lambda c: c.data.startswith('view_survey_'),
-            StateFilter(ViewSurveysStates.Viewing)
+            lambda c: c.data.startswith("view_survey_"),
+            StateFilter(ViewSurveysStates.Viewing),
         )
         dp.callback_query.register(
             self.handle_filter_selection,
-            lambda c: c.data.startswith('filter_'),
-            StateFilter(ViewSurveysStates.FilterMenu)
+            lambda c: c.data.startswith("filter_"),
+            StateFilter(ViewSurveysStates.FilterMenu),
         )
         dp.callback_query.register(
             self.handle_survey_action,
-            lambda c: c.data.startswith('survey_action_'),
-            StateFilter(ViewSurveysStates.ViewingDetails)
+            lambda c: c.data.startswith("survey_action_"),
+            StateFilter(ViewSurveysStates.ViewingDetails),
         )
-        
+
     def get_commands(self):
         """Возвращает список команд плагина"""
         return [
@@ -114,78 +117,78 @@ class ViewSurveysPlugin:
                 description="Просмотреть доступные опросы",
             )
         ]
-        
+
     def get_keyboards(self):
         """Возвращает клавиатуры, необходимые плагину"""
         return {}
-        
+
     def get_states(self):
         """Возвращает состояния, которые использует плагин"""
         return ViewSurveysStates
-    
+
     async def cmd_view_surveys(self, message: types.Message, state: FSMContext):
         """Обрабатывает команду /view_surveys"""
         logger.debug(f"{message.text} from {message.from_user.id}")
         user_id = message.from_user.id
         surveys = await get_surveys(user_id=user_id)
-        
+
         if not surveys:
             await message.answer("Нет доступных опросов.")
             return
-            
+
         # Создаём клавиатуру со списком опросов
         builder = InlineKeyboardBuilder()
         for survey in surveys:
             status = "✅ Активен" if not has_poll_ended(survey) else "❌ Завершён"
             button_text = f"{survey['title']} ({status})"
             builder.button(
-                text=button_text,
-                callback_data=f"view_survey_{survey['id']}"
+                text=button_text, callback_data=f"view_survey_{survey['id']}"
             )
         builder.button(text="🔍 Фильтр опросов", callback_data="filter_menu")
         builder.adjust(1)
         markup = builder.as_markup()
         await message.answer("Доступные опросы:", reply_markup=markup)
         await state.set_state(ViewSurveysStates.Viewing)
-        
-    async def handle_survey_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
+
+    async def handle_survey_selection(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Обрабатывает выбор опроса из списка"""
-        survey_id = int(callback_query.data.split('_')[2])
+        survey_id = int(callback_query.data.split("_")[2])
         survey = await get_survey_by_id(survey_id)
-        
+
         if not survey:
             await callback_query.answer("Опрос не найден.")
             return
-            
+
         # Формируем текст с подробной информацией
         survey_info = await format_survey_info(survey)
-        
+
         # Создаём кнопки действий
         builder = InlineKeyboardBuilder()
 
         if not has_poll_ended(survey):
             builder.button(
-                text="Пройти опрос",
-                callback_data=f"survey_action_take_{survey_id}"
+                text="Пройти опрос", callback_data=f"survey_action_take_{survey_id}"
             )
 
         builder.button(text="Назад к списку", callback_data="survey_action_back")
         builder.adjust(2)
         keyboard = builder.as_markup()
-        
+
         await callback_query.message.edit_text(
-            survey_info,
-            reply_markup=keyboard,
-            parse_mode="HTML"
+            survey_info, reply_markup=keyboard, parse_mode="HTML"
         )
         await state.set_state(ViewSurveysStates.ViewingDetails)
         await callback_query.answer()
-        
-    async def handle_filter_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
+
+    async def handle_filter_selection(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Обрабатывает выбор фильтра для опросов"""
         user_id = callback_query.from_user.id
-        filter_type = callback_query.data.split('_')[1]
-        
+        filter_type = callback_query.data.split("_")[1]
+
         if filter_type == "menu":
             # Показываем варианты фильтра
             builder = InlineKeyboardBuilder()
@@ -196,24 +199,23 @@ class ViewSurveysPlugin:
             builder.adjust(1)
             markup = builder.as_markup()
             await callback_query.message.edit_text(
-                "Выберите вариант фильтра:",
-                reply_markup=markup
+                "Выберите вариант фильтра:", reply_markup=markup
             )
             await state.set_state(ViewSurveysStates.FilterMenu)
-            
+
         elif filter_type == "back":
             # Возврат к общему списку опросов
             await self.cmd_view_surveys(callback_query.message, state)
-            
+
         else:
             # Применяем выбранный фильтр
             surveys = await get_surveys(user_id=user_id)
-            
+
             if filter_type == "active":
                 surveys = [s for s in surveys if not has_poll_ended(s)]
             elif filter_type == "completed":
                 surveys = [s for s in surveys if has_poll_ended(s)]
-                
+
             # Создаём клавиатуру с отфильтрованными опросами
             builder = InlineKeyboardBuilder()
 
@@ -223,7 +225,7 @@ class ViewSurveysPlugin:
                 back_builder.adjust(1)
                 await callback_query.message.edit_text(
                     "Нет опросов, удовлетворяющих фильтру.",
-                    reply_markup=back_builder.as_markup()
+                    reply_markup=back_builder.as_markup(),
                 )
                 return
 
@@ -231,38 +233,38 @@ class ViewSurveysPlugin:
                 status = "✅ Активен" if not has_poll_ended(survey) else "❌ Завершён"
                 button_text = f"{survey['title']} ({status})"
                 builder.button(
-                    text=button_text,
-                    callback_data=f"view_survey_{survey['id']}"
+                    text=button_text, callback_data=f"view_survey_{survey['id']}"
                 )
 
             builder.button(text="🔍 Фильтр опросов", callback_data="filter_menu")
             builder.adjust(1)
             keyboard = builder.as_markup()
-            
+
             await callback_query.message.edit_text(
-                f"Опросы ({filter_type}):",
-                reply_markup=keyboard
+                f"Опросы ({filter_type}):", reply_markup=keyboard
             )
             await state.set_state(ViewSurveysStates.Viewing)
-            
+
         await callback_query.answer()
-        
-    async def handle_survey_action(self, callback_query: types.CallbackQuery, state: FSMContext):
+
+    async def handle_survey_action(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         """Обрабатывает действия с выбранным опросом"""
-        action = callback_query.data.split('_')[2]
-        
+        action = callback_query.data.split("_")[2]
+
         if action == "back":
             # Возврат к списку опросов
             await self.cmd_view_surveys(callback_query.message, state)
-            
+
         elif action == "take":
-            survey_id = int(callback_query.data.split('_')[3])
+            survey_id = int(callback_query.data.split("_")[3])
             # Запускаем прохождение опроса
             # Обычно здесь происходит переход к другому плагину
             await callback_query.message.answer(f"Запускаем опрос {survey_id}...")
             # Сбрасываем состояние, чтобы другие хендлеры могли продолжить
             await state.clear()
-            
+
         await callback_query.answer()
 
 

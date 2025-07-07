@@ -6,6 +6,7 @@ DATA_FOLDER = "data"
 if not os.path.exists(DATA_FOLDER):
     os.makedirs(DATA_FOLDER)
 
+
 def save_to_excel(
     user_id,
     first_name,

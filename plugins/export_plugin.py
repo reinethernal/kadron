@@ -12,22 +12,31 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 try:
     from .storage_plugin import storage
 except ImportError:
+
     class DummyStorage:
-        def get_survey(self, survey_id): return {}
-        def get_all_surveys(self): return {}
+        def get_survey(self, survey_id):
+            return {}
+
+        def get_all_surveys(self):
+            return {}
+
     storage = DummyStorage()
 
 # Импорт ролей для проверки прав
 try:
     from .roles_plugin import RolesPlugin
+
     roles_plugin = RolesPlugin()
     has_permission = roles_plugin.has_permission
 except ImportError:
+
     def has_permission(user_id, permission):
         admin_ids = storage.get_setting("admin_ids", [])
         return user_id in admin_ids
 
+
 logger = logging.getLogger(__name__)
+
 
 class ExportPlugin:
     def __init__(self):
@@ -37,18 +46,19 @@ class ExportPlugin:
     async def register_handlers(self, dp: Dispatcher):
         # Используем новые методы регистрации:
         from aiogram.filters import Command  # фильтр команд из aiogram v3
+
         dp.message.register(self.cmd_export, Command("export"))
         dp.callback_query.register(
-            self.handle_survey_selection,
-            lambda c: c.data.startswith("export_survey_")
+            self.handle_survey_selection, lambda c: c.data.startswith("export_survey_")
         )
         dp.callback_query.register(
-            self.handle_format_selection,
-            lambda c: c.data.startswith("export_format_")
+            self.handle_format_selection, lambda c: c.data.startswith("export_format_")
         )
 
     def get_commands(self):
-        return [types.BotCommand(command="export", description="Экспорт данных опросов")]
+        return [
+            types.BotCommand(command="export", description="Экспорт данных опросов")
+        ]
 
     async def cmd_export(self, message: types.Message):
         logger.debug(f"{message.text} from {message.from_user.id}")
@@ -59,10 +69,12 @@ class ExportPlugin:
             return
         builder = InlineKeyboardBuilder()
         for survey_id, survey in all_surveys.items():
-            if survey.get("creator_id") == user_id or has_permission(user_id, "export_data"):
+            if survey.get("creator_id") == user_id or has_permission(
+                user_id, "export_data"
+            ):
                 builder.button(
                     text=survey.get("title", "Без названия"),
-                    callback_data=f"export_survey_{survey_id}"
+                    callback_data=f"export_survey_{survey_id}",
                 )
         builder.adjust(1)
         markup = builder.as_markup()
@@ -74,10 +86,14 @@ class ExportPlugin:
         builder.button(text="CSV", callback_data=f"export_format_csv_{survey_id}")
         builder.button(text="JSON", callback_data=f"export_format_json_{survey_id}")
         builder.button(text="Excel", callback_data=f"export_format_excel_{survey_id}")
-        builder.button(text="Текстовый отчет", callback_data=f"export_format_text_{survey_id}")
+        builder.button(
+            text="Текстовый отчет", callback_data=f"export_format_text_{survey_id}"
+        )
         builder.adjust(2)
         markup = builder.as_markup()
-        await callback_query.message.edit_text("Выберите формат экспорта:", reply_markup=markup)
+        await callback_query.message.edit_text(
+            "Выберите формат экспорта:", reply_markup=markup
+        )
         await callback_query.answer()
 
     async def handle_format_selection(self, callback_query: types.CallbackQuery):
@@ -106,7 +122,10 @@ class ExportPlugin:
         writer.writerow(header)
         for response in survey.get("responses", []):
             question_id = response.get("question_id")
-            question = next((q for q in survey.get("questions", []) if q.get("id") == question_id), {})
+            question = next(
+                (q for q in survey.get("questions", []) if q.get("id") == question_id),
+                {},
+            )
             question_text = question.get("text", "Неизвестный вопрос")
             answer = response.get("answer", "")
             if question.get("type") == "single_choice" and isinstance(answer, int):
@@ -115,18 +134,24 @@ class ExportPlugin:
                     answer = options[answer]
             elif question.get("type") == "multiple_choice" and isinstance(answer, list):
                 options = question.get("options", [])
-                answer = ", ".join([options[i] for i in answer if 0 <= i < len(options)])
-            writer.writerow([
-                question_text,
-                response.get("user_id", "Аноним"),
-                answer,
-                response.get("timestamp", "")
-            ])
+                answer = ", ".join(
+                    [options[i] for i in answer if 0 <= i < len(options)]
+                )
+            writer.writerow(
+                [
+                    question_text,
+                    response.get("user_id", "Аноним"),
+                    answer,
+                    response.get("timestamp", ""),
+                ]
+            )
         csv_data = output.getvalue()
         output.close()
         bio = io.BytesIO(csv_data.encode("utf-8"))
         bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.csv"
-        await callback_query.message.answer_document(bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}")
+        await callback_query.message.answer_document(
+            bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}"
+        )
         await callback_query.message.edit_text("✅ Экспорт в CSV успешно выполнен.")
         await callback_query.answer()
 
@@ -136,7 +161,10 @@ class ExportPlugin:
         responses = []
         for response in survey.get("responses", []):
             question_id = response.get("question_id")
-            question = next((q for q in survey.get("questions", []) if q.get("id") == question_id), {})
+            question = next(
+                (q for q in survey.get("questions", []) if q.get("id") == question_id),
+                {},
+            )
             question_text = question.get("text", "Неизвестный вопрос")
             answer = response.get("answer", "")
             if question.get("type") == "single_choice" and isinstance(answer, int):
@@ -145,7 +173,9 @@ class ExportPlugin:
                     answer = options[answer]
             elif question.get("type") == "multiple_choice" and isinstance(answer, list):
                 options = question.get("options", [])
-                answer = ", ".join([options[i] for i in answer if 0 <= i < len(options)])
+                answer = ", ".join(
+                    [options[i] for i in answer if 0 <= i < len(options)]
+                )
             responses.append({"question": question_text, "answer": answer})
 
         filename = save_to_excel(
@@ -155,7 +185,9 @@ class ExportPlugin:
         with open(filename, "rb") as f:
             bio = io.BytesIO(f.read())
         bio.name = os.path.basename(filename)
-        await callback_query.message.answer_document(bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}")
+        await callback_query.message.answer_document(
+            bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}"
+        )
         await callback_query.message.edit_text("✅ Экспорт в Excel успешно выполнен.")
         await callback_query.answer()
 
@@ -168,12 +200,14 @@ class ExportPlugin:
             "status": survey.get("status", ""),
             "is_anonymous": survey.get("is_anonymous", False),
             "questions": survey.get("questions", []),
-            "responses": survey.get("responses", [])
+            "responses": survey.get("responses", []),
         }
         json_data = json.dumps(export_data, ensure_ascii=False, indent=2)
         bio = io.BytesIO(json_data.encode("utf-8"))
         bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.json"
-        await callback_query.message.answer_document(bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}")
+        await callback_query.message.answer_document(
+            bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}"
+        )
         await callback_query.message.edit_text("✅ Экспорт в JSON успешно выполнен.")
         await callback_query.answer()
 
@@ -184,13 +218,19 @@ class ExportPlugin:
         report.append(f"Описание: {survey.get('description', '')}")
         report.append(f"Создан: {survey.get('created_at', '')}")
         report.append(f"Статус: {survey.get('status', '')}")
-        report.append(f"Анонимный: {'Да' if survey.get('is_anonymous', False) else 'Нет'}")
+        report.append(
+            f"Анонимный: {'Да' if survey.get('is_anonymous', False) else 'Нет'}"
+        )
         report.append("")
         questions = {q.get("id"): q for q in survey.get("questions", [])}
         for question_id, question in questions.items():
             report.append(f"ВОПРОС: {question.get('text', '')}")
             report.append(f"Тип: {question.get('type', '')}")
-            question_responses = [r for r in survey.get("responses", []) if r.get("question_id") == question_id]
+            question_responses = [
+                r
+                for r in survey.get("responses", [])
+                if r.get("question_id") == question_id
+            ]
             report.append(f"Всего ответов: {len(question_responses)}")
             report.append("")
             if question.get("type") == "single_choice":
@@ -238,7 +278,10 @@ class ExportPlugin:
         report_text = "\n".join(report)
         bio = io.BytesIO(report_text.encode("utf-8"))
         bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.txt"
-        await callback_query.message.answer_document(bio, caption=f"Текстовый отчет по опросу: {survey.get('title', 'Без названия')}")
+        await callback_query.message.answer_document(
+            bio,
+            caption=f"Текстовый отчет по опросу: {survey.get('title', 'Без названия')}",
+        )
         await callback_query.message.edit_text("✅ Текстовый отчет успешно создан.")
         await callback_query.answer()
 
@@ -247,6 +290,7 @@ class ExportPlugin:
 
     def on_plugin_unload(self):
         logger.info("Плагин экспорта выгружен")
+
 
 def load_plugin():
     return ExportPlugin()

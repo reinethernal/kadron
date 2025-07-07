@@ -33,16 +33,17 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 class PluginStates(StatesGroup):
     """Состояния для примера плагина"""
+
     SomeState = State()
 
 
 class PluginTemplate:
     """Шаблонный класс для создания новых плагинов"""
-    
+
     def __init__(self):
         self.name = "template_plugin"
         self.description = "Шаблонный плагин"
-        
+
     async def register_handlers(self, dp: Dispatcher):
         """Регистрация всех обработчиков плагина"""
         dp.message.register(
@@ -54,7 +55,7 @@ class PluginTemplate:
             lambda c: c.data in {"btn1", "btn2"},
         )
         # Добавляйте другие обработчики при необходимости
-        
+
     def get_commands(self):
         """Возвращает список команд, предоставляемых плагином"""
         return [
@@ -63,18 +64,18 @@ class PluginTemplate:
                 description="Шаблонная команда",
             )
         ]
-        
+
     def get_keyboards(self):
         """Возвращает клавиатуры, необходимые плагину"""
         return {
             "main": ReplyKeyboardMarkup(
                 keyboard=[
                     [KeyboardButton(text="Шаблонная кнопка")],
-                    [KeyboardButton(text="Другая кнопка")]
+                    [KeyboardButton(text="Другая кнопка")],
                 ],
-                resize_keyboard=True
+                resize_keyboard=True,
             ),
-            "inline": self._create_inline_keyboard()
+            "inline": self._create_inline_keyboard(),
         }
 
     def _create_inline_keyboard(self) -> types.InlineKeyboardMarkup:
@@ -88,7 +89,7 @@ class PluginTemplate:
     def on_plugin_load(self):
         """Вызывается при загрузке плагина"""
         print(f"Плагин {self.name} загружен")
-        
+
     def on_plugin_unload(self):
         """Вызывается при выгрузке плагина"""
         print(f"Плагин {self.name} выгружен")
@@ -101,7 +102,7 @@ class PluginTemplate:
         """Пример обработчика команды (стиль aiogram 3.x)"""
         await message.answer(
             "Это пример обработчика команды",
-            reply_markup=self._create_inline_keyboard()
+            reply_markup=self._create_inline_keyboard(),
         )
 
 

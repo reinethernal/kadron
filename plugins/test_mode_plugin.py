@@ -10,19 +10,32 @@ import copy
 try:
     from .storage_plugin import storage
 except ImportError:
+
     class DummyStorage:
-        def get_survey(self, survey_id): return {}
-        def save_survey(self, survey_id, data): pass
-        def get_setting(self, key, default=None): return default
-        def set_setting(self, key, value): pass
-        def get_all_surveys(self): return {}
+        def get_survey(self, survey_id):
+            return {}
+
+        def save_survey(self, survey_id, data):
+            pass
+
+        def get_setting(self, key, default=None):
+            return default
+
+        def set_setting(self, key, value):
+            pass
+
+        def get_all_surveys(self):
+            return {}
+
     storage = DummyStorage()
 
 logger = logging.getLogger(__name__)
 
+
 class TestModeStates(StatesGroup):
     SELECTING_SURVEY = State()
     TESTING_SURVEY = State()
+
 
 class TestModePlugin:
     def __init__(self):
@@ -32,13 +45,23 @@ class TestModePlugin:
 
     async def register_handlers(self, dp: Dispatcher):
         dp.message.register(self.cmd_test_mode, Command("test_mode"))
-        dp.callback_query.register(self.handle_survey_selection, lambda c: c.data.startswith("test_survey_"))
-        dp.callback_query.register(self.handle_test_action, lambda c: c.data.startswith("test_action_"))
-        dp.callback_query.register(self.handle_test_response, lambda c: c.data.startswith("test_response_"))
+        dp.callback_query.register(
+            self.handle_survey_selection, lambda c: c.data.startswith("test_survey_")
+        )
+        dp.callback_query.register(
+            self.handle_test_action, lambda c: c.data.startswith("test_action_")
+        )
+        dp.callback_query.register(
+            self.handle_test_response, lambda c: c.data.startswith("test_response_")
+        )
 
     def get_commands(self):
         # В aiogram 3.x конструкция BotCommand теперь требует именованных аргументов:
-        return [types.BotCommand(command="test_mode", description="Тестовый режим для опросов")]
+        return [
+            types.BotCommand(
+                command="test_mode", description="Тестовый режим для опросов"
+            )
+        ]
 
     async def cmd_test_mode(self, message: types.Message, state: FSMContext):
         logger.debug(f"{message.text} from {message.from_user.id}")
@@ -46,7 +69,8 @@ class TestModePlugin:
         # Получаем все опросы пользователя
         all_surveys = storage.get_all_surveys()
         user_surveys = {
-            survey_id: survey for survey_id, survey in all_surveys.items()
+            survey_id: survey
+            for survey_id, survey in all_surveys.items()
             if survey.get("creator_id") == user_id
         }
         if not user_surveys:
@@ -56,17 +80,18 @@ class TestModePlugin:
         for survey_id, survey in user_surveys.items():
             builder.button(
                 text=survey.get("title", "Без названия"),
-                callback_data=f"test_survey_{survey_id}"
+                callback_data=f"test_survey_{survey_id}",
             )
         builder.adjust(1)
         markup = builder.as_markup()
         await message.answer(
-            "🧪 Тестовый режим\n\nВыберите опрос для тестирования:",
-            reply_markup=markup
+            "🧪 Тестовый режим\n\nВыберите опрос для тестирования:", reply_markup=markup
         )
         await state.set_state(TestModeStates.SELECTING_SURVEY)
 
-    async def handle_survey_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def handle_survey_selection(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         survey_id = callback_query.data.split("_")[2]
         survey = storage.get_survey(survey_id)
         if not survey:
@@ -81,27 +106,27 @@ class TestModePlugin:
         await state.update_data(test_id=test_id)
         builder = InlineKeyboardBuilder()
         builder.button(
-            text="▶️ Начать тестирование",
-            callback_data=f"test_action_start_{test_id}"
+            text="▶️ Начать тестирование", callback_data=f"test_action_start_{test_id}"
         )
         builder.button(
             text="📊 Просмотреть результаты",
-            callback_data=f"test_action_results_{test_id}"
+            callback_data=f"test_action_results_{test_id}",
         )
         builder.button(
-            text="❌ Завершить тестирование",
-            callback_data="test_action_exit"
+            text="❌ Завершить тестирование", callback_data="test_action_exit"
         )
         builder.adjust(1)
         markup = builder.as_markup()
         await callback_query.message.edit_text(
             f"🧪 Тестовый режим: {test_survey.get('title')}\n\nВ тестовом режиме вы можете пройти опрос и просмотреть результаты без влияния на реальные данные.",
-            reply_markup=markup
+            reply_markup=markup,
         )
         await state.set_state(TestModeStates.TESTING_SURVEY)
         await callback_query.answer()
 
-    async def handle_test_action(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def handle_test_action(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         parts = callback_query.data.split("_")
         action = parts[2]
         if action == "exit":
@@ -121,7 +146,9 @@ class TestModePlugin:
             await self.show_test_results(callback_query, test_survey)
         await callback_query.answer()
 
-    async def start_test_survey(self, callback_query: types.CallbackQuery, test_survey, test_id):
+    async def start_test_survey(
+        self, callback_query: types.CallbackQuery, test_survey, test_id
+    ):
         questions = test_survey.get("questions", [])
         if not questions:
             await callback_query.message.edit_text("Этот опрос не содержит вопросов.")
@@ -134,21 +161,19 @@ class TestModePlugin:
             builder = InlineKeyboardBuilder()
             builder.button(
                 text="📊 Просмотреть результаты",
-                callback_data=f"test_action_results_{test_id}"
+                callback_data=f"test_action_results_{test_id}",
             )
             builder.button(
-                text="🔄 Пройти заново",
-                callback_data=f"test_action_start_{test_id}"
+                text="🔄 Пройти заново", callback_data=f"test_action_start_{test_id}"
             )
             builder.button(
-                text="❌ Завершить тестирование",
-                callback_data="test_action_exit"
+                text="❌ Завершить тестирование", callback_data="test_action_exit"
             )
             builder.adjust(1)
             markup = builder.as_markup()
             await message.edit_text(
                 "✅ Тестирование опроса завершено!\n\nВы можете просмотреть результаты или пройти опрос заново.",
-                reply_markup=markup
+                reply_markup=markup,
             )
             return
         question = questions[question_index]
@@ -158,51 +183,53 @@ class TestModePlugin:
             for i, option in enumerate(question.get("options", [])):
                 builder.button(
                     text=option,
-                    callback_data=f"test_response_single_{test_id}_{question_index}_{i}"
+                    callback_data=f"test_response_single_{test_id}_{question_index}_{i}",
                 )
             builder.adjust(1)
             markup = builder.as_markup()
             await message.edit_text(
                 f"Вопрос {question_index+1}/{len(questions)}:\n\n{question.get('text')}\n\nВыберите один вариант:",
-                reply_markup=markup
+                reply_markup=markup,
             )
         elif question_type == "multiple_choice":
             builder = InlineKeyboardBuilder()
             for i, option in enumerate(question.get("options", [])):
                 builder.button(
                     text=option,
-                    callback_data=f"test_response_multi_{test_id}_{question_index}_{i}"
+                    callback_data=f"test_response_multi_{test_id}_{question_index}_{i}",
                 )
             builder.button(
                 text="✅ Подтвердить выбор",
-                callback_data=f"test_response_submit_{test_id}_{question_index}"
+                callback_data=f"test_response_submit_{test_id}_{question_index}",
             )
             builder.adjust(1)
             markup = builder.as_markup()
             await message.edit_text(
                 f"Вопрос {question_index+1}/{len(questions)}:\n\n{question.get('text')}\n\nВыберите один или несколько вариантов:",
-                reply_markup=markup
+                reply_markup=markup,
             )
         elif question_type == "text_answer":
             builder = InlineKeyboardBuilder()
             test_answers = [
                 "Тестовый ответ 1",
                 "Это пример текстового ответа",
-                "Тестирование функциональности"
+                "Тестирование функциональности",
             ]
             for i, answer in enumerate(test_answers):
                 builder.button(
                     text=f"Ответ {i+1}",
-                    callback_data=f"test_response_text_{test_id}_{question_index}_{i}"
+                    callback_data=f"test_response_text_{test_id}_{question_index}_{i}",
                 )
             builder.adjust(1)
             markup = builder.as_markup()
             await message.edit_text(
                 f"Вопрос {question_index+1}/{len(questions)}:\n\n{question.get('text')}\n\nВ тестовом режиме выберите один из предопределенных ответов:",
-                reply_markup=markup
+                reply_markup=markup,
             )
 
-    async def handle_test_response(self, callback_query: types.CallbackQuery, state: FSMContext):
+    async def handle_test_response(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
         parts = callback_query.data.split("_")
         response_type = parts[2]
         test_id = parts[3]
@@ -223,10 +250,12 @@ class TestModePlugin:
                 "user_id": callback_query.from_user.id,
                 "question_id": question.get("id"),
                 "answer": option_index,
-                "timestamp": callback_query.message.date.isoformat()
+                "timestamp": callback_query.message.date.isoformat(),
             }
             test_survey["responses"].append(response)
-            await self.show_test_question(callback_query.message, test_survey, test_id, question_index + 1)
+            await self.show_test_question(
+                callback_query.message, test_survey, test_id, question_index + 1
+            )
         elif response_type == "multi":
             option_index = int(parts[5])
             state_data = await state.get_data()
@@ -242,11 +271,11 @@ class TestModePlugin:
                 text = f"✅ {option}" if i in selections else option
                 builder.button(
                     text=text,
-                    callback_data=f"test_response_multi_{test_id}_{question_index}_{i}"
+                    callback_data=f"test_response_multi_{test_id}_{question_index}_{i}",
                 )
             builder.button(
                 text="✅ Подтвердить выбор",
-                callback_data=f"test_response_submit_{test_id}_{question_index}"
+                callback_data=f"test_response_submit_{test_id}_{question_index}",
             )
             builder.adjust(1)
             markup = builder.as_markup()
@@ -259,40 +288,52 @@ class TestModePlugin:
                 "user_id": callback_query.from_user.id,
                 "question_id": question.get("id"),
                 "answer": selections,
-                "timestamp": callback_query.message.date.isoformat()
+                "timestamp": callback_query.message.date.isoformat(),
             }
             test_survey["responses"].append(response)
             await state.update_data({selections_key: []})
-            await self.show_test_question(callback_query.message, test_survey, test_id, question_index + 1)
+            await self.show_test_question(
+                callback_query.message, test_survey, test_id, question_index + 1
+            )
         elif response_type == "text":
             answer_index = int(parts[5])
             test_answers = [
                 "Тестовый ответ 1",
                 "Это пример текстового ответа",
-                "Тестирование функциональности"
+                "Тестирование функциональности",
             ]
-            selected_answer = test_answers[answer_index] if answer_index < len(test_answers) else "Тестовый ответ"
+            selected_answer = (
+                test_answers[answer_index]
+                if answer_index < len(test_answers)
+                else "Тестовый ответ"
+            )
             response = {
                 "user_id": callback_query.from_user.id,
                 "question_id": question.get("id"),
                 "answer": selected_answer,
-                "timestamp": callback_query.message.date.isoformat()
+                "timestamp": callback_query.message.date.isoformat(),
             }
             test_survey["responses"].append(response)
-            await self.show_test_question(callback_query.message, test_survey, test_id, question_index + 1)
+            await self.show_test_question(
+                callback_query.message, test_survey, test_id, question_index + 1
+            )
         await callback_query.answer()
 
     async def show_test_results(self, callback_query: types.CallbackQuery, test_survey):
         questions = test_survey.get("questions", [])
         responses = test_survey.get("responses", [])
         if not responses:
-            await callback_query.message.edit_text("Нет данных для отображения. Пройдите опрос в тестовом режиме.")
+            await callback_query.message.edit_text(
+                "Нет данных для отображения. Пройдите опрос в тестовом режиме."
+            )
             return
         results = ["📊 Результаты тестирования:\n"]
         for question in questions:
             question_id = question.get("id")
             question_type = question.get("type")
-            question_responses = [r for r in responses if r.get("question_id") == question_id]
+            question_responses = [
+                r for r in responses if r.get("question_id") == question_id
+            ]
             results.append(f"\n📝 {question.get('text')}")
             results.append(f"Тип: {question_type}")
             results.append(f"Ответов: {len(question_responses)}")
@@ -304,7 +345,11 @@ class TestModePlugin:
                     if isinstance(answer, int) and 0 <= answer < len(options):
                         counts[answer] += 1
                 for i, option in enumerate(options):
-                    percentage = (counts[i] / len(question_responses) * 100) if question_responses else 0
+                    percentage = (
+                        (counts[i] / len(question_responses) * 100)
+                        if question_responses
+                        else 0
+                    )
                     results.append(f"  - {option}: {counts[i]} ({percentage:.1f}%)")
             elif question_type == "multiple_choice":
                 options = question.get("options", [])
@@ -315,7 +360,11 @@ class TestModePlugin:
                         if 0 <= option_index < len(options):
                             counts[option_index] += 1
                 for i, option in enumerate(options):
-                    percentage = (counts[i] / len(question_responses) * 100) if question_responses else 0
+                    percentage = (
+                        (counts[i] / len(question_responses) * 100)
+                        if question_responses
+                        else 0
+                    )
                     results.append(f"  - {option}: {counts[i]} ({percentage:.1f}%)")
             elif question_type == "text_answer":
                 results.append("Текстовые ответы:")
@@ -325,9 +374,11 @@ class TestModePlugin:
         builder = InlineKeyboardBuilder()
         builder.button(
             text="🔄 Пройти заново",
-            callback_data=callback_query.data.replace("results", "start")
+            callback_data=callback_query.data.replace("results", "start"),
         )
-        builder.button(text="❌ Завершить тестирование", callback_data="test_action_exit")
+        builder.button(
+            text="❌ Завершить тестирование", callback_data="test_action_exit"
+        )
         builder.adjust(1)
         markup = builder.as_markup()
         results_text = "\n".join(results)
@@ -350,7 +401,9 @@ class TestModePlugin:
                     await callback_query.message.edit_text(chunk, reply_markup=None)
                 else:
                     await callback_query.message.reply(chunk)
-            await callback_query.message.reply("Выберите действие:", reply_markup=markup)
+            await callback_query.message.reply(
+                "Выберите действие:", reply_markup=markup
+            )
         else:
             await callback_query.message.edit_text(results_text, reply_markup=markup)
 
@@ -360,6 +413,7 @@ class TestModePlugin:
     def on_plugin_unload(self):
         self.test_surveys.clear()
         logger.info("Плагин тестового режима выгружен")
+
 
 def load_plugin():
     return TestModePlugin()
