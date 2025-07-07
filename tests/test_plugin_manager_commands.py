@@ -50,8 +50,7 @@ def test_setup_bot_commands_collects_from_plugins(tmp_path, monkeypatch):
 
     dp = aiogram.Dispatcher()
     bot = DummyBot()
-    pm = PluginManager(dp, bot)
-    pm.plugin_dir = 'testplugins'
+    pm = PluginManager(dp, bot, plugin_dir=pkg_dir)
 
     asyncio.run(pm.load_plugins())
     asyncio.run(pm.setup_bot_commands(bot))
