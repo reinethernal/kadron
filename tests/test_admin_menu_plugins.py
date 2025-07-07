@@ -48,9 +48,6 @@ def test_admin_menu_has_plugin_commands(monkeypatch):
     monkeypatch.setattr(types, "KeyboardButton", DummyButton, raising=False)
 
     import sys
-
-    print("DEBUG before import, path0", sys.path[0])
-    print("DEBUG aiogram in modules", "aiogram" in sys.modules)
     import os
 
     root = os.path.dirname(os.path.dirname(__file__))
@@ -82,7 +79,13 @@ def test_admin_menu_has_plugin_commands(monkeypatch):
             cmd_name = getattr(cmd, "command", None)
             assert any(t == desc or t == cmd_name for t in button_texts)
 
-    import sys
+    survey_texts = []
+    for row in keyboards["admin_surveys"].keyboard:
+        for btn in row:
+            survey_texts.append(btn.text)
 
-    print("DEBUG PATH", sys.path[0])
-    print("DEBUG modules has plugin_manager?", "plugin_manager" in sys.modules)
+    for cmds in plugin_cmds.values():
+        for cmd in cmds:
+            desc = getattr(cmd, "description", None)
+            cmd_name = getattr(cmd, "command", None)
+            assert any(t == desc or t == cmd_name for t in survey_texts)
