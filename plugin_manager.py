@@ -9,6 +9,7 @@ import importlib
 import inspect
 import os
 import logging
+import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 from aiogram import Dispatcher, Bot
@@ -26,6 +27,10 @@ class PluginManager:
         self.plugins = {}
         base = Path(__file__).resolve().parent
         self.plugin_dir = Path(plugin_dir) if plugin_dir else base / "plugins"
+        self.plugin_dir = self.plugin_dir.resolve()
+        parent = str(self.plugin_dir.parent)
+        if parent not in sys.path:
+            sys.path.append(parent)
         self._package = self.plugin_dir.name
 
     async def load_plugins(self):
