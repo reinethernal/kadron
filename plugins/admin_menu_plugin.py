@@ -7,7 +7,7 @@
 import logging
 from dotenv import load_dotenv
 from utils.env_utils import parse_admin_ids
-from typing import Optional
+
 
 from plugin_manager import PluginManager
 from aiogram import Dispatcher, types
@@ -41,7 +41,7 @@ class AdminMenuStates(StatesGroup):
 class AdminMenuPlugin:
     """Плагин административного меню"""
 
-    def __init__(self, plugin_manager: Optional[PluginManager] = None):
+    def __init__(self, plugin_manager: PluginManager):
         self.name = "admin_menu_plugin"
         self.description = "Функциональность административного меню"
         # Загружаем admin_ids из переменной окружения
@@ -60,9 +60,7 @@ class AdminMenuPlugin:
 
     def _get_or_create(self, plugin_name: str, cls):
         """Fetches a plugin from PluginManager or raises if missing."""
-        plugin = None
-        if self.plugin_manager:
-            plugin = self.plugin_manager.get_plugin(plugin_name)
+        plugin = self.plugin_manager.get_plugin(plugin_name)
         if plugin:
             return plugin
         logger.error(
@@ -132,66 +130,6 @@ class AdminMenuPlugin:
 
     def get_keyboards(self):
         """Возвращает словарь клавиатур для различных меню"""
-        if not self.plugin_manager:
-            return {
-                "admin_main": ReplyKeyboardMarkup(
-                    keyboard=[
-                        [
-                            KeyboardButton(text="📊 Опросы"),
-                            KeyboardButton(text="📈 Аналитика"),
-                        ],
-                        [KeyboardButton(text="⚙ Настройки")],
-                    ],
-                    resize_keyboard=True,
-                    one_time_keyboard=False,
-                ),
-                "admin_surveys": ReplyKeyboardMarkup(
-                    keyboard=[
-                        [
-                            KeyboardButton(text="Создать опрос"),
-                            KeyboardButton(text="Мои опросы"),
-                        ],
-                        [
-                            KeyboardButton(text="Шаблоны вопросов"),
-                            KeyboardButton(text="Настройки опросов"),
-                        ],
-                        [KeyboardButton(text="🔙 Назад")],
-                    ],
-                    resize_keyboard=True,
-                    one_time_keyboard=False,
-                ),
-                "admin_analytics": ReplyKeyboardMarkup(
-                    keyboard=[
-                        [
-                            KeyboardButton(text="Статистика опросов"),
-                            KeyboardButton(text="Экспорт данных"),
-                        ],
-                        [
-                            KeyboardButton(text="Активность группы"),
-                            KeyboardButton(text="Рейтинги"),
-                        ],
-                        [KeyboardButton(text="🔙 Назад")],
-                    ],
-                    resize_keyboard=True,
-                    one_time_keyboard=False,
-                ),
-                "admin_settings": ReplyKeyboardMarkup(
-                    keyboard=[
-                        [
-                            KeyboardButton(text="Общие настройки"),
-                            KeyboardButton(text="Настройки уведомлений"),
-                        ],
-                        [
-                            KeyboardButton(text="Управление доступом"),
-                            KeyboardButton(text="Тестовый режим"),
-                        ],
-                        [KeyboardButton(text="🔙 Назад")],
-                    ],
-                    resize_keyboard=True,
-                    one_time_keyboard=False,
-                ),
-            }
-
         plugin_commands = self.plugin_manager.get_plugin_commands()
         buttons = []
         for cmd_list in plugin_commands.values():
@@ -303,6 +241,6 @@ class AdminMenuPlugin:
         )
 
 
-def load_plugin(plugin_manager: Optional[PluginManager] = None):
+def load_plugin(plugin_manager: PluginManager):
     """Загружает плагин"""
     return AdminMenuPlugin(plugin_manager=plugin_manager)
