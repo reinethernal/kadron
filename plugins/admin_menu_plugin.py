@@ -59,17 +59,19 @@ class AdminMenuPlugin:
         self.roles_plugin = self._get_or_create("roles_plugin", RolesPlugin)
 
     def _get_or_create(self, plugin_name: str, cls):
-        """Fetches a plugin from PluginManager or creates a fallback instance."""
+        """Fetches a plugin from PluginManager or raises if missing."""
         plugin = None
         if self.plugin_manager:
             plugin = self.plugin_manager.get_plugin(plugin_name)
         if plugin:
             return plugin
-        logger.warning(
+        logger.error(
             f"Dependency '{plugin_name}' not found in PluginManager. "
-            f"Creating new {cls.__name__} instance."
+            f"'{self.name}' requires all dependencies to be loaded."
         )
-        return cls()
+        raise RuntimeError(
+            f"Dependency '{plugin_name}' must be loaded via PluginManager"
+        )
 
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует все обработчики для плагина"""

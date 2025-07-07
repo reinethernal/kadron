@@ -25,7 +25,25 @@ class DummyState:
 def test_admin_access_denied(monkeypatch):
     monkeypatch.setenv("ADMIN_IDS", "123")
     adm_module = importlib.reload(importlib.import_module("plugins.admin_menu_plugin"))
-    plugin = adm_module.load_plugin()
+
+    class DummyPlugin:
+        pass
+
+    class DummyPM:
+        def __init__(self):
+            self.plugins = {
+                "survey_plugin": DummyPlugin(),
+                "export_plugin": DummyPlugin(),
+                "test_mode_plugin": DummyPlugin(),
+                "survey_templates_plugin": DummyPlugin(),
+                "roles_plugin": DummyPlugin(),
+            }
+
+        def get_plugin(self, name):
+            return self.plugins.get(name)
+
+    pm = DummyPM()
+    plugin = adm_module.load_plugin(plugin_manager=pm)
 
     msg = DummyMessage("/admin", user_id=321)
     state = DummyState()
