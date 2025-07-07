@@ -12,11 +12,11 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import StateFilter  # Добавляем фильтр состояния
 import logging
 from core.db_manager import add_response
-from plugins.response_mixin import ResponseMixin
+from .response_mixin import ResponseMixin
 
 # Импорт хранилища из storage_plugin
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except ImportError:
     # Запасной вариант для тестирования
     class DummyStorage:

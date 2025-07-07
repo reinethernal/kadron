@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Используем хранилище из storage_plugin
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except Exception:
 
     class DummyStorage:

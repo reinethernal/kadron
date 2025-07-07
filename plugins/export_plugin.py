@@ -10,7 +10,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Импорт хранилища
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except ImportError:
     class DummyStorage:
         def get_survey(self, survey_id): return {}
@@ -19,7 +19,7 @@ except ImportError:
 
 # Импорт ролей для проверки прав
 try:
-    from plugins.roles_plugin import RolesPlugin
+    from .roles_plugin import RolesPlugin
     roles_plugin = RolesPlugin()
     has_permission = roles_plugin.has_permission
 except ImportError:

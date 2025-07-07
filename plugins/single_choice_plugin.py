@@ -5,11 +5,11 @@
 from aiogram import Dispatcher, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from core.db_manager import add_response
-from plugins.response_mixin import ResponseMixin
+from .response_mixin import ResponseMixin
 import logging
 
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except ImportError:
     class DummyStorage:
         def get_survey(self, survey_id): return {}

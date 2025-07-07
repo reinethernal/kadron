@@ -11,11 +11,11 @@ from aiogram import Dispatcher
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import CallbackQuery, Message
 from core.db_manager import add_response
-from plugins.response_mixin import ResponseMixin
+from .response_mixin import ResponseMixin
 
 # Поправленные импорты для хранилища
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except ImportError:
     # Запасной вариант для тестов
     class DummyStorage:

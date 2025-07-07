@@ -20,10 +20,10 @@ from aiogram.types import (
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import ChatMemberUpdatedFilter, StateFilter
 from core.db_manager import add_user_to_pending
-from plugins.group_event_plugin import unrestrict_user_if_needed
+from .group_event_plugin import unrestrict_user_if_needed
 
 try:
-    from plugins.storage_plugin import storage
+    from .storage_plugin import storage
 except ImportError:
     class DummyStorage:
         def get_user_state(self, user_id): return {}
