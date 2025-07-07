@@ -16,6 +16,13 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
 
+# Fallback plugin classes in case dependencies are missing
+from plugins.survey_plugin import SurveyPlugin
+from plugins.export_plugin import ExportPlugin
+from plugins.test_mode_plugin import TestModePlugin
+from plugins.survey_templates_plugin import SurveyTemplatesPlugin
+from plugins.roles_plugin import RolesPlugin
+
 # Загружаем переменные из .env файла
 load_dotenv()
 
@@ -42,25 +49,25 @@ class AdminMenuPlugin:
         logger.debug(f"Parsed admin_ids: {self.admin_ids}")
         self.plugin_manager = plugin_manager
 
-        if plugin_manager:
-            self.survey_plugin = plugin_manager.get_plugin("survey_plugin")
-            self.export_plugin = plugin_manager.get_plugin("export_plugin")
-            self.test_mode_plugin = plugin_manager.get_plugin("test_mode_plugin")
-            self.templates_plugin = plugin_manager.get_plugin("survey_templates_plugin")
-            self.roles_plugin = plugin_manager.get_plugin("roles_plugin")
-        else:
-            # Fallback для тестов или изолированного использования
-            from plugins.survey_plugin import SurveyPlugin
-            from plugins.export_plugin import ExportPlugin
-            from plugins.test_mode_plugin import TestModePlugin
-            from plugins.survey_templates_plugin import SurveyTemplatesPlugin
-            from plugins.roles_plugin import RolesPlugin
+        # Resolve plugin dependencies using helper
+        self.survey_plugin = self._get_or_create("survey_plugin", SurveyPlugin)
+        self.export_plugin = self._get_or_create("export_plugin", ExportPlugin)
+        self.test_mode_plugin = self._get_or_create("test_mode_plugin", TestModePlugin)
+        self.templates_plugin = self._get_or_create("survey_templates_plugin", SurveyTemplatesPlugin)
+        self.roles_plugin = self._get_or_create("roles_plugin", RolesPlugin)
 
-            self.survey_plugin = SurveyPlugin()
-            self.export_plugin = ExportPlugin()
-            self.test_mode_plugin = TestModePlugin()
-            self.templates_plugin = SurveyTemplatesPlugin()
-            self.roles_plugin = RolesPlugin()
+    def _get_or_create(self, plugin_name: str, cls):
+        """Fetches a plugin from PluginManager or creates a fallback instance."""
+        plugin = None
+        if self.plugin_manager:
+            plugin = self.plugin_manager.get_plugin(plugin_name)
+        if plugin:
+            return plugin
+        logger.warning(
+            f"Dependency '{plugin_name}' not found in PluginManager. "
+            f"Creating new {cls.__name__} instance."
+        )
+        return cls()
 
     async def register_handlers(self, dp: Dispatcher):
         """Регистрирует все обработчики для плагина"""
