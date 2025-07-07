@@ -33,6 +33,20 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+async def _state_info(state: FSMContext):
+    """Safely get current state name and data from FSM context."""
+    state_name = None
+    data = {}
+    if hasattr(state, "get_state"):
+        state_name = await state.get_state()
+    else:
+        state_name = getattr(state, "state", None)
+    if hasattr(state, "get_data"):
+        data = await state.get_data()
+    else:
+        data = getattr(state, "data", {})
+    return state_name, data
+
 class SurveyStates(StatesGroup):
     """Состояния для создания и управления опросами"""
     CREATING = State()
@@ -178,18 +192,39 @@ class SurveyPlugin:
         logger.debug(f"{message.text} from {message.from_user.id}")
         await state.set_state(SurveyStates.TITLE)
         await state.update_data(creator_id=message.from_user.id, questions=[])
+        state_name, data_dump = await _state_info(state)
+        logger.debug(
+            "cmd_create_survey user=%s new_state=%s data=%s",
+            getattr(message.from_user, "id", "unknown"),
+            state_name,
+            data_dump,
+        )
         await message.answer("Введите название опроса:")
 
     async def process_title(self, message: types.Message, state: FSMContext):
         """Обрабатывает ввод названия опроса"""
         await state.update_data(title=message.text)
         await state.set_state(SurveyStates.DESCRIPTION)
+        state_name, data_dump = await _state_info(state)
+        logger.debug(
+            "process_title user=%s new_state=%s data=%s",
+            getattr(message.from_user, "id", "unknown"),
+            state_name,
+            data_dump,
+        )
         await message.answer("Введите описание опроса:")
 
     async def process_description(self, message: types.Message, state: FSMContext):
         """Обрабатывает ввод описания опроса"""
         await state.update_data(description=message.text)
         await state.set_state(SurveyStates.QUESTION_TYPE)
+        state_name, data_dump = await _state_info(state)
+        logger.debug(
+            "process_description user=%s new_state=%s data=%s",
+            getattr(message.from_user, "id", "unknown"),
+            state_name,
+            data_dump,
+        )
 
         builder = InlineKeyboardBuilder()
         builder.button(text="Одиночный выбор", callback_data="type_single")
@@ -216,6 +251,13 @@ class SurveyPlugin:
         if question_type in question_types:
             await state.update_data(current_question_type=question_types[question_type])
             await state.set_state(SurveyStates.QUESTION_TEXT)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_question_type_selection user=%s new_state=%s data=%s",
+                getattr(callback_query.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
 
             await callback_query.message.edit_text(
                 f"Выбран тип: {question_types[question_type]}\n\nВведите текст вопроса:"
@@ -234,6 +276,13 @@ class SurveyPlugin:
                 return
             await state.update_data(scheduled_date=selected_date.isoformat())
             await state.set_state(SurveyStates.SCHEDULE_TIME)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_schedule_date user=%s new_state=%s data=%s",
+                getattr(message.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
             await message.answer("Введите время отправки в формате ЧЧ:ММ:")
         except Exception:
             await message.answer("Неверный формат даты. Используйте ДД.ММ.ГГГГ:")
@@ -259,6 +308,13 @@ class SurveyPlugin:
                 return
             await state.update_data(scheduled_datetime=send_datetime.isoformat())
             await state.set_state(SurveyStates.CONFIRMATION)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_schedule_time user=%s new_state=%s data=%s",
+                getattr(message.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
 
             data.update({'scheduled_datetime': send_datetime.isoformat()})
             summary = self._generate_survey_summary(data)
@@ -277,6 +333,13 @@ class SurveyPlugin:
 
         if q_type in ["одиночный выбор", "множественный выбор"]:
             await state.set_state(SurveyStates.ADDING_OPTIONS)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_question_text user=%s new_state=%s data=%s",
+                getattr(message.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
             await message.answer(
                 "Введите варианты ответов, каждый с новой строки.\nВведите 'Готово', когда закончите:"
             )
@@ -291,6 +354,13 @@ class SurveyPlugin:
             await state.update_data(questions=questions, current_question_text=None, current_question_type=None, options=[])
 
             await state.set_state(SurveyStates.QUESTION_TYPE)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_question_text user=%s new_state=%s data=%s",
+                getattr(message.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
             builder = InlineKeyboardBuilder()
             builder.button(text="Одиночный выбор", callback_data="type_single")
             builder.button(text="Множественный выбор", callback_data="type_multiple")
@@ -326,6 +396,13 @@ class SurveyPlugin:
             )
 
             await state.set_state(SurveyStates.QUESTION_TYPE)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_options user=%s new_state=%s data=%s",
+                getattr(message.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
             builder = InlineKeyboardBuilder()
             builder.button(text="Одиночный выбор", callback_data="type_single")
             builder.button(text="Множественный выбор", callback_data="type_multiple")
@@ -342,6 +419,13 @@ class SurveyPlugin:
             updated_options = data.get('options', [])
             updated_options.extend(options)
             await state.update_data(options=updated_options)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_options user=%s state=%s data=%s",
+                getattr(message.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
             await message.answer(f"Добавлено {len(options)} вариантов. Продолжайте добавлять или введите 'Готово':")
 
     async def process_deadline(self, message: types.Message, state: FSMContext):
@@ -356,6 +440,13 @@ class SurveyPlugin:
             await state.update_data(deadline=deadline.isoformat())
 
             await state.set_state(SurveyStates.ANONYMITY)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_deadline user=%s new_state=%s data=%s",
+                getattr(message.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
             builder = InlineKeyboardBuilder()
             builder.button(text="Да", callback_data="anon_yes")
             builder.button(text="Нет", callback_data="anon_no")
@@ -381,6 +472,13 @@ class SurveyPlugin:
         text = f"Анонимный опрос: {anon_status}\n\n" + text
 
         await state.set_state(SurveyStates.TARGET_GROUPS)
+        state_name, data_dump = await _state_info(state)
+        logger.debug(
+            "process_anonymity_selection user=%s new_state=%s data=%s",
+            getattr(callback_query.from_user, "id", "unknown"),
+            state_name,
+            data_dump,
+        )
         await callback_query.message.edit_text(text)
         await callback_query.answer()
 
@@ -395,6 +493,13 @@ class SurveyPlugin:
         builder.adjust(2)
 
         await state.set_state(SurveyStates.SCHEDULING)
+        state_name, data_dump = await _state_info(state)
+        logger.debug(
+            "process_target_groups user=%s new_state=%s data=%s",
+            getattr(message.from_user, "id", "unknown"),
+            state_name,
+            data_dump,
+        )
         await message.answer("Когда отправить опрос?", reply_markup=builder.as_markup())
 
     async def process_scheduling_selection(self, callback_query: types.CallbackQuery, state: FSMContext):
@@ -404,6 +509,13 @@ class SurveyPlugin:
         if schedule_type == "now":
             await state.update_data(scheduled=False)
             await state.set_state(SurveyStates.CONFIRMATION)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_scheduling_selection user=%s new_state=%s data=%s",
+                getattr(callback_query.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
 
             data = await state.get_data()
             summary = self._generate_survey_summary(data)
@@ -417,6 +529,13 @@ class SurveyPlugin:
             )
             await state.update_data(scheduled=True)
             await state.set_state(SurveyStates.SCHEDULE_DATE)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_scheduling_selection user=%s new_state=%s data=%s",
+                getattr(callback_query.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
 
         await callback_query.answer()
 
@@ -468,6 +587,13 @@ class SurveyPlugin:
                 self._schedule_survey_notifications(survey)
 
             await state.clear()
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_confirmation user=%s new_state=%s data=%s",
+                getattr(getattr(message, "from_user", None), "id", "unknown"),
+                state_name,
+                data_dump,
+            )
             await message.answer(f"✅ Опрос '{data['title']}' успешно создан!")
         else:
             await message.answer("Для подтверждения создания опроса введите 'Подтвердить':")
@@ -481,11 +607,23 @@ class SurveyPlugin:
             return
 
         await state.set_state(SurveyStates.DEADLINE)
+        state_name, data_dump = await _state_info(state)
+        logger.debug(
+            "cmd_finish_questions user=%s new_state=%s data=%s",
+            getattr(message.from_user, "id", "unknown"),
+            state_name,
+            data_dump,
+        )
         await message.answer("Введите срок действия опроса в часах (например, 24):")
 
     async def cmd_questions_count(self, message: types.Message, state: FSMContext):
         """Отображает количество уже добавленных вопросов"""
         logger.debug(f"{message.text} from {message.from_user.id}")
+        logger.debug(
+            "cmd_questions_count user=%s state=%s data=%s",
+            getattr(message.from_user, "id", "unknown"),
+            *(await _state_info(state)),
+        )
         data = await state.get_data()
         count = len(data.get('questions', []))
         await message.answer(f"Количество добавленных вопросов: {count}")
@@ -493,6 +631,11 @@ class SurveyPlugin:
     async def cmd_view_surveys(self, message: types.Message, state: FSMContext):
         """Обработчик команды просмотра опросов"""
         logger.debug(f"{message.text} from {message.from_user.id}")
+        logger.debug(
+            "cmd_view_surveys user=%s state=%s data=%s",
+            getattr(message.from_user, "id", "unknown"),
+            *(await _state_info(state)),
+        )
         user_id = message.from_user.id
         surveys = storage.get_all_surveys()
         user_surveys = {k: v for k, v in surveys.items() if v.get('creator_id') == user_id}
@@ -538,6 +681,13 @@ class SurveyPlugin:
 
             await state.set_state(SurveyStates.EDITING)
             await state.update_data(editing_survey_id=survey_id)
+            state_name, data_dump = await _state_info(state)
+            logger.debug(
+                "process_survey_action user=%s new_state=%s data=%s",
+                getattr(callback_query.from_user, "id", "unknown"),
+                state_name,
+                data_dump,
+            )
 
             builder = InlineKeyboardBuilder()
             for i, question in enumerate(survey['questions']):
@@ -590,6 +740,13 @@ class SurveyPlugin:
 
         await state.update_data(editing_question_id=question_id)
         await state.set_state(SurveyStates.EDITING_QUESTION)
+        state_name, data_dump = await _state_info(state)
+        logger.debug(
+            "process_edit_question user=%s new_state=%s data=%s",
+            getattr(callback_query.from_user, "id", "unknown"),
+            state_name,
+            data_dump,
+        )
 
         await callback_query.message.answer(
             f"Редактирование вопроса:\nТекущий текст: {question['text']}\nТип: {question['type']}\n\nВведите новый текст вопроса:"
@@ -617,6 +774,13 @@ class SurveyPlugin:
         storage.save_survey(survey_id, survey)
         await message.answer("✅ Вопрос успешно обновлен!")
         await state.clear()
+        state_name, data_dump = await _state_info(state)
+        logger.debug(
+            "process_edited_question user=%s new_state=%s data=%s",
+            getattr(message.from_user, "id", "unknown"),
+            state_name,
+            data_dump,
+        )
 
     def _generate_survey_summary(self, data):
         """Генерирует сводку опроса для подтверждения"""
