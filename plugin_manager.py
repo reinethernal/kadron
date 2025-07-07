@@ -9,6 +9,7 @@ import importlib
 import inspect
 import os
 import logging
+from pathlib import Path
 from typing import Dict, List, Any, Optional
 from aiogram import Dispatcher, Bot
 from aiogram.types import BotCommand
@@ -19,23 +20,25 @@ logger = logging.getLogger(__name__)
 class PluginManager:
     """Управляет всеми плагинами бота"""
 
-    def __init__(self, dp: Dispatcher, bot: Bot):
+    def __init__(self, dp: Dispatcher, bot: Bot, plugin_dir: str | None = None):
         self.dp = dp
         self.bot = bot
         self.plugins = {}
-        self.plugin_dir = "plugins"
+        base = Path(__file__).resolve().parent
+        self.plugin_dir = Path(plugin_dir) if plugin_dir else base / "plugins"
+        self._package = self.plugin_dir.name
 
     async def load_plugins(self):
         """Загружает все плагины из каталога plugins"""
-        if not os.path.exists(self.plugin_dir):
-            logger.warning(f"Каталог плагинов {self.plugin_dir} не найден")
-            os.makedirs(self.plugin_dir)
-            return
+        if not self.plugin_dir.exists():
+            msg = f"Каталог плагинов {self.plugin_dir} не найден"
+            logger.error(msg)
+            raise FileNotFoundError(msg)
 
         plugin_files = [
-            f
-            for f in sorted(os.listdir(self.plugin_dir))
-            if f.endswith("_plugin.py") and not f.startswith("__")
+            f.name
+            for f in sorted(self.plugin_dir.iterdir())
+            if f.is_file() and f.name.endswith("_plugin.py") and not f.name.startswith("__")
         ]
 
         # Загружаем admin_menu_plugin последним, т.к. он зависит от других
@@ -55,7 +58,7 @@ class PluginManager:
             return False
 
         try:
-            module = importlib.import_module(f"{self.plugin_dir}.{plugin_name}")
+            module = importlib.import_module(f"{self._package}.{plugin_name}")
             sig = inspect.signature(module.load_plugin)
             kwargs = {}
             if "bot" in sig.parameters:
