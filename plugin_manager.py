@@ -119,6 +119,17 @@ class PluginManager:
                 commands.extend(plugin.get_commands())
         return commands
 
+    def get_plugin_commands(self) -> Dict[str, List[BotCommand]]:
+        """Возвращает команды, сгруппированные по плагинам"""
+        plugin_commands: Dict[str, List[BotCommand]] = {}
+        for name, plugin in self.plugins.items():
+            if hasattr(plugin, "get_commands"):
+                cmds = plugin.get_commands() or []
+                plugin_commands[name] = cmds
+            else:
+                plugin_commands[name] = []
+        return plugin_commands
+
     async def setup_bot_commands(self, bot: Bot):
         """Настраивает команды бота на основе плагинов"""
         commands = self.get_all_commands()
