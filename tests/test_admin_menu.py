@@ -27,24 +27,57 @@ class DummyState:
 
 def test_admin_menu_calls(monkeypatch):
     adm_module = importlib.reload(importlib.import_module("plugins.admin_menu_plugin"))
-    plugin = adm_module.load_plugin()
+
+    class DummyPlugin:
+        pass
+
+    class DummyPM:
+        def __init__(self):
+            self.plugins = {
+                "survey_plugin": DummyPlugin(),
+                "export_plugin": DummyPlugin(),
+                "test_mode_plugin": DummyPlugin(),
+                "survey_templates_plugin": DummyPlugin(),
+                "roles_plugin": DummyPlugin(),
+            }
+
+        def get_plugin(self, name):
+            return self.plugins.get(name)
+
+    pm = DummyPM()
+    plugin = adm_module.load_plugin(plugin_manager=pm)
 
     called = {}
 
     async def fake_create(msg, state):
         called["create"] = msg.text
 
-    monkeypatch.setattr(plugin.survey_plugin, "cmd_create_survey", fake_create)
+    monkeypatch.setattr(
+        plugin.survey_plugin,
+        "cmd_create_survey",
+        fake_create,
+        raising=False,
+    )
 
     async def fake_export(msg):
         called["export"] = msg.text
 
-    monkeypatch.setattr(plugin.export_plugin, "cmd_export", fake_export)
+    monkeypatch.setattr(
+        plugin.export_plugin,
+        "cmd_export",
+        fake_export,
+        raising=False,
+    )
 
     async def fake_test_mode(msg, state):
         called["test_mode"] = msg.text
 
-    monkeypatch.setattr(plugin.test_mode_plugin, "cmd_test_mode", fake_test_mode)
+    monkeypatch.setattr(
+        plugin.test_mode_plugin,
+        "cmd_test_mode",
+        fake_test_mode,
+        raising=False,
+    )
 
     state = DummyState()
     msg = DummyMessage("Создать опрос")
