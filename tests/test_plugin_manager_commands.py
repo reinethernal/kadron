@@ -1,6 +1,7 @@
 import asyncio
 from pathlib import Path
 import sys
+import os
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -57,3 +58,19 @@ def test_setup_bot_commands_collects_from_plugins(tmp_path, monkeypatch):
 
     assert bot.commands
     assert {c.command for c in bot.commands} == {'one', 'two'}
+
+
+def test_plugins_load_from_env_dir(tmp_path, monkeypatch):
+    pkg_dir = tmp_path / 'external_plugins'
+    pkg_dir.mkdir()
+    (pkg_dir / '__init__.py').write_text('')
+    make_plugin_file(pkg_dir / 'ext_plugin.py', 'ext')
+    monkeypatch.setenv('PLUGIN_DIR', str(pkg_dir))
+
+    dp = aiogram.Dispatcher()
+    bot = DummyBot()
+    pm = PluginManager(dp, bot, plugin_dir=os.getenv('PLUGIN_DIR'))
+
+    asyncio.run(pm.load_plugins())
+
+    assert 'ext_plugin' in pm.plugins
