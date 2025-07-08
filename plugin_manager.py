@@ -101,6 +101,10 @@ class PluginManager:
         try:
             plugin = self.plugins[plugin_name]
 
+            # Отменяем регистрацию обработчиков, если метод определён
+            if hasattr(plugin, "unregister_handlers"):
+                await plugin.unregister_handlers(self.router)
+
             # Вызываем хук выгрузки, если он определён
             if hasattr(plugin, "on_plugin_unload"):
                 plugin.on_plugin_unload()

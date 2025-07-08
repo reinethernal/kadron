@@ -55,6 +55,18 @@ class TestModePlugin:
             self.handle_test_response, lambda c: c.data.startswith("test_response_")
         )
 
+    async def unregister_handlers(self, router: Router):
+        for attr in dir(router):
+            event = getattr(router, attr)
+            handlers = getattr(event, "handlers", None)
+            if handlers is None:
+                continue
+            handlers[:] = [
+                h
+                for h in handlers
+                if getattr(getattr(h, "callback", h), "__self__", None) is not self
+            ]
+
     def get_commands(self):
         # В aiogram 3.x конструкция BotCommand теперь требует именованных аргументов:
         return [

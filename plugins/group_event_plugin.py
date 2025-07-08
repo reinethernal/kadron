@@ -143,6 +143,18 @@ class GroupEventPlugin:
             self.on_private_message, lambda m: getattr(m.chat, "type", "") == "private"
         )
 
+    async def unregister_handlers(self, router: Router):
+        for attr in dir(router):
+            event = getattr(router, attr)
+            handlers = getattr(event, "handlers", None)
+            if handlers is None:
+                continue
+            handlers[:] = [
+                h
+                for h in handlers
+                if getattr(getattr(h, "callback", h), "__self__", None) is not self
+            ]
+
     async def on_new_chat_member(self, event: ChatMemberUpdated):
         user = event.from_user
         if user.is_bot:
