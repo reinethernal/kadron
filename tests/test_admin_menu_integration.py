@@ -1,8 +1,6 @@
 import importlib
 import asyncio
 import sys
-import os
-from pathlib import Path
 import aiogram
 
 
@@ -20,6 +18,7 @@ class DummyButton:
 class DummyMarkup:
     def __init__(self, keyboard=None, **kwargs):
         self.keyboard = keyboard or []
+
 
 class DummyStorage:
     def __init__(self):
@@ -140,10 +139,6 @@ def test_admin_menu_creates_survey(monkeypatch):
     monkeypatch.setattr(aiogram.types, "KeyboardButton", DummyButton, raising=False)
     monkeypatch.setattr(asyncio, "create_task", lambda coro: DummyTask())
 
-    root = Path(__file__).resolve().parents[1]
-    if str(root) not in sys.path:
-        sys.path.insert(0, str(root))
-
     for k in list(sys.modules.keys()):
         if k.startswith("plugins."):
             sys.modules.pop(k)
@@ -170,7 +165,7 @@ def test_admin_menu_creates_survey(monkeypatch):
     monkeypatch.setattr(group_mod, "storage", storage, raising=False)
     monkeypatch.setattr(group_mod, "remove_inactive_users", lambda bot: None)
 
-    admin_mod = importlib.reload(importlib.import_module("plugins.admin_menu_plugin"))
+    importlib.reload(importlib.import_module("plugins.admin_menu_plugin"))
 
     pm_module = importlib.reload(importlib.import_module("plugin_manager"))
     dp = pm_module.Dispatcher()
