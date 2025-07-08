@@ -5,7 +5,7 @@ import io
 import datetime
 import os
 
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Импорт хранилища
@@ -43,15 +43,15 @@ class ExportPlugin:
         self.name = "export_plugin"
         self.description = "Экспорт данных опросов в разные форматы"
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         # Используем новые методы регистрации:
         from aiogram.filters import Command  # фильтр команд из aiogram v3
 
-        dp.message.register(self.cmd_export, Command("export"))
-        dp.callback_query.register(
+        router.message.register(self.cmd_export, Command("export"))
+        router.callback_query.register(
             self.handle_survey_selection, lambda c: c.data.startswith("export_survey_")
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_format_selection, lambda c: c.data.startswith("export_format_")
         )
 

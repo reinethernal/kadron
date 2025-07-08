@@ -11,7 +11,7 @@ import logging
 import re
 from core.db_manager import get_all_groups
 
-from aiogram import Dispatcher, types, Bot
+from aiogram import Router, types, Bot
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext  # <-- Вместо dispatcher.FSMContext
 from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.filters.state
@@ -62,45 +62,45 @@ class SchedulerPlugin:
         self.close_tasks = {}
         self.bot = bot
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """
         Регистрируем хендлеры (обработчики) в стиле aiogram 3.x
         """
 
         # Вместо dp.register_message_handler(...), используем dp.message.register(...)
-        dp.message.register(
+        router.message.register(
             self.cmd_schedule,
             Command(commands=["schedule"]),  # Разрешаем команду /schedule
         )
 
         # Вместо dp.register_callback_query_handler(...), используем dp.callback_query.register(...)
         # Дополнительно учитываем, что нам нужно вызывать этот хендлер в состоянии SchedulerStates.SELECTING_SURVEY
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_survey_selection,
             lambda c: c.data.startswith("schedule_survey_"),
             SchedulerStates.SELECTING_SURVEY,
         )
 
-        dp.message.register(self.process_group_input, SchedulerStates.SELECTING_GROUPS)
+        router.message.register(self.process_group_input, SchedulerStates.SELECTING_GROUPS)
 
         # Хендлер на ввод даты (состояние SELECTING_DATE)
-        dp.message.register(self.process_date_input, SchedulerStates.SELECTING_DATE)
+        router.message.register(self.process_date_input, SchedulerStates.SELECTING_DATE)
 
         # Хендлер на ввод времени (состояние SELECTING_TIME)
-        dp.message.register(self.process_time_input, SchedulerStates.SELECTING_TIME)
+        router.message.register(self.process_time_input, SchedulerStates.SELECTING_TIME)
 
         # Хендлер на подтверждение планирования (callback) в состоянии CONFIRMING
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_confirmation,
             lambda c: c.data.startswith("schedule_confirm_"),
             SchedulerStates.CONFIRMING,
         )
 
         # Команда /scheduled (без конкретного состояния)
-        dp.message.register(self.cmd_list_scheduled, Command(commands=["scheduled"]))
+        router.message.register(self.cmd_list_scheduled, Command(commands=["scheduled"]))
 
         # Хендлер на отмену запланированного (любой стейт, или без стейта)
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_cancel_scheduled,
             lambda c: c.data.startswith("cancel_scheduled_"),
         )

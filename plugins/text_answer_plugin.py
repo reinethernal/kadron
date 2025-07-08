@@ -5,7 +5,7 @@
 отображение и ввод пользователем.
 """
 
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -44,12 +44,12 @@ class TextAnswerPlugin(ResponseMixin):
         self.name = "text_answer_plugin"
         self.description = "Тип вопроса - текстовый ответ"
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """Регистрирует все обработчики плагина"""
-        dp.callback_query.register(
+        router.callback_query.register(
             self.start_text_answer, lambda c: c.data.startswith("text_answer_")
         )
-        dp.message.register(
+        router.message.register(
             self.process_text_answer,
             StateFilter(TextAnswerStates.WAITING_FOR_ANSWER),  # Убираем 'state='
         )

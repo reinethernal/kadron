@@ -1,4 +1,4 @@
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.filters import Command
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
@@ -43,15 +43,15 @@ class TestModePlugin:
         self.description = "Тестовый режим для опросов"
         self.test_surveys = {}
 
-    async def register_handlers(self, dp: Dispatcher):
-        dp.message.register(self.cmd_test_mode, Command("test_mode"))
-        dp.callback_query.register(
+    async def register_handlers(self, router: Router):
+        router.message.register(self.cmd_test_mode, Command("test_mode"))
+        router.callback_query.register(
             self.handle_survey_selection, lambda c: c.data.startswith("test_survey_")
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_test_action, lambda c: c.data.startswith("test_action_")
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_test_response, lambda c: c.data.startswith("test_response_")
         )
 

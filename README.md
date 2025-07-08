@@ -113,11 +113,12 @@ flake8
 Пример использования:
 
 ```python
-from aiogram import Dispatcher
+from aiogram import Dispatcher, Router
 from plugin_manager import PluginManager
 
 # dp — экземпляр Dispatcher
-pm = PluginManager(dp)
+router = Router()
+pm = PluginManager(dp, router=router)
 await pm.load_plugins()
 await pm.setup_bot_commands(bot)
 ```

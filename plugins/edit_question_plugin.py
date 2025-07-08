@@ -6,7 +6,7 @@
 """
 
 import logging
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
@@ -108,27 +108,27 @@ class EditQuestionPlugin:
         self.name = "edit_question"
         self.description = "Редактировать вопросы в существующих опросах"
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """Регистрирует все обработчики плагина"""
-        dp.message.register(
+        router.message.register(
             self.cmd_edit_question,
             Command("edit_question"),
             lambda msg: is_admin(msg.from_user.id),
         )
 
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_survey_selection,
             lambda c: c.data.startswith("edit_survey_"),
             StateFilter(EditQuestionStates.SelectSurvey),
         )
 
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_question_selection,
             lambda c: c.data.startswith("edit_question_"),
             StateFilter(EditQuestionStates.SelectQuestion),
         )
 
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_edit_action,
             lambda c: c.data.startswith("edit_action_"),
             StateFilter(
@@ -139,15 +139,15 @@ class EditQuestionPlugin:
             ),
         )
 
-        dp.message.register(
+        router.message.register(
             self.process_question_text, StateFilter(EditQuestionStates.EditQuestionText)
         )
 
-        dp.message.register(
+        router.message.register(
             self.process_new_option, StateFilter(EditQuestionStates.AddOption)
         )
 
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_remove_option,
             lambda c: c.data.startswith("remove_option_"),
             StateFilter(EditQuestionStates.RemoveOption),

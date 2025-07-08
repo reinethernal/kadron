@@ -7,7 +7,7 @@
 
 import logging
 
-from aiogram import Dispatcher
+from aiogram import Router
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import CallbackQuery, Message
 from core.db_manager import add_response
@@ -43,17 +43,17 @@ class MultipleChoicePlugin(ResponseMixin):
         self.name = "multiple_choice_plugin"
         self.description = "Тип вопроса - множественный выбор"
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """Регистрирует обработчики плагина (стиль aiogram 3.x)"""
-        dp.callback_query.register(
+        router.callback_query.register(
             self.process_multiple_choice_selection,
             lambda c: c.data.startswith("multi_choice_"),
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.process_multiple_choice_submit,
             lambda c: c.data.startswith("multi_submit_"),
         )
-        dp.message.register(self.process_other_input)
+        router.message.register(self.process_other_input)
 
     def get_commands(self):
         """Возвращает список команд плагина"""

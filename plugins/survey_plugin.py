@@ -4,7 +4,7 @@
 """
 
 import logging
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -93,53 +93,53 @@ class SurveyPlugin:
         self.description = "Создание и управление опросами"
         self.scheduled_tasks = {}
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """Регистрирует все обработчики для плагина опросов"""
         # Обработчики создания опроса
-        dp.message.register(self.cmd_create_survey, Command(commands=["create_survey"]))
-        dp.message.register(
+        router.message.register(self.cmd_create_survey, Command(commands=["create_survey"]))
+        router.message.register(
             self.cmd_create_survey, lambda msg: msg.text == "Создать опрос"
         )
-        dp.message.register(self.process_title, StateFilter(SurveyStates.TITLE))
-        dp.message.register(
+        router.message.register(self.process_title, StateFilter(SurveyStates.TITLE))
+        router.message.register(
             self.process_description, StateFilter(SurveyStates.DESCRIPTION)
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.process_question_type_selection,
             lambda c: c.data.startswith("type_"),
             StateFilter(SurveyStates.QUESTION_TYPE),
         )
-        dp.message.register(
+        router.message.register(
             self.process_question_text, StateFilter(SurveyStates.QUESTION_TEXT)
         )
-        dp.message.register(
+        router.message.register(
             self.process_options, StateFilter(SurveyStates.ADDING_OPTIONS)
         )
-        dp.message.register(self.process_deadline, StateFilter(SurveyStates.DEADLINE))
-        dp.callback_query.register(
+        router.message.register(self.process_deadline, StateFilter(SurveyStates.DEADLINE))
+        router.callback_query.register(
             self.process_anonymity_selection,
             lambda c: c.data.startswith("anon_"),
             StateFilter(SurveyStates.ANONYMITY),
         )
-        dp.message.register(
+        router.message.register(
             self.process_target_groups, StateFilter(SurveyStates.TARGET_GROUPS)
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.process_scheduling_selection,
             lambda c: c.data.startswith("schedule_"),
             StateFilter(SurveyStates.SCHEDULING),
         )
-        dp.message.register(
+        router.message.register(
             self.process_schedule_date, StateFilter(SurveyStates.SCHEDULE_DATE)
         )
-        dp.message.register(
+        router.message.register(
             self.process_schedule_time, StateFilter(SurveyStates.SCHEDULE_TIME)
         )
-        dp.message.register(
+        router.message.register(
             self.process_confirmation, StateFilter(SurveyStates.CONFIRMATION)
         )
         # Дополнительные команды во время ввода вопросов
-        dp.message.register(
+        router.message.register(
             self.cmd_finish_questions,
             Command(commands=["finish_questions"]),
             StateFilter(
@@ -148,7 +148,7 @@ class SurveyPlugin:
                 SurveyStates.ADDING_OPTIONS,
             ),
         )
-        dp.message.register(
+        router.message.register(
             self.cmd_questions_count,
             Command(commands=["questions_count"]),
             StateFilter(
@@ -159,17 +159,17 @@ class SurveyPlugin:
         )
 
         # Обработчики управления опросами
-        dp.message.register(self.cmd_view_surveys, Command(commands=["view_surveys"]))
-        dp.message.register(self.cmd_view_surveys, lambda msg: msg.text == "Мои опросы")
-        dp.callback_query.register(
+        router.message.register(self.cmd_view_surveys, Command(commands=["view_surveys"]))
+        router.message.register(self.cmd_view_surveys, lambda msg: msg.text == "Мои опросы")
+        router.callback_query.register(
             self.process_survey_action, lambda c: c.data.startswith("survey_")
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.process_edit_question,
             lambda c: c.data.startswith("edit_q_"),
             StateFilter(SurveyStates.EDITING),
         )
-        dp.message.register(
+        router.message.register(
             self.process_edited_question, StateFilter(SurveyStates.EDITING_QUESTION)
         )
 

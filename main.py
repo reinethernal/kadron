@@ -22,6 +22,7 @@ except ImportError:
 
 from core.db_manager import initialize_db
 from plugin_manager import PluginManager
+from routers.menu_router import router as menu_router
 from handlers.survey_handlers import register_survey_handlers
 from handlers.group_handlers import register_group_handlers
 from handlers.view_surveys_handler import register_view_surveys_handler
@@ -65,7 +66,7 @@ async def main():
     dp = Dispatcher()
 
     # Инициализация менеджера плагинов
-    plugin_manager = PluginManager(dp, bot, plugin_dir=PLUGIN_DIR)
+    plugin_manager = PluginManager(dp, bot, plugin_dir=PLUGIN_DIR, router=menu_router)
 
     # Загружаем плагины
     await plugin_manager.load_plugins()

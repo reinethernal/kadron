@@ -23,7 +23,7 @@
 - `on_plugin_unload()` — вызывается при выгрузке плагина.
 """
 
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command
@@ -44,13 +44,13 @@ class PluginTemplate:
         self.name = "template_plugin"
         self.description = "Шаблонный плагин"
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """Регистрация всех обработчиков плагина"""
-        dp.message.register(
+        router.message.register(
             self.command_handler,
             Command(commands=["template_command"]),
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_button,
             lambda c: c.data in {"btn1", "btn2"},
         )

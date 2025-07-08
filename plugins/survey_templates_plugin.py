@@ -5,7 +5,7 @@
 шаблонов, удалять их и создавать новые опросы на основе выбранного шаблона.
 """
 
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.filters import Command
 from datetime import datetime
 import uuid
@@ -41,11 +41,11 @@ class SurveyTemplatesPlugin:
         self.name = "survey_templates_plugin"
         self.description = "Шаблоны опросов"
 
-    async def register_handlers(self, dp: Dispatcher):
-        dp.message.register(self.cmd_save_template, Command("save_template"))
-        dp.message.register(self.cmd_list_templates, Command("list_templates"))
-        dp.message.register(self.cmd_delete_template, Command("delete_template"))
-        dp.message.register(self.cmd_use_template, Command("use_template"))
+    async def register_handlers(self, router: Router):
+        router.message.register(self.cmd_save_template, Command("save_template"))
+        router.message.register(self.cmd_list_templates, Command("list_templates"))
+        router.message.register(self.cmd_delete_template, Command("delete_template"))
+        router.message.register(self.cmd_use_template, Command("use_template"))
 
     def get_commands(self):
         return [

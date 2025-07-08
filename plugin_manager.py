@@ -11,7 +11,7 @@ import logging
 import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
-from aiogram import Dispatcher, Bot
+from aiogram import Dispatcher, Bot, Router
 from aiogram.types import BotCommand
 
 logger = logging.getLogger(__name__)
@@ -20,9 +20,12 @@ logger = logging.getLogger(__name__)
 class PluginManager:
     """Управляет всеми плагинами бота"""
 
-    def __init__(self, dp: Dispatcher, bot: Bot, plugin_dir: str | None = None):
+    def __init__(self, dp: Dispatcher, bot: Bot, plugin_dir: str | None = None, router: Router | None = None):
         self.dp = dp
         self.bot = bot
+        self.router = router or Router()
+        if hasattr(self.dp, "include_router"):
+            self.dp.include_router(self.router)
         self.plugins = {}
         base = Path(__file__).resolve().parent
         self.plugin_dir = Path(plugin_dir) if plugin_dir else base / "plugins"
@@ -74,7 +77,7 @@ class PluginManager:
             plugin = module.load_plugin(**kwargs)
 
             # Регистрируем обработчики плагина
-            await plugin.register_handlers(self.dp)
+            await plugin.register_handlers(self.router)
 
             # Вызываем хук загрузки, если он определён
             if hasattr(plugin, "on_plugin_load"):

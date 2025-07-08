@@ -5,7 +5,7 @@
 подробную информацию.
 """
 
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
@@ -90,20 +90,20 @@ class ViewSurveysPlugin:
         self.name = "view_surveys"
         self.description = "Просмотр и управление опросами"
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """Регистрирует все обработчики плагина"""
-        dp.message.register(self.cmd_view_surveys, Command("view_surveys"))
-        dp.callback_query.register(
+        router.message.register(self.cmd_view_surveys, Command("view_surveys"))
+        router.callback_query.register(
             self.handle_survey_selection,
             lambda c: c.data.startswith("view_survey_"),
             StateFilter(ViewSurveysStates.Viewing),
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_filter_selection,
             lambda c: c.data.startswith("filter_"),
             StateFilter(ViewSurveysStates.FilterMenu),
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_survey_action,
             lambda c: c.data.startswith("survey_action_"),
             StateFilter(ViewSurveysStates.ViewingDetails),

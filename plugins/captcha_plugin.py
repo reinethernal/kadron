@@ -11,7 +11,7 @@ import logging
 import random
 import string
 
-from aiogram import Dispatcher
+from aiogram import Dispatcher, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ChatMemberUpdated, Message, CallbackQuery, ChatPermissions
@@ -78,12 +78,12 @@ class CaptchaPlugin:
             },
         ]
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """
         Регистрируем хендлеры для aiogram 3.x
         """
         # 1) Обработка новых участников
-        dp.chat_member.register(
+        router.chat_member.register(
             self.on_new_chat_member,
             ChatMemberUpdatedFilter(
                 member_status_changed=["member", "creator", "administrator"]
@@ -91,28 +91,28 @@ class CaptchaPlugin:
         )
 
         # 2) Обработка капчи
-        dp.callback_query.register(
+        router.callback_query.register(
             self.process_captcha, lambda c: c.data.startswith("captcha_")
         )
 
         # 3) Ограничиваем пользователей в группах, если капча не пройдена
-        dp.message.register(
+        router.message.register(
             self.check_access,
             lambda msg: msg.chat.type in ["group", "supergroup"]
             and not self.is_access_granted(msg.from_user.id),
         )
 
         # 4) Запуск короткого опроса после капчи
-        dp.callback_query.register(
+        router.callback_query.register(
             self.start_primary_survey, lambda c: c.data == "start_primary_survey"
         )
-        dp.callback_query.register(
+        router.callback_query.register(
             self.process_primary_survey_choice,
             lambda c: c.data.startswith("primary_choice_"),
         )
 
         # 5) Обработка текстового ответа в состоянии AWAITING_RESPONSE
-        dp.message.register(
+        router.message.register(
             self.process_primary_survey_text,
             StateFilter(PrimarySurveyStates.AWAITING_RESPONSE),
         )
