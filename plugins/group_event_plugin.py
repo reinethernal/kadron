@@ -5,9 +5,10 @@
 import os
 import logging
 import asyncio
-from aiogram.types import ChatPermissions
+from aiogram.types import ChatPermissions, ChatMemberUpdated, Message
 from aiogram.client.bot import Bot
 from aiogram import Router
+from aiogram.filters import ChatMemberUpdatedFilter
 from core.db_manager import (
     is_user_pending,
     remove_user_from_pending,
@@ -133,8 +134,33 @@ class GroupEventPlugin:
         self.cleanup_task = None
 
     async def register_handlers(self, router: Router):
-        # При необходимости здесь можно зарегистрировать обработчики событий группы.
-        pass
+        """Регистрирует обработчики событий группы."""
+        router.chat_member.register(
+            self.on_new_chat_member,
+            ChatMemberUpdatedFilter(member_status_changed=["member", "creator", "administrator"]),
+        )
+        router.message.register(
+            self.on_private_message, lambda m: getattr(m.chat, "type", "") == "private"
+        )
+
+    async def on_new_chat_member(self, event: ChatMemberUpdated):
+        user = event.from_user
+        if user.is_bot:
+            return
+        if ENABLE_CAPTCHA:
+            await restrict_user(event.bot, event.chat.id, user.id)
+            asyncio.create_task(start_captcha_timer(event.bot, user.id, event.chat.id))
+        else:
+            welcome = storage.get_setting("welcome_message", DEFAULT_WELCOME_MESSAGE)
+            try:
+                await event.bot.send_message(
+                    event.chat.id, welcome.format(username=user.full_name)
+                )
+            except Exception as e:
+                logger.error(f"Не удалось отправить приветственное сообщение: {e}")
+
+    async def on_private_message(self, message: Message):
+        await unrestrict_user_if_needed(message.bot, message.from_user.id)
 
     def get_commands(self):
         return []

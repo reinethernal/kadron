@@ -100,17 +100,18 @@ class DummyState:
 
 
 class DummyHandler:
+    def __init__(self):
+        self.handlers = []
+
     def __call__(self, *args, **kwargs):
         def decorator(func):
+            self.handlers.append(func)
             return func
 
         return decorator
 
-    def register(self, *args, **kwargs):
-        def decorator(func):
-            return func
-
-        return decorator
+    def register(self, handler, *args, **kwargs):
+        self.handlers.append(handler)
 
 
 class DummyDispatcher:
@@ -118,6 +119,16 @@ class DummyDispatcher:
         self.message = DummyHandler()
         self.callback_query = DummyHandler()
         self.chat_member = DummyHandler()
+
+
+class DummyRouter:
+    def __init__(self):
+        self.message = DummyHandler()
+        self.callback_query = DummyHandler()
+        self.chat_member = DummyHandler()
+
+    def include_router(self, *args, **kwargs):
+        pass
 
 
 class DummyTask:
@@ -131,9 +142,11 @@ async def no_task(*args, **kwargs):
 
 def test_admin_menu_creates_survey(monkeypatch):
     monkeypatch.setenv("ADMIN_IDS", "1")
+    monkeypatch.setenv("ENABLE_CAPTCHA", "True")
     monkeypatch.setenv("ENABLE_INACTIVE_CLEANUP", "False")
 
     monkeypatch.setattr(aiogram, "Dispatcher", DummyDispatcher, raising=False)
+    monkeypatch.setattr(aiogram, "Router", DummyRouter, raising=False)
     monkeypatch.setattr(aiogram.types, "BotCommand", DummyBotCommand, raising=False)
     monkeypatch.setattr(aiogram.types, "ReplyKeyboardMarkup", DummyMarkup, raising=False)
     monkeypatch.setattr(aiogram.types, "KeyboardButton", DummyButton, raising=False)
@@ -164,6 +177,20 @@ def test_admin_menu_creates_survey(monkeypatch):
     group_mod = importlib.reload(importlib.import_module("plugins.group_event_plugin"))
     monkeypatch.setattr(group_mod, "storage", storage, raising=False)
     monkeypatch.setattr(group_mod, "remove_inactive_users", lambda bot: None)
+    called = {}
+
+    async def fake_restrict(bot, chat_id, user_id):
+        called["restrict"] = (chat_id, user_id)
+
+    def fake_timer(bot, user_id, chat_id):
+        called["timer"] = (user_id, chat_id)
+
+    async def fake_unrestrict(bot, user_id):
+        called["unrestrict"] = user_id
+
+    monkeypatch.setattr(group_mod, "restrict_user", fake_restrict, raising=False)
+    monkeypatch.setattr(group_mod, "start_captcha_timer", fake_timer, raising=False)
+    monkeypatch.setattr(group_mod, "unrestrict_user_if_needed", fake_unrestrict, raising=False)
 
     importlib.reload(importlib.import_module("plugins.admin_menu_plugin"))
 
@@ -173,6 +200,35 @@ def test_admin_menu_creates_survey(monkeypatch):
     bot = pm_module.Bot()
     pm = pm_module.PluginManager(dp, bot, router=router)
     asyncio.run(pm.load_plugins())
+
+    group = pm.get_plugin("group_event_plugin")
+    assert group.on_new_chat_member in router.chat_member.handlers
+    assert group.on_private_message in router.message.handlers
+
+    event = type(
+        "Ev",
+        (),
+        {
+            "bot": bot,
+            "chat": type("C", (), {"id": 42})(),
+            "from_user": type("U", (), {"id": 1, "full_name": "U", "is_bot": False})(),
+        },
+    )()
+    asyncio.run(group.on_new_chat_member(event))
+    msg = type(
+        "Msg",
+        (),
+        {
+            "bot": bot,
+            "chat": type("Chat", (), {"type": "private", "id": 1})(),
+            "from_user": DummyUser(),
+        },
+    )()
+    asyncio.run(group.on_private_message(msg))
+
+    assert called["restrict"] == (42, 1)
+    assert called["timer"] == (1, 42)
+    assert called["unrestrict"] == 1
 
     admin = pm.get_plugin("admin_menu_plugin")
     survey = pm.get_plugin("survey_plugin")
