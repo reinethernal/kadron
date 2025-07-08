@@ -20,7 +20,8 @@
 Необязательные методы:
 - `get_keyboards()` — необходимые клавиатуры;
 - `on_plugin_load()` — вызывается при загрузке плагина;
-- `on_plugin_unload()` — вызывается при выгрузке плагина.
+- `on_plugin_unload()` — вызывается при выгрузке плагина;
+- `unregister_handlers(router)` — удаляет зарегистрированные обработчики.
 """
 
 from aiogram import Router, types
@@ -55,6 +56,19 @@ class PluginTemplate:
             lambda c: c.data in {"btn1", "btn2"},
         )
         # Добавляйте другие обработчики при необходимости
+
+    async def unregister_handlers(self, router: Router):
+        """Удаляет все обработчики плагина из переданного ``Router``"""
+        for attr in dir(router):
+            event = getattr(router, attr)
+            handlers = getattr(event, "handlers", None)
+            if handlers is None:
+                continue
+            handlers[:] = [
+                h
+                for h in handlers
+                if getattr(getattr(h, "callback", h), "__self__", None) is not self
+            ]
 
     def get_commands(self):
         """Возвращает список команд, предоставляемых плагином"""

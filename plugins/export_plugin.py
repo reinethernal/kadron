@@ -55,6 +55,18 @@ class ExportPlugin:
             self.handle_format_selection, lambda c: c.data.startswith("export_format_")
         )
 
+    async def unregister_handlers(self, router: Router):
+        for attr in dir(router):
+            event = getattr(router, attr)
+            handlers = getattr(event, "handlers", None)
+            if handlers is None:
+                continue
+            handlers[:] = [
+                h
+                for h in handlers
+                if getattr(getattr(h, "callback", h), "__self__", None) is not self
+            ]
+
     def get_commands(self):
         return [
             types.BotCommand(command="export", description="Экспорт данных опросов")
