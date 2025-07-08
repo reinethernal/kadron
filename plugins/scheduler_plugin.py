@@ -62,6 +62,11 @@ class SchedulerPlugin:
         self.close_tasks = {}
         self.bot = bot
 
+        # Функция создания задач может быть переопределена в тестах
+        self._create_task = lambda coro_func, *args, **kwargs: asyncio.create_task(
+            coro_func(*args, **kwargs)
+        )
+
     async def register_handlers(self, router: Router):
         """
         Регистрируем хендлеры (обработчики) в стиле aiogram 3.x
@@ -81,7 +86,9 @@ class SchedulerPlugin:
             SchedulerStates.SELECTING_SURVEY,
         )
 
-        router.message.register(self.process_group_input, SchedulerStates.SELECTING_GROUPS)
+        router.message.register(
+            self.process_group_input, SchedulerStates.SELECTING_GROUPS
+        )
 
         # Хендлер на ввод даты (состояние SELECTING_DATE)
         router.message.register(self.process_date_input, SchedulerStates.SELECTING_DATE)
@@ -97,7 +104,9 @@ class SchedulerPlugin:
         )
 
         # Команда /scheduled (без конкретного состояния)
-        router.message.register(self.cmd_list_scheduled, Command(commands=["scheduled"]))
+        router.message.register(
+            self.cmd_list_scheduled, Command(commands=["scheduled"])
+        )
 
         # Хендлер на отмену запланированного (любой стейт, или без стейта)
         router.callback_query.register(
@@ -343,7 +352,7 @@ class SchedulerPlugin:
             return
 
         # Основная задача
-        task = asyncio.create_task(self._send_scheduled_survey(survey_id, time_delta))
+        task = self._create_task(self._send_scheduled_survey, survey_id, time_delta)
         self.scheduled_tasks[survey_id] = task
 
         survey = storage.get_survey(survey_id)
@@ -353,8 +362,8 @@ class SchedulerPlugin:
                 reminder_time = deadline - datetime.timedelta(minutes=10)
                 reminder_delta = (reminder_time - now).total_seconds()
                 if reminder_delta > 0:
-                    reminder_task = asyncio.create_task(
-                        self._send_reminder(survey_id, reminder_delta)
+                    reminder_task = self._create_task(
+                        self._send_reminder, survey_id, reminder_delta
                     )
                     self.reminder_tasks[survey_id] = reminder_task
             except Exception as e:
@@ -428,8 +437,8 @@ class SchedulerPlugin:
                 deadline = datetime.datetime.fromisoformat(survey.get("deadline"))
                 close_delta = (deadline - datetime.datetime.now()).total_seconds()
                 if close_delta > 0:
-                    close_task = asyncio.create_task(
-                        self._close_survey(survey_id, close_delta)
+                    close_task = self._create_task(
+                        self._close_survey, survey_id, close_delta
                     )
                     self.close_tasks[survey_id] = close_task
             except Exception as e:
