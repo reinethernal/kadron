@@ -6,7 +6,8 @@ Admin Plugin для Telegram бота.
 
 import logging
 from aiogram.client.bot import Bot
-from aiogram import Router
+from aiogram import Router, types
+from aiogram.filters import Command
 from core.db_manager import get_all_groups, get_poll_by_id
 from dotenv import load_dotenv
 from utils.env_utils import parse_admin_ids
@@ -25,11 +26,30 @@ class AdminPlugin:
         self.description = "Административные функции"
 
     async def register_handlers(self, router: Router):
-        # Здесь можно зарегистрировать обработчики административных команд.
-        pass
+        """Регистрирует обработчики административных команд"""
+        router.message.register(
+            self.cmd_send_survey,
+            Command(commands=["send_survey"]),
+            lambda msg: msg.from_user.id in ADMIN_IDS,
+        )
 
     def get_commands(self):
-        return []
+        return [
+            types.BotCommand(
+                command="send_survey",
+                description="Разослать опрос по группам",
+            )
+        ]
+
+    async def cmd_send_survey(self, message: types.Message):
+        """Команда для рассылки существующего опроса по группам"""
+        parts = message.text.split(maxsplit=1)
+        if len(parts) < 2 or not parts[1].isdigit():
+            await message.answer("Использование: /send_survey <poll_id>")
+            return
+        poll_id = int(parts[1])
+        await self.send_survey_to_users(poll_id, message.bot)
+        await message.answer("Опрос отправлен")
 
     def on_plugin_load(self):
         logger.info("Плагин администратора загружен")
