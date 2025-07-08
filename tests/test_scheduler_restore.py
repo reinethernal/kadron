@@ -78,20 +78,19 @@ def test_restore_scheduled(monkeypatch):
 
     tasks = []
 
-    def fake_create_task(coro):
-        tasks.append(coro)
+    def fake_create_task(func, *args, **kwargs):
+        tasks.append((func, args, kwargs))
 
         class Dummy:
             pass
 
         return Dummy()
 
-    monkeypatch.setattr(asyncio, "create_task", fake_create_task)
-
     module = importlib.reload(importlib.import_module("plugins.scheduler_plugin"))
     monkeypatch.setattr(module, "storage", storage, raising=False)
     bot = DummyBot()
     plugin = module.load_plugin(bot)
+    monkeypatch.setattr(plugin, "_create_task", fake_create_task)
     plugin.on_plugin_load()
 
     assert "s1" in plugin.scheduled_tasks
@@ -127,14 +126,14 @@ def test_scheduled_send(monkeypatch):
 
     monkeypatch.setattr(module.asyncio, "sleep", fake_sleep)
 
-    def fake_task(coro):
+    def fake_task(func, *args, **kwargs):
         class Dummy:
             def cancel(self):
                 pass
 
         return Dummy()
 
-    monkeypatch.setattr(module.asyncio, "create_task", fake_task)
+    monkeypatch.setattr(plugin, "_create_task", fake_task)
 
     asyncio.run(plugin._send_scheduled_survey("s1", 0))
 
