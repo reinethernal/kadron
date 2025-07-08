@@ -2,7 +2,7 @@
 Плагин для одиночного выбора.
 """
 
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from core.db_manager import add_response
 from .response_mixin import ResponseMixin
@@ -31,12 +31,12 @@ class SingleChoicePlugin(ResponseMixin):
         self.name = "single_choice_plugin"
         self.description = "Тип вопроса - одиночный выбор"
 
-    async def register_handlers(self, dp: Dispatcher):
-        dp.callback_query.register(
+    async def register_handlers(self, router: Router):
+        router.callback_query.register(
             self.process_single_choice_selection,
             lambda c: c.data.startswith("single_choice_"),
         )
-        dp.message.register(self.process_other_input)
+        router.message.register(self.process_other_input)
 
     def get_commands(self):
         return []

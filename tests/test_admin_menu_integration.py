@@ -174,8 +174,9 @@ def test_admin_menu_creates_survey(monkeypatch):
 
     pm_module = importlib.reload(importlib.import_module("plugin_manager"))
     dp = pm_module.Dispatcher()
+    router = pm_module.Router()
     bot = pm_module.Bot()
-    pm = pm_module.PluginManager(dp, bot)
+    pm = pm_module.PluginManager(dp, bot, router=router)
     asyncio.run(pm.load_plugins())
 
     admin = pm.get_plugin("admin_menu_plugin")

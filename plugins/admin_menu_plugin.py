@@ -10,7 +10,7 @@ from utils.env_utils import parse_admin_ids
 
 
 from plugin_manager import PluginManager
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -71,15 +71,15 @@ class AdminMenuPlugin:
             f"Dependency '{plugin_name}' must be loaded via PluginManager"
         )
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """Регистрирует все обработчики для плагина"""
-        dp.message.register(self.cmd_admin_menu, Command(commands=["admin"]))
-        dp.message.register(
+        router.message.register(self.cmd_admin_menu, Command(commands=["admin"]))
+        router.message.register(
             self.handle_main_menu,
             lambda msg: msg.text in ["📊 Опросы", "📈 Аналитика", "⚙ Настройки"],
             StateFilter(AdminMenuStates.MAIN_MENU),
         )
-        dp.message.register(
+        router.message.register(
             self.handle_back,
             lambda msg: msg.text == "🔙 Назад",
             StateFilter(
@@ -88,7 +88,7 @@ class AdminMenuPlugin:
                 AdminMenuStates.SETTINGS_MENU,
             ),
         )
-        dp.message.register(
+        router.message.register(
             self.handle_surveys_menu,
             lambda msg: msg.text
             in [
@@ -99,7 +99,7 @@ class AdminMenuPlugin:
             ],
             StateFilter(AdminMenuStates.SURVEYS_MENU),
         )
-        dp.message.register(
+        router.message.register(
             self.handle_analytics_menu,
             lambda msg: msg.text
             in [
@@ -110,7 +110,7 @@ class AdminMenuPlugin:
             ],
             StateFilter(AdminMenuStates.ANALYTICS_MENU),
         )
-        dp.message.register(
+        router.message.register(
             self.handle_settings_menu,
             lambda msg: msg.text
             in [

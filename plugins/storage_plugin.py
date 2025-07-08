@@ -7,6 +7,7 @@ import json
 import os
 import logging
 from typing import Dict, Any, Optional
+from aiogram import Router
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ class StoragePlugin:
         self.name = "storage_plugin"
         self.description = "Обеспечивает постоянное хранилище данных"
 
-    async def register_handlers(self, dp):
+    async def register_handlers(self, router: Router):
         """Обработчиков для этого плагина нет"""
         pass
 

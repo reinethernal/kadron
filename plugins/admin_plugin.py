@@ -6,6 +6,7 @@ Admin Plugin для Telegram бота.
 
 import logging
 from aiogram.client.bot import Bot
+from aiogram import Router
 from core.db_manager import get_all_groups, get_poll_by_id
 from dotenv import load_dotenv
 from utils.env_utils import parse_admin_ids
@@ -23,7 +24,7 @@ class AdminPlugin:
         self.name = "admin_plugin"
         self.description = "Административные функции"
 
-    async def register_handlers(self, dp):
+    async def register_handlers(self, router: Router):
         # Здесь можно зарегистрировать обработчики административных команд.
         pass
 

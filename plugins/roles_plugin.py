@@ -6,7 +6,7 @@
 """
 
 import logging
-from aiogram import Dispatcher, types
+from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -72,41 +72,41 @@ class RolesPlugin:
         self.name = "roles_plugin"
         self.description = "Контроль доступа на основе ролей"
 
-    async def register_handlers(self, dp: Dispatcher):
+    async def register_handlers(self, router: Router):
         """Регистрирует все обработчики для этого плагина"""
-        dp.message.register(
+        router.message.register(
             self.cmd_roles,
             Command(commands=["roles"]),
             lambda msg: self.has_permission(msg.from_user.id, "manage_roles"),
         )
 
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_roles_action, lambda c: c.data.startswith("roles_")
         )
 
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_user_selection,
             lambda c: c.data.startswith("select_user_"),
             StateFilter(RoleStates.SELECTING_USER),
         )
 
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_role_selection,
             lambda c: c.data.startswith("select_role_"),
             StateFilter(RoleStates.SELECTING_ROLE),
         )
 
-        dp.message.register(
+        router.message.register(
             self.process_role_name, StateFilter(RoleStates.CREATING_ROLE)
         )
 
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_permission_toggle,
             lambda c: c.data.startswith("toggle_perm_"),
             StateFilter(RoleStates.EDITING_PERMISSIONS),
         )
 
-        dp.callback_query.register(
+        router.callback_query.register(
             self.handle_save_permissions,
             lambda c: c.data == "save_permissions",
             StateFilter(RoleStates.EDITING_PERMISSIONS),

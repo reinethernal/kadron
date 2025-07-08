@@ -7,6 +7,7 @@ import logging
 import asyncio
 from aiogram.types import ChatPermissions
 from aiogram.client.bot import Bot
+from aiogram import Router
 from core.db_manager import (
     is_user_pending,
     remove_user_from_pending,
@@ -131,7 +132,7 @@ class GroupEventPlugin:
         self.bot = bot
         self.cleanup_task = None
 
-    async def register_handlers(self, dp):
+    async def register_handlers(self, router: Router):
         # При необходимости здесь можно зарегистрировать обработчики событий группы.
         pass
 

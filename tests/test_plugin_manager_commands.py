@@ -24,7 +24,7 @@ def make_plugin_file(path: Path, command_name: str):
         """
 from aiogram.types import BotCommand
 class Plugin:
-    async def register_handlers(self, dp):
+    async def register_handlers(self, router):
         pass
     def get_commands(self):
         return [BotCommand(command='{cmd}', description='{cmd} desc')]
@@ -54,8 +54,9 @@ def test_setup_bot_commands_collects_from_plugins(tmp_path, monkeypatch):
     monkeypatch.setattr(aiogram.types, "BotCommand", DummyCommand)
 
     dp = aiogram.Dispatcher()
+    router = aiogram.Router()
     bot = DummyBot()
-    pm = PluginManager(dp, bot, plugin_dir=pkg_dir)
+    pm = PluginManager(dp, bot, plugin_dir=pkg_dir, router=router)
 
     asyncio.run(pm.load_plugins())
     asyncio.run(pm.setup_bot_commands(bot))
@@ -72,8 +73,9 @@ def test_plugins_load_from_env_dir(tmp_path, monkeypatch):
     monkeypatch.setenv("PLUGIN_DIR", str(pkg_dir))
 
     dp = aiogram.Dispatcher()
+    router = aiogram.Router()
     bot = DummyBot()
-    pm = PluginManager(dp, bot, plugin_dir=os.getenv("PLUGIN_DIR"))
+    pm = PluginManager(dp, bot, plugin_dir=os.getenv("PLUGIN_DIR"), router=router)
 
     asyncio.run(pm.load_plugins())
 
@@ -105,8 +107,9 @@ def test_builtin_plugins_load_from_custom_package(tmp_path, monkeypatch):
     monkeypatch.setattr(aiogram, "Dispatcher", DummyDispatcher, raising=False)
 
     dp = aiogram.Dispatcher()
+    router = aiogram.Router()
     bot = DummyBot()
-    pm = PluginManager(dp, bot, plugin_dir=os.getenv("PLUGIN_DIR"))
+    pm = PluginManager(dp, bot, plugin_dir=os.getenv("PLUGIN_DIR"), router=router)
 
     asyncio.run(pm.load_plugins())
 
