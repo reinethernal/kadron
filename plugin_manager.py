@@ -119,6 +119,29 @@ class PluginManager:
             logger.error(f"Не удалось выгрузить плагин {plugin_name}: {e}")
             return False
 
+    async def reload_plugin(self, plugin_name: str) -> bool:
+        """Перезагружает указанный плагин."""
+        module_name = f"{self._package}.{plugin_name}"
+
+        # Сначала выгружаем плагин, если он был загружен
+        if plugin_name in self.plugins:
+            await self.unload_plugin(plugin_name)
+
+        try:
+            module = sys.modules.get(module_name)
+            if module is not None:
+                importlib.reload(module)
+            else:
+                module = importlib.import_module(module_name)
+        except Exception as e:
+            logger.exception(
+                f"Не удалось перезагрузить модуль плагина {plugin_name}: {e}"
+            )
+            return False
+
+        # После успешной перезагрузки повторно загружаем плагин
+        return await self.load_plugin(plugin_name)
+
     def get_plugin(self, plugin_name: str) -> Optional[Any]:
         """Возвращает плагин по имени"""
         return self.plugins.get(plugin_name)
