@@ -3,6 +3,7 @@
 import sqlite3
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
+from dataclasses import dataclass
 import logging
 import os
 from dotenv import load_dotenv
@@ -10,6 +11,27 @@ from dotenv import load_dotenv
 load_dotenv()
 DATABASE = os.getenv("DATABASE", "database.db")
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SurveyStats:
+    participant_count: int
+    option_distribution: Dict[str, int]
+    average_duration: float
+
+
+@dataclass
+class ActivityStats:
+    message_count: int
+    new_users: int
+    reactions: int
+
+
+@dataclass
+class UserRating:
+    user_id: int
+    rating: float
+    feedback_count: int
 
 
 def initialize_db():
@@ -572,3 +594,93 @@ def get_responses_by_poll(poll_id: int) -> List[Dict]:
             }
         )
     return responses
+
+
+def get_survey_statistics(survey_id: int) -> SurveyStats:
+    """Return statistics for a survey."""
+    with sqlite3.connect(DATABASE) as conn:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT COUNT(DISTINCT user_id) FROM responses WHERE poll_id=?",
+            (survey_id,),
+        )
+        row = cursor.fetchone()
+        participants = row[0] if row else 0
+
+        cursor.execute(
+            "SELECT answer, COUNT(*) FROM responses WHERE poll_id=? GROUP BY answer",
+            (survey_id,),
+        )
+        distribution = {r[0]: r[1] for r in cursor.fetchall()}
+
+        cursor.execute(
+            """
+            SELECT AVG(duration) FROM (
+                SELECT julianday(MAX(timestamp)) - julianday(MIN(timestamp)) AS duration
+                FROM responses
+                WHERE poll_id=?
+                GROUP BY user_id
+                HAVING user_id IS NOT NULL
+            )
+            """,
+            (survey_id,),
+        )
+        row = cursor.fetchone()
+        avg_duration = float(row[0] * 86400) if row and row[0] is not None else 0.0
+
+    return SurveyStats(participants, distribution, avg_duration)
+
+
+def get_group_activity(chat_id: int, days: int) -> ActivityStats:
+    """Return group activity statistics."""
+    start = datetime.now() - timedelta(days=days)
+    with sqlite3.connect(DATABASE) as conn:
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                "SELECT COUNT(*) FROM messages WHERE chat_id=? AND timestamp>=?",
+                (chat_id, start),
+            )
+            messages = cursor.fetchone()[0]
+        except sqlite3.OperationalError:
+            messages = 0
+
+        try:
+            cursor.execute(
+                "SELECT COUNT(*) FROM users WHERE last_activity>=?",
+                (start,),
+            )
+            new_users = cursor.fetchone()[0]
+        except sqlite3.OperationalError:
+            new_users = 0
+
+        try:
+            cursor.execute(
+                "SELECT COUNT(*) FROM reactions WHERE chat_id=? AND timestamp>=?",
+                (chat_id, start),
+            )
+            reactions = cursor.fetchone()[0]
+        except sqlite3.OperationalError:
+            reactions = 0
+
+    return ActivityStats(messages, new_users, reactions)
+
+
+def get_user_ratings(chat_id: int) -> List[UserRating]:
+    """Return average ratings per user."""
+    with sqlite3.connect(DATABASE) as conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT user_id, AVG(rating), COUNT(*) FROM feedback WHERE chat_id=? GROUP BY user_id",
+                (chat_id,),
+            )
+        except sqlite3.OperationalError:
+            cursor.execute(
+                "SELECT user_id, AVG(rating), COUNT(*) FROM feedback GROUP BY user_id"
+            )
+        rows = cursor.fetchall()
+
+    return [UserRating(r[0], float(r[1]) if r[1] is not None else 0.0, r[2]) for r in rows]
