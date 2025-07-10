@@ -67,6 +67,12 @@ def test_admin_menu_has_plugin_commands(monkeypatch):
     keyboards = admin.get_keyboards()
     plugin_cmds = pm.get_plugin_commands()
 
+    # ensure admin command is exposed
+    admin_cmds = plugin_cmds.get("admin_menu_plugin")
+    assert any(cmd.command == "admin" for cmd in admin_cmds)
+    # exclude admin command from common checks
+    plugin_cmds.pop("admin_menu_plugin", None)
+
     button_texts = []
     for kb in keyboards.values():
         for row in kb.keyboard:

@@ -56,85 +56,84 @@ def initialize_db():
         engine.dispose()
         with sqlite3.connect(DATABASE) as conn:
             cursor = conn.cursor()
-        # Таблица тегов для опросов
-        # Таблица тегов для опросов
-        cursor.execute(
+            # Таблица тегов для опросов
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS poll_tags (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    poll_id INTEGER,
+                    tag TEXT,
+                    FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE
+                )
             """
-            CREATE TABLE IF NOT EXISTS poll_tags (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                poll_id INTEGER,
-                tag TEXT,
-                FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE
             )
-        """
-        )
-        # Таблица групп
-        cursor.execute(
+            # Таблица групп
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS groups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    group_id INTEGER UNIQUE,
+                    title TEXT
+                )
             """
-            CREATE TABLE IF NOT EXISTS groups (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                group_id INTEGER UNIQUE,
-                title TEXT
             )
-        """
-        )
-        # Таблица настроек
-        cursor.execute(
+            # Таблица настроек
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                )
             """
-            CREATE TABLE IF NOT EXISTS settings (
-                key TEXT PRIMARY KEY,
-                value TEXT
             )
-        """
-        )
-        # Таблица обратной связи (отзывы, рейтинг)
-        cursor.execute(
+            # Таблица обратной связи (отзывы, рейтинг)
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS feedback (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    poll_id INTEGER,
+                    user_id INTEGER,
+                    feedback TEXT,
+                    rating INTEGER,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE
+                )
             """
-            CREATE TABLE IF NOT EXISTS feedback (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                poll_id INTEGER,
-                user_id INTEGER,
-                feedback TEXT,
-                rating INTEGER,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE
             )
-        """
-        )
-        # Таблица для pending пользователей (капча)
-        cursor.execute(
+            # Таблица для pending пользователей (капча)
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS pending_users (
+                    user_id INTEGER,
+                    chat_id INTEGER,
+                    PRIMARY KEY (user_id, chat_id)
+                )
             """
-            CREATE TABLE IF NOT EXISTS pending_users (
-                user_id INTEGER,
-                chat_id INTEGER,
-                PRIMARY KEY (user_id, chat_id)
             )
-        """
-        )
-        # Настройки: тестовый режим, приветствие
-        cursor.execute(
+            # Настройки: тестовый режим, приветствие
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO settings (key, value) VALUES ('test_mode', '0')
             """
-            INSERT OR IGNORE INTO settings (key, value) VALUES ('test_mode', '0')
-        """
-        )
-        cursor.execute(
-            """
-            INSERT OR IGNORE INTO settings (key, value) VALUES ('welcome_message', ?)
-        """,
-            (os.getenv("WELCOME_MESSAGE", "Добро пожаловать, {username}!"),),
-        )
+            )
+            cursor.execute(
+                """
+                INSERT OR IGNORE INTO settings (key, value) VALUES ('welcome_message', ?)
+            """,
+                (os.getenv("WELCOME_MESSAGE", "Добро пожаловать, {username}!"),),
+            )
 
-        # Таблица group_settings для хранения «входного» опроса
-        cursor.execute(
+            # Таблица group_settings для хранения «входного» опроса
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS group_settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    group_id INTEGER UNIQUE,
+                    join_poll_id INTEGER,
+                    FOREIGN KEY (join_poll_id) REFERENCES polls(id) ON DELETE SET NULL
+                )
             """
-            CREATE TABLE IF NOT EXISTS group_settings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                group_id INTEGER UNIQUE,
-                join_poll_id INTEGER,
-                FOREIGN KEY (join_poll_id) REFERENCES polls(id) ON DELETE SET NULL
             )
-        """
-        )
 
         logger.info("Database initialized successfully.")
 
