@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kadron-bot"
+version = "0.1.0"
+description = "Telegram bot for managing polls with a plugin architecture"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "Kadron Team", email = "contact@example.com"}]
+
+dependencies = [
+    "aiogram==3.0.0b7",
+    "python-dotenv",
+    "pandas",
+    "openpyxl",
+    "packaging",
+    "SQLAlchemy",
+    "alembic"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["tests*", "scripts*"]
+
