@@ -173,6 +173,8 @@ class PluginManager:
 
     async def setup_bot_commands(self, bot: Bot):
         """Настраивает команды бота на основе плагинов"""
+        from aiogram.types import BotCommand
+
         commands = [BotCommand(command="start", description="Начать работу с ботом")]
         await bot.set_my_commands(commands)
         logger.info("Установлено команд: 1")
