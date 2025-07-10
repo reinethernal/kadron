@@ -1,4 +1,7 @@
+# Python cache directories
 __pycache__/
+
+# Byte-compiled / optimized / DLL files
 *.py[cod]
 venv/
 *.log
