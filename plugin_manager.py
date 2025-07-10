@@ -173,14 +173,9 @@ class PluginManager:
 
     async def setup_bot_commands(self, bot: Bot):
         """Настраивает команды бота на основе плагинов"""
-        commands = self.get_all_commands()
-        if not any(cmd.command == "start" for cmd in commands):
-            commands.append(
-                BotCommand(command="start", description="Начать работу с ботом")
-            )
-        if commands:
-            await bot.set_my_commands(commands)
-            logger.info(f"Установлено команд: {len(commands)}")
+        commands = [BotCommand(command="start", description="Начать работу с ботом")]
+        await bot.set_my_commands(commands)
+        logger.info("Установлено команд: 1")
 
     def get_all_keyboards(self) -> Dict[str, Any]:
         """Получает все клавиатуры из плагинов"""

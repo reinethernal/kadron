@@ -1,5 +1,5 @@
 from aiogram import Router, types
-from aiogram.filters import Command
+
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -44,7 +44,6 @@ class TestModePlugin:
         self.test_surveys = {}
 
     async def register_handlers(self, router: Router):
-        router.message.register(self.cmd_test_mode, Command("test_mode"))
         router.callback_query.register(
             self.handle_survey_selection, lambda c: c.data.startswith("test_survey_")
         )
@@ -68,12 +67,7 @@ class TestModePlugin:
             ]
 
     def get_commands(self):
-        # В aiogram 3.x конструкция BotCommand теперь требует именованных аргументов:
-        return [
-            types.BotCommand(
-                command="test_mode", description="Тестовый режим для опросов"
-            )
-        ]
+        return []
 
     async def cmd_test_mode(self, message: types.Message, state: FSMContext):
         logger.debug(f"{message.text} from {message.from_user.id}")

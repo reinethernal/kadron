@@ -10,7 +10,7 @@ from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import StateFilter
 
 # Импортируем модуль хранилища
 try:
@@ -74,11 +74,6 @@ class RolesPlugin:
 
     async def register_handlers(self, router: Router):
         """Регистрирует все обработчики для этого плагина"""
-        router.message.register(
-            self.cmd_roles,
-            Command(commands=["roles"]),
-            lambda msg: self.has_permission(msg.from_user.id, "manage_roles"),
-        )
 
         router.callback_query.register(
             self.handle_roles_action, lambda c: c.data.startswith("roles_")
@@ -126,11 +121,7 @@ class RolesPlugin:
 
     def get_commands(self):
         """Возвращает список команд, предоставляемых плагином"""
-        return [
-            types.BotCommand(
-                command="roles", description="Управление ролями пользователей"
-            )
-        ]
+        return []
 
     def has_permission(self, user_id, permission):
         """Проверяет, есть ли у пользователя определённое разрешение"""

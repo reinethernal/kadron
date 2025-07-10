@@ -44,10 +44,6 @@ class ExportPlugin:
         self.description = "Экспорт данных опросов в разные форматы"
 
     async def register_handlers(self, router: Router):
-        # Используем новые методы регистрации:
-        from aiogram.filters import Command  # фильтр команд из aiogram v3
-
-        router.message.register(self.cmd_export, Command("export"))
         router.callback_query.register(
             self.handle_survey_selection, lambda c: c.data.startswith("export_survey_")
         )
@@ -68,9 +64,7 @@ class ExportPlugin:
             ]
 
     def get_commands(self):
-        return [
-            types.BotCommand(command="export", description="Экспорт данных опросов")
-        ]
+        return []
 
     async def cmd_export(self, message: types.Message):
         logger.debug(f"{message.text} from {message.from_user.id}")

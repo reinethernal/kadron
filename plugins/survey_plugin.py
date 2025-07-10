@@ -8,7 +8,7 @@ from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import StateFilter
 import uuid
 from datetime import datetime, timedelta, time
 import asyncio
@@ -96,7 +96,7 @@ class SurveyPlugin:
     async def register_handlers(self, router: Router):
         """Регистрирует все обработчики для плагина опросов"""
         # Обработчики создания опроса
-        router.message.register(self.cmd_create_survey, Command(commands=["create_survey"]))
+        # вход через меню администратора
         router.message.register(
             self.cmd_create_survey, lambda msg: msg.text == "Создать опрос"
         )
@@ -141,7 +141,6 @@ class SurveyPlugin:
         # Дополнительные команды во время ввода вопросов
         router.message.register(
             self.cmd_finish_questions,
-            Command(commands=["finish_questions"]),
             StateFilter(
                 SurveyStates.QUESTION_TYPE,
                 SurveyStates.QUESTION_TEXT,
@@ -150,7 +149,6 @@ class SurveyPlugin:
         )
         router.message.register(
             self.cmd_questions_count,
-            Command(commands=["questions_count"]),
             StateFilter(
                 SurveyStates.QUESTION_TYPE,
                 SurveyStates.QUESTION_TEXT,
@@ -159,7 +157,7 @@ class SurveyPlugin:
         )
 
         # Обработчики управления опросами
-        router.message.register(self.cmd_view_surveys, Command(commands=["view_surveys"]))
+        # просмотр доступен через меню
         router.message.register(self.cmd_view_surveys, lambda msg: msg.text == "Мои опросы")
         router.callback_query.register(
             self.process_survey_action, lambda c: c.data.startswith("survey_")
@@ -187,20 +185,7 @@ class SurveyPlugin:
 
     def get_commands(self):
         """Возвращает список команд, предоставляемых плагином"""
-        return [
-            types.BotCommand(
-                command="create_survey", description="Создать новый опрос"
-            ),
-            types.BotCommand(
-                command="view_surveys", description="Просмотреть мои опросы"
-            ),
-            types.BotCommand(
-                command="finish_questions", description="Завершить ввод вопросов"
-            ),
-            types.BotCommand(
-                command="questions_count", description="Сколько вопросов добавлено"
-            ),
-        ]
+        return []
 
     async def cmd_create_survey(self, message: types.Message, state: FSMContext):
         """Обработчик команды создания нового опроса"""

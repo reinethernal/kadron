@@ -5,6 +5,7 @@ from datetime import datetime
 from aiogram import Router, Bot, Dispatcher, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command, StateFilter
+from utils.env_utils import parse_admin_ids
 from aiogram.fsm.context import FSMContext
 from core.db_manager import (
     get_poll_by_id,
@@ -149,10 +150,14 @@ async def start_handler(message: types.Message, bot: Bot, state: FSMContext):
                 "{username}", message.from_user.full_name
             )
         else:
-            welcome_text = (
-                "Добро пожаловать! Используйте /admin для доступа к административным функциям."
+            welcome_text = "Добро пожаловать!"
+        admin_ids = parse_admin_ids()
+        markup = None
+        if message.from_user.id in admin_ids:
+            markup = InlineKeyboardMarkup(
+                inline_keyboard=[[InlineKeyboardButton(text="Админ меню", callback_data="admin_menu")]]
             )
-        await message.answer(welcome_text)
+        await message.answer(welcome_text, reply_markup=markup)
     except Exception as e:
         logger.exception(f"Ошибка в обработчике /start: {e}")
         await message.answer("Произошла ошибка. Попробуйте позже.")
