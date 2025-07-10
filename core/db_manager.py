@@ -1,6 +1,9 @@
 # core/db_manager.py
 
 import sqlite3
+from sqlalchemy import create_engine, func, distinct
+from sqlalchemy.orm import sessionmaker
+from core.models import Base, Poll, Question, User, Response, Message
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from dataclasses import dataclass
@@ -11,6 +14,9 @@ from dotenv import load_dotenv
 load_dotenv()
 DATABASE = os.getenv("DATABASE", "database.db")
 logger = logging.getLogger(__name__)
+
+engine = create_engine(f"sqlite:///{DATABASE}")
+SessionLocal = sessionmaker(bind=engine)
 
 
 @dataclass
@@ -35,34 +41,19 @@ class UserRating:
 
 
 def initialize_db():
+    """Create database tables."""
+    Base.metadata.create_all(
+        engine,
+        tables=[
+            Poll.__table__,
+            Question.__table__,
+            User.__table__,
+            Response.__table__,
+        ],
+    )
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
-        # Таблица опросов (polls)
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS polls (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE,
-                anonymous BOOLEAN DEFAULT 0,
-                time_limit DATETIME,
-                scheduled_time DATETIME,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """
-        )
-        # Таблица вопросов
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS questions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                poll_id INTEGER,
-                text TEXT,
-                type TEXT,
-                options TEXT,
-                FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE
-            )
-        """
-        )
+        # Таблица тегов для опросов
         # Таблица тегов для опросов
         cursor.execute(
             """
@@ -81,19 +72,6 @@ def initialize_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 group_id INTEGER UNIQUE,
                 title TEXT
-            )
-        """
-        )
-        # Таблица пользователей
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER UNIQUE,
-                username TEXT,
-                category TEXT DEFAULT 'Новичок',
-                last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
-                warnings INTEGER DEFAULT 0
             )
         """
         )
@@ -130,20 +108,6 @@ def initialize_db():
             )
         """
         )
-        # Таблица ответов пользователей на вопросы опросов
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS responses (
-                poll_id INTEGER,
-                question_id INTEGER,
-                user_id INTEGER,
-                answer TEXT,
-                timestamp DATETIME,
-                FOREIGN KEY (poll_id) REFERENCES polls(id) ON DELETE CASCADE,
-                FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
-            )
-        """
-        )
         # Настройки: тестовый режим, приветствие
         cursor.execute(
             """
@@ -174,97 +138,78 @@ def initialize_db():
 
 # --- Опросы ---
 def add_poll(name: str) -> int:
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO polls (name) VALUES (?)", (name,))
-        poll_id = cursor.lastrowid
+    with SessionLocal() as session:
+        poll = Poll(name=name)
+        session.add(poll)
+        session.commit()
+        session.refresh(poll)
+        poll_id = poll.id
     logger.info(f"Poll '{name}' added with ID {poll_id}.")
     return poll_id
 
 
 def poll_exists(name: str) -> bool:
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM polls WHERE name = ?", (name,))
-        result = cursor.fetchone()
-    return result is not None
+    with SessionLocal() as session:
+        return session.query(Poll.id).filter_by(name=name).first() is not None
 
 
 def get_all_polls() -> List[str]:
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM polls")
-        polls = [row[0] for row in cursor.fetchall()]
-    return polls
+    with SessionLocal() as session:
+        return [p.name for p in session.query(Poll).all()]
 
 
 def get_poll_id_by_name(name: str) -> Optional[int]:
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM polls WHERE name = ?", (name,))
-        result = cursor.fetchone()
-    return result[0] if result else None
+    with SessionLocal() as session:
+        poll = session.query(Poll).filter_by(name=name).first()
+        return poll.id if poll else None
 
 
 def get_poll_by_id(poll_id: int) -> Optional[Dict]:
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, name, anonymous, time_limit, scheduled_time FROM polls WHERE id = ?",
-            (poll_id,),
-        )
-        result = cursor.fetchone()
-    if result:
-        return {
-            "id": result[0],
-            "name": result[1],
-            "anonymous": bool(result[2]),
-            "time_limit": result[3],
-            "scheduled_time": result[4],
-        }
-    return None
+    with SessionLocal() as session:
+        poll = session.query(Poll).get(poll_id)
+        if poll:
+            return {
+                "id": poll.id,
+                "name": poll.name,
+                "anonymous": bool(poll.anonymous),
+                "time_limit": poll.time_limit,
+                "scheduled_time": poll.scheduled_time,
+            }
+        return None
 
 
 def update_poll_anonymous(poll_id: int, anonymous: bool):
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE polls SET anonymous = ? WHERE id = ?",
-            (1 if anonymous else 0, poll_id),
-        )
+    with SessionLocal() as session:
+        session.query(Poll).filter(Poll.id == poll_id).update({"anonymous": anonymous})
+        session.commit()
     logger.info(f"Poll ID {poll_id} anonymous set to {anonymous}.")
 
 
 def update_poll_time_limit(poll_id: int, time_limit: Optional[datetime]):
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        if time_limit is None:
-            cursor.execute(
-                "UPDATE polls SET time_limit = NULL WHERE id = ?", (poll_id,)
-            )
-        else:
-            cursor.execute(
-                "UPDATE polls SET time_limit = ? WHERE id = ?",
-                (time_limit.strftime("%Y-%m-%d %H:%M:%S"), poll_id),
-            )
+    with SessionLocal() as session:
+        session.query(Poll).filter(Poll.id == poll_id).update(
+            {"time_limit": time_limit}
+        )
+        session.commit()
     logger.info(f"Poll ID {poll_id} time limit updated to {time_limit}.")
 
 
 def schedule_poll(poll_id: int, scheduled_time: datetime):
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE polls SET scheduled_time = ? WHERE id = ?",
-            (scheduled_time.strftime("%Y-%m-%d %H:%M:%S"), poll_id),
+    with SessionLocal() as session:
+        session.query(Poll).filter(Poll.id == poll_id).update(
+            {"scheduled_time": scheduled_time}
         )
+        session.commit()
     logger.info(f"Poll ID {poll_id} scheduled for {scheduled_time}.")
 
 
 def delete_poll_by_id(poll_id: int):
+    with SessionLocal() as session:
+        session.query(Poll).filter(Poll.id == poll_id).delete()
+        session.query(Question).filter(Question.poll_id == poll_id).delete()
+        session.commit()
     with sqlite3.connect(DATABASE) as conn:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM polls WHERE id = ?", (poll_id,))
-        cursor.execute("DELETE FROM questions WHERE poll_id = ?", (poll_id,))
         cursor.execute("DELETE FROM poll_tags WHERE poll_id = ?", (poll_id,))
     logger.info(f"Poll {poll_id} and related data deleted.")
 
@@ -308,62 +253,56 @@ def filter_polls(keyword: str) -> List[str]:
 def add_question_to_poll(
     poll_id: int, text: str, q_type: str, options: Optional[List[str]] = None
 ):
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
+    with SessionLocal() as session:
         options_str = ",".join(options) if options else None
-        cursor.execute(
-            "INSERT INTO questions (poll_id, text, type, options) VALUES (?, ?, ?, ?)",
-            (poll_id, text, q_type, options_str),
-        )
+        q = Question(poll_id=poll_id, text=text, type=q_type, options=options_str)
+        session.add(q)
+        session.commit()
     logger.info(f"Question added to poll {poll_id}.")
 
 
 def get_questions_by_poll(poll_id: int) -> List[Dict]:
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, text, type, options FROM questions WHERE poll_id = ?",
-            (poll_id,),
-        )
-        questions = []
-        for row in cursor.fetchall():
-            questions.append(
+    with SessionLocal() as session:
+        questions = session.query(Question).filter(Question.poll_id == poll_id).all()
+        result = []
+        for q in questions:
+            result.append(
                 {
-                    "id": row[0],
-                    "text": row[1],
-                    "type": row[2],
-                    "options": row[3].split(",") if row[3] else [],
+                    "id": q.id,
+                    "text": q.text,
+                    "type": q.type,
+                    "options": q.options.split(",") if q.options else [],
                 }
             )
-    return questions
+        return result
 
 
 def update_question_text(question_id: int, new_text: str):
     """Update the text of a question by its ID."""
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE questions SET text = ? WHERE id = ?", (new_text, question_id)
+    with SessionLocal() as session:
+        session.query(Question).filter(Question.id == question_id).update(
+            {"text": new_text}
         )
+        session.commit()
     logger.info(f"Question {question_id} text updated to '{new_text}'.")
 
 
 def update_question_options(question_id: int, options: List[str]):
     """Update the options for a question by its ID."""
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
+    with SessionLocal() as session:
         options_str = ",".join(options) if options else None
-        cursor.execute(
-            "UPDATE questions SET options = ? WHERE id = ?", (options_str, question_id)
+        session.query(Question).filter(Question.id == question_id).update(
+            {"options": options_str}
         )
+        session.commit()
     logger.info(f"Question {question_id} options updated.")
 
 
 def delete_question_by_id(question_id: int):
     """Delete a question and its answers by ID."""
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM questions WHERE id = ?", (question_id,))
+    with SessionLocal() as session:
+        session.query(Question).filter(Question.id == question_id).delete()
+        session.commit()
     logger.info(f"Question {question_id} deleted.")
 
 
@@ -559,113 +498,113 @@ def add_response(
     timestamp: datetime,
 ):
     """Сохраняет ответ пользователя на вопрос."""
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
+    with SessionLocal() as session:
         ts = (
-            timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            timestamp
             if isinstance(timestamp, datetime)
-            else str(timestamp)
+            else datetime.fromisoformat(str(timestamp))
         )
-        cursor.execute(
-            "INSERT INTO responses (poll_id, question_id, user_id, answer, timestamp) VALUES (?, ?, ?, ?, ?)",
-            (poll_id, question_id, user_id, answer, ts),
+        resp = Response(
+            poll_id=poll_id,
+            question_id=question_id,
+            user_id=user_id,
+            answer=answer,
+            timestamp=ts,
         )
+        session.add(resp)
+        session.commit()
     logger.info(f"Response added for poll {poll_id}, question {question_id}.")
 
 
 def get_responses_by_poll(poll_id: int) -> List[Dict]:
     """Возвращает все ответы для указанного опроса."""
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT poll_id, question_id, user_id, answer, timestamp FROM responses WHERE poll_id = ?",
-            (poll_id,),
-        )
-        rows = cursor.fetchall()
-    responses = []
-    for row in rows:
-        responses.append(
-            {
-                "poll_id": row[0],
-                "question_id": row[1],
-                "user_id": row[2],
-                "answer": row[3],
-                "timestamp": row[4],
-            }
-        )
-    return responses
+    with SessionLocal() as session:
+        rows = session.query(Response).filter(Response.poll_id == poll_id).all()
+        responses = []
+        for r in rows:
+            responses.append(
+                {
+                    "poll_id": r.poll_id,
+                    "question_id": r.question_id,
+                    "user_id": r.user_id,
+                    "answer": r.answer,
+                    "timestamp": r.timestamp,
+                }
+            )
+        return responses
 
 
 def get_survey_statistics(survey_id: int) -> SurveyStats:
     """Return statistics for a survey."""
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-
-        cursor.execute(
-            "SELECT COUNT(DISTINCT user_id) FROM responses WHERE poll_id=?",
-            (survey_id,),
+    with SessionLocal() as session:
+        participants = (
+            session.query(func.count(distinct(Response.user_id)))
+            .filter(Response.poll_id == survey_id)
+            .scalar()
+            or 0
         )
-        row = cursor.fetchone()
-        participants = row[0] if row else 0
 
-        cursor.execute(
-            "SELECT answer, COUNT(*) FROM responses WHERE poll_id=? GROUP BY answer",
-            (survey_id,),
+        rows = (
+            session.query(Response.answer, func.count())
+            .filter(Response.poll_id == survey_id)
+            .group_by(Response.answer)
+            .all()
         )
-        distribution = {r[0]: r[1] for r in cursor.fetchall()}
+        distribution = {r[0]: r[1] for r in rows}
 
-        cursor.execute(
-            """
-            SELECT AVG(duration) FROM (
-                SELECT julianday(MAX(timestamp)) - julianday(MIN(timestamp)) AS duration
-                FROM responses
-                WHERE poll_id=?
-                GROUP BY user_id
-                HAVING user_id IS NOT NULL
+        subq = (
+            session.query(
+                (
+                    func.julianday(func.max(Response.timestamp))
+                    - func.julianday(func.min(Response.timestamp))
+                ).label("duration")
             )
-            """,
-            (survey_id,),
+            .filter(Response.poll_id == survey_id)
+            .group_by(Response.user_id)
+            .having(Response.user_id.isnot(None))
+            .subquery()
         )
-        row = cursor.fetchone()
-        avg_duration = float(row[0] * 86400) if row and row[0] is not None else 0.0
+        avg = session.query(func.avg(subq.c.duration)).scalar()
+        avg_duration = float(avg * 86400) if avg is not None else 0.0
 
-    return SurveyStats(participants, distribution, avg_duration)
+        return SurveyStats(participants, distribution, avg_duration)
 
 
 def get_group_activity(chat_id: int, days: int) -> ActivityStats:
     """Return group activity statistics."""
     start = datetime.now() - timedelta(days=days)
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
-
+    with SessionLocal() as session, sqlite3.connect(DATABASE) as conn:
         try:
-            cursor.execute(
-                "SELECT COUNT(*) FROM messages WHERE chat_id=? AND timestamp>=?",
-                (chat_id, start),
+            messages = (
+                session.query(func.count())
+                .select_from(Message)
+                .filter(Message.chat_id == chat_id, Message.timestamp >= start)
+                .scalar()
             )
-            messages = cursor.fetchone()[0]
-        except sqlite3.OperationalError:
+        except Exception:
             messages = 0
 
         try:
-            cursor.execute(
-                "SELECT COUNT(*) FROM users WHERE last_activity>=?",
-                (start,),
+            new_users = (
+                session.query(func.count())
+                .select_from(User)
+                .filter(User.last_activity >= start)
+                .scalar()
             )
-            new_users = cursor.fetchone()[0]
-        except sqlite3.OperationalError:
+        except Exception:
             new_users = 0
 
         try:
-            cursor.execute(
+            cur = conn.cursor()
+            cur.execute(
                 "SELECT COUNT(*) FROM reactions WHERE chat_id=? AND timestamp>=?",
                 (chat_id, start),
             )
-            reactions = cursor.fetchone()[0]
+            reactions = cur.fetchone()[0]
         except sqlite3.OperationalError:
             reactions = 0
 
-    return ActivityStats(messages, new_users, reactions)
+    return ActivityStats(messages or 0, new_users or 0, reactions)
 
 
 def get_user_ratings(chat_id: int) -> List[UserRating]:
@@ -683,4 +622,6 @@ def get_user_ratings(chat_id: int) -> List[UserRating]:
             )
         rows = cursor.fetchall()
 
-    return [UserRating(r[0], float(r[1]) if r[1] is not None else 0.0, r[2]) for r in rows]
+    return [
+        UserRating(r[0], float(r[1]) if r[1] is not None else 0.0, r[2]) for r in rows
+    ]
