@@ -14,7 +14,7 @@ from aiogram import Router, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import StateFilter
+from aiogram.filters import Command, StateFilter
 
 # Fallback plugin classes in case dependencies are missing
 from .survey_plugin import SurveyPlugin
@@ -73,6 +73,7 @@ class AdminMenuPlugin:
 
     async def register_handlers(self, router: Router):
         """Регистрирует все обработчики для плагина"""
+        router.message.register(self.cmd_admin_menu, Command("admin"))
         router.callback_query.register(
             self.admin_menu_callback,
             lambda c: c.data == "admin_menu",
@@ -138,8 +139,10 @@ class AdminMenuPlugin:
             ]
 
     def get_commands(self):
-        """Административное меню теперь открывается через кнопку, поэтому команды отсутствуют."""
-        return []
+        """Возвращает команды плагина"""
+        return [
+            types.BotCommand(command="admin", description="Админ меню")
+        ]
 
     def get_keyboards(self):
         """Возвращает словарь инлайн-клавиатур для различных меню"""
