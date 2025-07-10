@@ -170,7 +170,7 @@ class EditQuestionPlugin:
         return [
             types.BotCommand(
                 command="edit_question",
-                description="Редактировать вопросы в существующих опросах",
+                description="Настройки опросов",
             )
         ]
 

@@ -33,7 +33,7 @@ load_dotenv()
 ENABLE_CAPTCHA = os.getenv("ENABLE_CAPTCHA", "False").lower() == "true"
 CAPTCHA_TIMEOUT = int(os.getenv("CAPTCHA_TIMEOUT", "5"))
 INACTIVITY_DAYS = int(os.getenv("INACTIVITY_DAYS", "30"))
-ENABLE_INACTIVE_CLEANUP = os.getenv("ENABLE_INACTIVE_CLEANUP", "True").lower() == "true"
+ENABLE_INACTIVE_CLEANUP = os.getenv("ENABLE_INACTIVE_CLEANUP", "False").lower() == "true"
 DEFAULT_WELCOME_MESSAGE = "Привет, {username}!"
 
 logger = logging.getLogger(__name__)

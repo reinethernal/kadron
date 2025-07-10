@@ -62,7 +62,7 @@ def test_setup_bot_commands_collects_from_plugins(tmp_path, monkeypatch):
     asyncio.run(pm.setup_bot_commands(bot))
 
     assert bot.commands
-    assert {c.command for c in bot.commands} == {"start"}
+    assert {c.command for c in bot.commands} == {"start", "one", "two"}
 
 
 def test_plugins_load_from_env_dir(tmp_path, monkeypatch):
