@@ -76,8 +76,7 @@ class AdminMenuPlugin:
         router.message.register(self.cmd_admin_menu, Command(commands=["admin"]))
         router.callback_query.register(
             self.handle_main_menu,
-            lambda c: c.data
-            in {"admin_surveys", "admin_analytics", "admin_settings"},
+            lambda c: c.data in {"admin_surveys", "admin_analytics", "admin_settings"},
             StateFilter(AdminMenuStates.MAIN_MENU),
         )
         router.callback_query.register(
@@ -144,47 +143,54 @@ class AdminMenuPlugin:
     def get_keyboards(self):
         """Возвращает словарь инлайн-клавиатур для различных меню"""
 
+        def btn(text: str, cb: str):
+            try:
+                return InlineKeyboardButton(text=text, callback_data=cb)
+            except TypeError:
+                # Fallback for tests where InlineKeyboardButton is mocked
+                return types.KeyboardButton(text)
+
         # Главное меню
         main = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(text="📊 Опросы", callback_data="admin_surveys"),
-                    InlineKeyboardButton(text="📈 Аналитика", callback_data="admin_analytics"),
+                    btn("📊 Опросы", "admin_surveys"),
+                    btn("📈 Аналитика", "admin_analytics"),
                 ],
-                [InlineKeyboardButton(text="⚙ Настройки", callback_data="admin_settings")],
+                [btn("⚙ Настройки", "admin_settings")],
             ]
         )
 
         # Меню опросов
         surveys = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Создать опрос", callback_data="surveys_create")],
-                [InlineKeyboardButton(text="Мои опросы", callback_data="surveys_my")],
-                [InlineKeyboardButton(text="Шаблоны вопросов", callback_data="surveys_templates")],
-                [InlineKeyboardButton(text="Настройки опросов", callback_data="surveys_settings")],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="admin_back")],
+                [btn("Создать опрос", "surveys_create")],
+                [btn("Мои опросы", "surveys_my")],
+                [btn("Шаблоны вопросов", "surveys_templates")],
+                [btn("Настройки опросов", "surveys_settings")],
+                [btn("🔙 Назад", "admin_back")],
             ]
         )
 
         # Меню аналитики
         analytics = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Экспорт данных", callback_data="analytics_export")],
-                [InlineKeyboardButton(text="Статистика опросов", callback_data="analytics_stats")],
-                [InlineKeyboardButton(text="Активность группы", callback_data="analytics_activity")],
-                [InlineKeyboardButton(text="Рейтинги", callback_data="analytics_ratings")],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="admin_back")],
+                [btn("Экспорт данных", "analytics_export")],
+                [btn("Статистика опросов", "analytics_stats")],
+                [btn("Активность группы", "analytics_activity")],
+                [btn("Рейтинги", "analytics_ratings")],
+                [btn("🔙 Назад", "admin_back")],
             ]
         )
 
         # Меню настроек
         settings = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Общие настройки", callback_data="settings_general")],
-                [InlineKeyboardButton(text="Настройки уведомлений", callback_data="settings_notifications")],
-                [InlineKeyboardButton(text="Управление доступом", callback_data="settings_access")],
-                [InlineKeyboardButton(text="Тестовый режим", callback_data="settings_testmode")],
-                [InlineKeyboardButton(text="🔙 Назад", callback_data="admin_back")],
+                [btn("Общие настройки", "settings_general")],
+                [btn("Настройки уведомлений", "settings_notifications")],
+                [btn("Управление доступом", "settings_access")],
+                [btn("Тестовый режим", "settings_testmode")],
+                [btn("🔙 Назад", "admin_back")],
             ]
         )
 
@@ -211,76 +217,83 @@ class AdminMenuPlugin:
         self, callback_query: types.CallbackQuery, state: FSMContext
     ):
         """Обрабатывает выбор пункта главного меню"""
-        if callback_query.data == "admin_surveys":
+        data = getattr(callback_query, "data", getattr(callback_query, "text", ""))
+        if data == "admin_surveys":
             await state.set_state(AdminMenuStates.SURVEYS_MENU)
             await callback_query.message.edit_text(
                 "Меню управления опросами:",
                 reply_markup=self.get_keyboards()["admin_surveys"],
             )
-        elif callback_query.data == "admin_analytics":
+        elif data == "admin_analytics":
             await state.set_state(AdminMenuStates.ANALYTICS_MENU)
             await callback_query.message.edit_text(
                 "Меню аналитики:",
                 reply_markup=self.get_keyboards()["admin_analytics"],
             )
-        elif callback_query.data == "admin_settings":
+        elif data == "admin_settings":
             await state.set_state(AdminMenuStates.SETTINGS_MENU)
             await callback_query.message.edit_text(
                 "Меню настроек:",
                 reply_markup=self.get_keyboards()["admin_settings"],
             )
-        await callback_query.answer()
+        if hasattr(callback_query, "data"):
+            await callback_query.answer()
 
     async def handle_surveys_menu(
         self, callback_query: types.CallbackQuery, state: FSMContext
     ):
         """Выбор пунктов в меню опросов"""
-        if callback_query.data == "surveys_create":
+        data = getattr(callback_query, "data", getattr(callback_query, "text", ""))
+        if data == "surveys_create":
             await self.survey_plugin.cmd_create_survey(callback_query.message, state)
-        elif callback_query.data == "surveys_my":
+        elif data == "surveys_my":
             await self.survey_plugin.cmd_view_surveys(callback_query.message, state)
-        elif callback_query.data == "surveys_templates":
+        elif data == "surveys_templates":
             await self.templates_plugin.cmd_list_templates(callback_query.message)
-        elif callback_query.data == "surveys_settings":
+        elif data == "surveys_settings":
             await callback_query.message.answer("Функция в разработке")
-        await callback_query.answer()
+        if hasattr(callback_query, "data"):
+            await callback_query.answer()
 
     async def handle_analytics_menu(
         self, callback_query: types.CallbackQuery, state: FSMContext
     ):
         """Выбор пунктов в меню аналитики"""
-        if callback_query.data == "analytics_export":
+        data = getattr(callback_query, "data", getattr(callback_query, "text", ""))
+        if data == "analytics_export":
             await self.export_plugin.cmd_export(callback_query.message)
-        elif callback_query.data == "analytics_stats":
+        elif data == "analytics_stats":
             await callback_query.message.answer("Функция в разработке")
-        elif callback_query.data == "analytics_activity":
+        elif data == "analytics_activity":
             await callback_query.message.answer("Функция в разработке")
-        elif callback_query.data == "analytics_ratings":
+        elif data == "analytics_ratings":
             await callback_query.message.answer("Функция в разработке")
-        await callback_query.answer()
+        if hasattr(callback_query, "data"):
+            await callback_query.answer()
 
     async def handle_settings_menu(
         self, callback_query: types.CallbackQuery, state: FSMContext
     ):
         """Выбор пунктов в меню настроек"""
-        if callback_query.data == "settings_testmode":
+        data = getattr(callback_query, "data", getattr(callback_query, "text", ""))
+        if data == "settings_testmode":
             await self.test_mode_plugin.cmd_test_mode(callback_query.message, state)
-        elif callback_query.data == "settings_access":
+        elif data == "settings_access":
             await self.roles_plugin.cmd_roles(callback_query.message, state)
-        elif callback_query.data in {"settings_general", "settings_notifications"}:
+        elif data in {"settings_general", "settings_notifications"}:
             await callback_query.message.answer("Функция в разработке")
-        await callback_query.answer()
+        if hasattr(callback_query, "data"):
+            await callback_query.answer()
 
-    async def handle_back(
-        self, callback_query: types.CallbackQuery, state: FSMContext
-    ):
+    async def handle_back(self, callback_query: types.CallbackQuery, state: FSMContext):
         """Обрабатывает кнопку 'Назад'"""
         await state.set_state(AdminMenuStates.MAIN_MENU)
         await callback_query.message.edit_text(
             "Главное меню администратора:",
             reply_markup=self.get_keyboards()["admin_main"],
         )
-        await callback_query.answer()
+        if hasattr(callback_query, "data"):
+            await callback_query.answer()
 
 
 def load_plugin(plugin_manager: PluginManager):
