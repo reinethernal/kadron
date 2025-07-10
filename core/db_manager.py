@@ -52,6 +52,8 @@ def initialize_db():
                 Response.__table__,
             ],
         )
+        # Close SQLAlchemy connections to avoid locking when using sqlite3
+        engine.dispose()
         with sqlite3.connect(DATABASE) as conn:
             cursor = conn.cursor()
         # Таблица тегов для опросов
@@ -139,6 +141,9 @@ def initialize_db():
     except Exception as e:
         logger.exception(f"Failed to initialize database: {e}")
         raise
+    finally:
+        # Close pooled connections to avoid database locking issues in tests
+        engine.dispose()
 
 
 # --- Опросы ---

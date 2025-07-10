@@ -176,8 +176,11 @@ class PluginManager:
         from aiogram.types import BotCommand
 
         commands = [BotCommand(command="start", description="Начать работу с ботом")]
+        # Собираем команды из всех загруженных плагинов
+        commands.extend(self.get_all_commands())
+
         await bot.set_my_commands(commands)
-        logger.info("Установлено команд: 1")
+        logger.info(f"Установлено команд: {len(commands)}")
 
     def get_all_keyboards(self) -> Dict[str, Any]:
         """Получает все клавиатуры из плагинов"""

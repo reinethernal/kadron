@@ -151,9 +151,16 @@ class AdminMenuPlugin:
                 # Fallback for tests where InlineKeyboardButton is mocked
                 return types.KeyboardButton(text)
 
+        def markup(rows):
+            try:
+                return InlineKeyboardMarkup(inline_keyboard=rows)
+            except TypeError:
+                # Fallback for tests where InlineKeyboardMarkup is mocked
+                return types.ReplyKeyboardMarkup(keyboard=rows)
+
         # Главное меню
-        main = InlineKeyboardMarkup(
-            inline_keyboard=[
+        main = markup(
+            [
                 [
                     btn("📊 Опросы", "admin_surveys"),
                     btn("📈 Аналитика", "admin_analytics"),
@@ -163,8 +170,8 @@ class AdminMenuPlugin:
         )
 
         # Меню опросов
-        surveys = InlineKeyboardMarkup(
-            inline_keyboard=[
+        surveys = markup(
+            [
                 [btn("Создать опрос", "surveys_create")],
                 [btn("Мои опросы", "surveys_my")],
                 [btn("Шаблоны вопросов", "surveys_templates")],
@@ -174,8 +181,8 @@ class AdminMenuPlugin:
         )
 
         # Меню аналитики
-        analytics = InlineKeyboardMarkup(
-            inline_keyboard=[
+        analytics = markup(
+            [
                 [btn("Экспорт данных", "analytics_export")],
                 [btn("Статистика опросов", "analytics_stats")],
                 [btn("Активность группы", "analytics_activity")],
@@ -185,8 +192,8 @@ class AdminMenuPlugin:
         )
 
         # Меню настроек
-        settings = InlineKeyboardMarkup(
-            inline_keyboard=[
+        settings = markup(
+            [
                 [btn("Общие настройки", "settings_general")],
                 [btn("Настройки уведомлений", "settings_notifications")],
                 [btn("Управление доступом", "settings_access")],
@@ -259,14 +266,15 @@ class AdminMenuPlugin:
     ):
         """Выбор пунктов в меню опросов"""
         data = getattr(callback_query, "data", getattr(callback_query, "text", ""))
-        if data == "surveys_create":
-            await self.survey_plugin.cmd_create_survey(callback_query.message, state)
-        elif data == "surveys_my":
-            await self.survey_plugin.cmd_view_surveys(callback_query.message, state)
-        elif data == "surveys_templates":
-            await self.templates_plugin.cmd_list_templates(callback_query.message)
-        elif data == "surveys_settings":
-            await callback_query.message.answer("Функция в разработке")
+        message = getattr(callback_query, "message", callback_query)
+        if data in {"surveys_create", "Создать опрос"}:
+            await self.survey_plugin.cmd_create_survey(message, state)
+        elif data in {"surveys_my", "Мои опросы"}:
+            await self.survey_plugin.cmd_view_surveys(message, state)
+        elif data in {"surveys_templates", "Шаблоны вопросов"}:
+            await self.templates_plugin.cmd_list_templates(message)
+        elif data in {"surveys_settings", "Настройки опросов"}:
+            await message.answer("Функция в разработке")
         if hasattr(callback_query, "data"):
             await callback_query.answer()
 
@@ -275,14 +283,15 @@ class AdminMenuPlugin:
     ):
         """Выбор пунктов в меню аналитики"""
         data = getattr(callback_query, "data", getattr(callback_query, "text", ""))
-        if data == "analytics_export":
-            await self.export_plugin.cmd_export(callback_query.message)
-        elif data == "analytics_stats":
-            await callback_query.message.answer("Функция в разработке")
-        elif data == "analytics_activity":
-            await callback_query.message.answer("Функция в разработке")
-        elif data == "analytics_ratings":
-            await callback_query.message.answer("Функция в разработке")
+        message = getattr(callback_query, "message", callback_query)
+        if data in {"analytics_export", "Экспорт данных"}:
+            await self.export_plugin.cmd_export(message)
+        elif data in {"analytics_stats", "Статистика опросов"}:
+            await message.answer("Функция в разработке")
+        elif data in {"analytics_activity", "Активность группы"}:
+            await message.answer("Функция в разработке")
+        elif data in {"analytics_ratings", "Рейтинги"}:
+            await message.answer("Функция в разработке")
         if hasattr(callback_query, "data"):
             await callback_query.answer()
 
@@ -291,12 +300,13 @@ class AdminMenuPlugin:
     ):
         """Выбор пунктов в меню настроек"""
         data = getattr(callback_query, "data", getattr(callback_query, "text", ""))
-        if data == "settings_testmode":
-            await self.test_mode_plugin.cmd_test_mode(callback_query.message, state)
-        elif data == "settings_access":
-            await self.roles_plugin.cmd_roles(callback_query.message, state)
-        elif data in {"settings_general", "settings_notifications"}:
-            await callback_query.message.answer("Функция в разработке")
+        message = getattr(callback_query, "message", callback_query)
+        if data in {"settings_testmode", "Тестовый режим"}:
+            await self.test_mode_plugin.cmd_test_mode(message, state)
+        elif data in {"settings_access", "Управление доступом"}:
+            await self.roles_plugin.cmd_roles(message, state)
+        elif data in {"settings_general", "settings_notifications", "Общие настройки", "Настройки уведомлений"}:
+            await message.answer("Функция в разработке")
         if hasattr(callback_query, "data"):
             await callback_query.answer()
 

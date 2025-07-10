@@ -1,5 +1,11 @@
 import sys
 import types
+from pathlib import Path
+
+# Ensure repository root is on sys.path for plugin imports
+root = Path(__file__).resolve().parents[1]
+if str(root) not in sys.path:
+    sys.path.insert(0, str(root))
 
 # Minimal aiogram stubs for plugin imports
 aiogram = types.ModuleType("aiogram")
@@ -25,6 +31,7 @@ class Router:
     def __init__(self):
         self.message = _Handler()
         self.callback_query = _Handler()
+        self.chat_member = _Handler()
 
     def include_router(self, *args, **kwargs):
         pass

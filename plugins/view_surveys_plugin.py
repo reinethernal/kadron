@@ -126,7 +126,7 @@ class ViewSurveysPlugin:
         return [
             types.BotCommand(
                 command="view_surveys",
-                description="Просмотреть доступные опросы",
+                description="Мои опросы",
             )
         ]
 
