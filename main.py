@@ -55,7 +55,11 @@ logger.debug(f"ADMIN_IDS parsed: {ADMIN_IDS}")
 
 async def main():
     # Инициализация БД
-    initialize_db()
+    try:
+        initialize_db()
+    except Exception as e:
+        logger.exception(f"Ошибка инициализации базы данных: {e}")
+        return
 
     # Создание бота
     if DefaultBotProperties:
@@ -69,7 +73,10 @@ async def main():
     plugin_manager = PluginManager(dp, bot, plugin_dir=PLUGIN_DIR, router=menu_router)
 
     # Загружаем плагины
-    await plugin_manager.load_plugins()
+    try:
+        await plugin_manager.load_plugins()
+    except Exception as e:
+        logger.exception(f"Ошибка загрузки плагинов: {e}")
 
     # Регистрируем основные хендлеры
     register_survey_handlers(dp)

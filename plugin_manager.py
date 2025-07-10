@@ -116,7 +116,9 @@ class PluginManager:
             return True
 
         except Exception as e:
-            logger.error(f"Не удалось выгрузить плагин {plugin_name}: {e}")
+            logger.exception(
+                f"Не удалось выгрузить плагин {plugin_name}: {e}"
+            )
             return False
 
     async def reload_plugin(self, plugin_name: str) -> bool:

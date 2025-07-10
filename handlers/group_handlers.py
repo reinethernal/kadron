@@ -20,11 +20,15 @@ async def handle_chat_member_update(event: types.ChatMemberUpdated):
     chat = event.chat
     user = event.from_user
 
-    add_group(chat.id, chat.title)
-    update_user_activity(user.id, user.username)
+    try:
+        add_group(chat.id, chat.title)
+        update_user_activity(user.id, user.username)
 
-    # Здесь можно добавить логику приветствия, капчи и т.д.
-    await bot.send_message(chat.id, f"Привет, {user.full_name}!")
+        # Здесь можно добавить логику приветствия, капчи и т.д.
+        await bot.send_message(chat.id, f"Привет, {user.full_name}!")
+    except Exception as e:
+        logger.exception(f"Ошибка обработки участника: {e}")
+        await bot.send_message(chat.id, "Произошла ошибка при добавлении участника")
 
 
 @router.message(lambda msg: msg.chat.type in ["group", "supergroup"])
@@ -32,8 +36,12 @@ async def handle_group_message(message: Message):
     """
     Пример простого хендлера, реагирующего на сообщения в группе/супергруппе
     """
-    update_user_activity(message.from_user.id, message.from_user.username)
-    add_group(message.chat.id, message.chat.title)
+    try:
+        update_user_activity(message.from_user.id, message.from_user.username)
+        add_group(message.chat.id, message.chat.title)
+    except Exception as e:
+        logger.exception(f"Ошибка обработки сообщения: {e}")
+        await message.answer("Произошла ошибка при обработке сообщения")
 
 
 def register_group_handlers(dp: Dispatcher):
