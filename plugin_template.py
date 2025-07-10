@@ -24,12 +24,16 @@
 - `unregister_handlers(router)` — удаляет зарегистрированные обработчики.
 """
 
+import logging
+
 from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+logger = logging.getLogger(__name__)
 
 
 class PluginStates(StatesGroup):
@@ -102,11 +106,11 @@ class PluginTemplate:
 
     def on_plugin_load(self):
         """Вызывается при загрузке плагина"""
-        print(f"Плагин {self.name} загружен")
+        logger.info("Плагин %s загружен", self.name)
 
     def on_plugin_unload(self):
         """Вызывается при выгрузке плагина"""
-        print(f"Плагин {self.name} выгружен")
+        logger.info("Плагин %s выгружен", self.name)
 
     async def handle_button(self, callback_query: types.CallbackQuery):
         """Обработчик нажатий на кнопки"""
