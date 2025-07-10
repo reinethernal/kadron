@@ -42,17 +42,18 @@ class UserRating:
 
 def initialize_db():
     """Create database tables."""
-    Base.metadata.create_all(
-        engine,
-        tables=[
-            Poll.__table__,
-            Question.__table__,
-            User.__table__,
-            Response.__table__,
-        ],
-    )
-    with sqlite3.connect(DATABASE) as conn:
-        cursor = conn.cursor()
+    try:
+        Base.metadata.create_all(
+            engine,
+            tables=[
+                Poll.__table__,
+                Question.__table__,
+                User.__table__,
+                Response.__table__,
+            ],
+        )
+        with sqlite3.connect(DATABASE) as conn:
+            cursor = conn.cursor()
         # Таблица тегов для опросов
         # Таблица тегов для опросов
         cursor.execute(
@@ -133,7 +134,11 @@ def initialize_db():
         """
         )
 
-    logger.info("Database initialized successfully.")
+        logger.info("Database initialized successfully.")
+
+    except Exception as e:
+        logger.exception(f"Failed to initialize database: {e}")
+        raise
 
 
 # --- Опросы ---
