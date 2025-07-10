@@ -12,7 +12,6 @@ import re
 from core.db_manager import get_all_groups
 
 from aiogram import Router, types, Bot
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext  # <-- Вместо dispatcher.FSMContext
 from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.filters.state
 from aiogram.utils.keyboard import InlineKeyboardBuilder
@@ -73,10 +72,7 @@ class SchedulerPlugin:
         """
 
         # Вместо dp.register_message_handler(...), используем dp.message.register(...)
-        router.message.register(
-            self.cmd_schedule,
-            Command(commands=["schedule"]),  # Разрешаем команду /schedule
-        )
+        # вход через меню админа
 
         # Вместо dp.register_callback_query_handler(...), используем dp.callback_query.register(...)
         # Дополнительно учитываем, что нам нужно вызывать этот хендлер в состоянии SchedulerStates.SELECTING_SURVEY
@@ -104,9 +100,7 @@ class SchedulerPlugin:
         )
 
         # Команда /scheduled (без конкретного состояния)
-        router.message.register(
-            self.cmd_list_scheduled, Command(commands=["scheduled"])
-        )
+        # список также вызывается через меню
 
         # Хендлер на отмену запланированного (любой стейт, или без стейта)
         router.callback_query.register(
@@ -128,14 +122,7 @@ class SchedulerPlugin:
 
     def get_commands(self):
         """Возвращаем список команд, которые добавляет этот плагин (для /help и т.п.)"""
-        return [
-            types.BotCommand(
-                command="schedule", description="Запланировать отправку опроса"
-            ),
-            types.BotCommand(
-                command="scheduled", description="Список запланированных опросов"
-            ),
-        ]
+        return []
 
     async def cmd_schedule(self, message: types.Message, state: FSMContext):
         """Обработка команды /schedule — начать процесс планирования опроса"""

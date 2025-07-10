@@ -14,7 +14,7 @@ from aiogram import Router, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import StateFilter
 
 # Fallback plugin classes in case dependencies are missing
 from .survey_plugin import SurveyPlugin
@@ -73,7 +73,10 @@ class AdminMenuPlugin:
 
     async def register_handlers(self, router: Router):
         """Регистрирует все обработчики для плагина"""
-        router.message.register(self.cmd_admin_menu, Command(commands=["admin"]))
+        router.callback_query.register(
+            self.admin_menu_callback,
+            lambda c: c.data == "admin_menu",
+        )
         router.callback_query.register(
             self.handle_main_menu,
             lambda c: c.data in {"admin_surveys", "admin_analytics", "admin_settings"},
@@ -135,10 +138,8 @@ class AdminMenuPlugin:
             ]
 
     def get_commands(self):
-        """Возвращает список команд, предоставляемых плагином"""
-        return [
-            types.BotCommand(command="admin", description="Открыть меню администратора")
-        ]
+        """Административное меню теперь открывается через кнопку, поэтому команды отсутствуют."""
+        return []
 
     def get_keyboards(self):
         """Возвращает словарь инлайн-клавиатур для различных меню"""
@@ -202,7 +203,7 @@ class AdminMenuPlugin:
         }
 
     async def cmd_admin_menu(self, message: types.Message, state: FSMContext):
-        """Обрабатывает команду /admin"""
+        """Открывает меню администратора по команде"""
         logger.debug(f"{message.text} from {message.from_user.id}")
         if message.from_user.id not in self.admin_ids:
             await message.answer("У вас нет доступа к меню администратора.")
@@ -212,6 +213,20 @@ class AdminMenuPlugin:
             "Главное меню администратора:",
             reply_markup=self.get_keyboards()["admin_main"],
         )
+
+    async def admin_menu_callback(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
+        """Открывает админ меню по нажатию кнопки"""
+        if callback_query.from_user.id not in self.admin_ids:
+            await callback_query.answer("Нет доступа")
+            return
+        await state.set_state(AdminMenuStates.MAIN_MENU)
+        await callback_query.message.answer(
+            "Главное меню администратора:",
+            reply_markup=self.get_keyboards()["admin_main"],
+        )
+        await callback_query.answer()
 
     async def handle_main_menu(
         self, callback_query: types.CallbackQuery, state: FSMContext

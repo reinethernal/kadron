@@ -42,10 +42,7 @@ class SurveyTemplatesPlugin:
         self.description = "Шаблоны опросов"
 
     async def register_handlers(self, router: Router):
-        router.message.register(self.cmd_save_template, Command("save_template"))
-        router.message.register(self.cmd_list_templates, Command("list_templates"))
-        router.message.register(self.cmd_delete_template, Command("delete_template"))
-        router.message.register(self.cmd_use_template, Command("use_template"))
+        pass
 
     async def unregister_handlers(self, router: Router):
         for attr in dir(router):
@@ -60,16 +57,7 @@ class SurveyTemplatesPlugin:
             ]
 
     def get_commands(self):
-        return [
-            types.BotCommand(
-                command="save_template", description="Создать шаблон из опроса"
-            ),
-            types.BotCommand(command="list_templates", description="Список шаблонов"),
-            types.BotCommand(command="delete_template", description="Удалить шаблон"),
-            types.BotCommand(
-                command="use_template", description="Новый опрос из шаблона"
-            ),
-        ]
+        return []
 
     def _get_templates(self):
         return storage.data.setdefault("templates", {})
