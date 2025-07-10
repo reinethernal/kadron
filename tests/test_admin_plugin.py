@@ -5,6 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+
 class DummyHandler:
     def __init__(self):
         self.handlers = []
@@ -13,6 +14,7 @@ class DummyHandler:
         self.handlers.append(handler)
 
     __call__ = register
+
 
 class DummyRouter:
     def __init__(self):
@@ -26,6 +28,7 @@ def test_admin_plugin_registers_handler(monkeypatch):
             sys.modules.pop(k)
 
     module = importlib.reload(importlib.import_module("plugins.admin_plugin"))
+
     class DummyBotCommand:
         def __init__(self, command=None, description=None):
             self.command = command

@@ -1,6 +1,5 @@
 import asyncio
 import importlib
-import sys
 from pathlib import Path
 
 import aiogram

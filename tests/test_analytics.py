@@ -100,4 +100,3 @@ def test_get_user_ratings(tmp_path, monkeypatch):
     assert ratings[1].user_id == 2
     assert round(ratings[1].rating, 1) == 3.0
     assert ratings[1].feedback_count == 1
-
