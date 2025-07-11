@@ -175,7 +175,7 @@ def get_poll_id_by_name(name: str) -> Optional[int]:
 
 def get_poll_by_id(poll_id: int) -> Optional[Dict]:
     with SessionLocal() as session:
-        poll = session.query(Poll).get(poll_id)
+        poll = session.get(Poll, poll_id)
         if poll:
             return {
                 "id": poll.id,
