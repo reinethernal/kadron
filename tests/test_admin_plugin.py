@@ -39,6 +39,6 @@ def test_admin_plugin_registers_handler(monkeypatch):
     router = DummyRouter()
     asyncio.run(plugin.register_handlers(router))
 
-    assert plugin.cmd_send_survey not in router.message.handlers
+    assert plugin.cmd_send_survey in router.message.handlers
     cmds = plugin.get_commands()
     assert not cmds
