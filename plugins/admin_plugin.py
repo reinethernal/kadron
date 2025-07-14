@@ -7,6 +7,7 @@ Admin Plugin для Telegram бота.
 import logging
 from aiogram.client.bot import Bot
 from aiogram import Router, types
+from aiogram.filters import Command
 
 from core.db_manager import get_all_groups, get_poll_by_id
 from dotenv import load_dotenv
@@ -27,7 +28,7 @@ class AdminPlugin:
 
     async def register_handlers(self, router: Router):
         """Регистрирует обработчики административных команд"""
-        pass
+        router.message.register(self.cmd_send_survey, Command("send_survey"))
 
     async def unregister_handlers(self, router: Router):
         for attr in dir(router):
