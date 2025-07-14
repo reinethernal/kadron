@@ -143,6 +143,13 @@ await pm.unload_plugin('test_mode_plugin')  # имя без .py
 ```python
 await pm.reload_plugin('test_mode_plugin')
 ```
+
+Получить список загруженных плагинов можно методом `list_plugin_names()`:
+
+```python
+names = pm.list_plugin_names()
+print(names)  # ['survey_plugin', 'admin_menu_plugin']
+```
 ## Примеры использования
 
 Ниже пример того, как выглядит административное меню:
