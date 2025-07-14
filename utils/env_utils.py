@@ -1,8 +1,6 @@
 import os
 import re
 
-
-def parse_admin_ids() -> list[int]:
-    """Parse ADMIN_IDS from environment and return a list of ints."""
-    ids = re.findall(r"\d+", os.environ.get("ADMIN_IDS", ""))
-    return [int(x) for x in ids]
+def parse_admin_ids(value: str) -> list[int]:
+    """Парсит строку вида '123,456' в список int"""
+    return [int(x.strip()) for x in value.split(",") if x.strip().isdigit()]
