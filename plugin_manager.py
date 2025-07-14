@@ -31,7 +31,6 @@ class PluginManager:
         self.bot = bot
         self.router = router or Router()
         if hasattr(self.dp, "include_router"):
-            self.dp.include_router(self.router)
         self.plugins = {}
         base = Path(__file__).resolve().parent
         self.plugin_dir = Path(plugin_dir) if plugin_dir else base / "plugins"
