@@ -63,7 +63,7 @@ async def main():
 
     # Создание бота
     if DefaultBotProperties:
-        bot = Bot(token=BOT_TOKEN, defaults=DefaultBotProperties(parse_mode="HTML"))
+        bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
     else:
         bot = Bot(token=BOT_TOKEN)
 
