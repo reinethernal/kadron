@@ -1,3 +1,5 @@
+# === FILE: plugin_manager.py ===
+
 """
 Менеджер плагинов Telegram‑бота.
 
@@ -30,14 +32,16 @@ class PluginManager:
         self.dp = dp
         self.bot = bot
         self.router = router or Router()
-        if hasattr(self.dp, "include_router"):
-        self.plugins = {}
+        self.plugins: Dict[str, Any] = {}
+
         base = Path(__file__).resolve().parent
         self.plugin_dir = Path(plugin_dir) if plugin_dir else base / "plugins"
         self.plugin_dir = self.plugin_dir.resolve()
+
         parent = str(self.plugin_dir.parent)
         if parent not in sys.path:
             sys.path.append(parent)
+
         self._package = self.plugin_dir.name
 
     async def load_plugins(self):
@@ -62,10 +66,11 @@ class PluginManager:
 
         for filename in plugin_files:
             logger.debug(f"Loading plugin file: {filename}")
-            plugin_name = filename[:-3]  # убираем расширение .py
+            plugin_name = filename[:-3]
             await self.load_plugin(plugin_name)
 
-        logger.info("Loaded plugins: %s", ", ".join(self.list_plugin_names()))
+        logger.info("Загружены плагины: %s", ", ".join(self.list_plugin_names()))
+        self.dp.include_router(self.router)
 
     async def load_plugin(self, plugin_name: str) -> bool:
         """Загружает конкретный плагин по имени"""
@@ -83,16 +88,13 @@ class PluginManager:
                 kwargs["plugin_manager"] = self
             plugin = module.load_plugin(**kwargs)
 
-            # Регистрируем обработчики плагина
             await plugin.register_handlers(self.router)
 
-            # Вызываем хук загрузки, если он определён
             if hasattr(plugin, "on_plugin_load"):
                 plugin.on_plugin_load()
 
             self.plugins[plugin_name] = plugin
             logger.info(f"Плагин {plugin_name} успешно загружен")
-            logger.debug(f"Plugin {plugin_name} imported successfully")
             return True
 
         except Exception as e:
@@ -107,30 +109,20 @@ class PluginManager:
 
         try:
             plugin = self.plugins[plugin_name]
-
-            # Отменяем регистрацию обработчиков, если метод определён
             if hasattr(plugin, "unregister_handlers"):
                 await plugin.unregister_handlers(self.router)
-
-            # Вызываем хук выгрузки, если он определён
             if hasattr(plugin, "on_plugin_unload"):
                 plugin.on_plugin_unload()
-
-            # Убираем плагин из реестра
             del self.plugins[plugin_name]
-
             logger.info(f"Плагин {plugin_name} успешно выгружен")
             return True
-
         except Exception as e:
             logger.exception(f"Не удалось выгрузить плагин {plugin_name}: {e}")
             return False
 
     async def reload_plugin(self, plugin_name: str) -> bool:
-        """Перезагружает указанный плагин."""
+        """Перезагружает указанный плагин"""
         module_name = f"{self._package}.{plugin_name}"
-
-        # Сначала выгружаем плагин, если он был загружен
         if plugin_name in self.plugins:
             await self.unload_plugin(plugin_name)
 
@@ -139,64 +131,55 @@ class PluginManager:
             if module is not None:
                 importlib.reload(module)
             else:
-                module = importlib.import_module(module_name)
+                importlib.import_module(module_name)
         except Exception as e:
-            logger.exception(
-                f"Не удалось перезагрузить модуль плагина {plugin_name}: {e}"
-            )
+            logger.exception(f"Не удалось перезагрузить модуль {plugin_name}: {e}")
             return False
 
-        # После успешной перезагрузки повторно загружаем плагин
         return await self.load_plugin(plugin_name)
 
     def get_plugin(self, plugin_name: str) -> Optional[Any]:
-        """Возвращает плагин по имени"""
         return self.plugins.get(plugin_name)
 
     def get_all_plugins(self) -> Dict[str, Any]:
-        """Возвращает все загруженные плагины"""
         return self.plugins
 
     def get_all_commands(self) -> List[BotCommand]:
-        """Получает команды из всех плагинов"""
         commands = []
         for plugin in self.plugins.values():
             if hasattr(plugin, "get_commands"):
-                commands.extend(plugin.get_commands())
+                try:
+                    commands.extend(plugin.get_commands() or [])
+                except Exception as e:
+                    logger.warning(f"Ошибка get_commands у {plugin.name}: {e}")
         return commands
 
     def get_plugin_commands(self) -> Dict[str, List[BotCommand]]:
-        """Возвращает команды, сгруппированные по плагинам"""
-        plugin_commands: Dict[str, List[BotCommand]] = {}
+        plugin_commands = {}
         for name, plugin in self.plugins.items():
             if hasattr(plugin, "get_commands"):
-                cmds = plugin.get_commands() or []
-                plugin_commands[name] = cmds
+                plugin_commands[name] = plugin.get_commands() or []
             else:
                 plugin_commands[name] = []
         return plugin_commands
 
     async def setup_bot_commands(self, bot: Bot):
-        """Настраивает команды бота на основе плагинов"""
-        from aiogram.types import BotCommand
-
         commands = [BotCommand(command="start", description="Начать работу с ботом")]
-        # Собираем команды из всех загруженных плагинов
         commands.extend(self.get_all_commands())
-
         await bot.set_my_commands(commands)
-        logger.info(f"Установлено команд: {len(commands)}")
+        logger.info(f"Установлено {len(commands)} команд")
 
     def get_all_keyboards(self) -> Dict[str, Any]:
-        """Получает все клавиатуры из плагинов"""
         keyboards = {}
         for plugin in self.plugins.values():
             if hasattr(plugin, "get_keyboards"):
-                plugin_keyboards = plugin.get_keyboards()
-                if plugin_keyboards:
-                    keyboards.update(plugin_keyboards)
+                try:
+                    plugin_keyboards = plugin.get_keyboards()
+                    if plugin_keyboards:
+                        keyboards.update(plugin_keyboards)
+                except Exception as e:
+                    logger.warning(f"Ошибка get_keyboards у {plugin.name}: {e}")
         return keyboards
 
     def list_plugin_names(self) -> List[str]:
-        """Возвращает список имён загруженных плагинов"""
         return list(self.plugins.keys())
