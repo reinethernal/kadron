@@ -20,7 +20,13 @@ logger = logging.getLogger(__name__)
 class PluginManager:
     """Управляет всеми плагинами бота"""
 
-    def __init__(self, dp: Dispatcher, bot: Bot, plugin_dir: str | None = None, router: Router | None = None):
+    def __init__(
+        self,
+        dp: Dispatcher,
+        bot: Bot,
+        plugin_dir: str | None = None,
+        router: Router | None = None,
+    ):
         self.dp = dp
         self.bot = bot
         self.router = router or Router()
@@ -59,6 +65,8 @@ class PluginManager:
             logger.debug(f"Loading plugin file: {filename}")
             plugin_name = filename[:-3]  # убираем расширение .py
             await self.load_plugin(plugin_name)
+
+        logger.info("Loaded plugins: %s", ", ".join(self.list_plugin_names()))
 
     async def load_plugin(self, plugin_name: str) -> bool:
         """Загружает конкретный плагин по имени"""
@@ -116,9 +124,7 @@ class PluginManager:
             return True
 
         except Exception as e:
-            logger.exception(
-                f"Не удалось выгрузить плагин {plugin_name}: {e}"
-            )
+            logger.exception(f"Не удалось выгрузить плагин {plugin_name}: {e}")
             return False
 
     async def reload_plugin(self, plugin_name: str) -> bool:
@@ -191,3 +197,7 @@ class PluginManager:
                 if plugin_keyboards:
                     keyboards.update(plugin_keyboards)
         return keyboards
+
+    def list_plugin_names(self) -> List[str]:
+        """Возвращает список имён загруженных плагинов"""
+        return list(self.plugins.keys())
