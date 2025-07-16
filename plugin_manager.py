@@ -169,8 +169,17 @@ class PluginManager:
     async def setup_bot_commands(self, bot: Bot):
         commands = [BotCommand(command="start", description="Начать работу с ботом")]
         commands.extend(self.get_all_commands())
-        await bot.set_my_commands(commands)
-        logger.info(f"Установлено {len(commands)} команд")
+
+        unique: List[BotCommand] = []
+        seen: set[str] = set()
+        for cmd in commands:
+            name = getattr(cmd, "command", None)
+            if name and name not in seen:
+                unique.append(cmd)
+                seen.add(name)
+
+        await bot.set_my_commands(unique)
+        logger.info(f"Установлено {len(unique)} команд")
 
     def get_all_keyboards(self) -> Dict[str, Any]:
         keyboards = {}

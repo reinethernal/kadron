@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import aiogram  # noqa: E402
 from plugin_manager import PluginManager  # noqa: E402
+import plugin_manager  # noqa: E402
 
 
 class DummyBot(aiogram.Bot):
@@ -52,6 +53,7 @@ def test_setup_bot_commands_collects_from_plugins(tmp_path, monkeypatch):
             self.description = description
 
     monkeypatch.setattr(aiogram.types, "BotCommand", DummyCommand)
+    monkeypatch.setattr(plugin_manager, "BotCommand", DummyCommand)
 
     dp = aiogram.Dispatcher()
     router = aiogram.Router()
@@ -63,6 +65,37 @@ def test_setup_bot_commands_collects_from_plugins(tmp_path, monkeypatch):
 
     assert bot.commands
     assert {c.command for c in bot.commands} == {"start", "one", "two"}
+
+
+def test_setup_bot_commands_deduplicates(tmp_path, monkeypatch):
+    pkg_dir = tmp_path / "dupplugins"
+    pkg_dir.mkdir()
+    (pkg_dir / "__init__.py").write_text("")
+    make_plugin_file(pkg_dir / "a_plugin.py", "dup")
+    make_plugin_file(pkg_dir / "b_plugin.py", "dup")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.chdir(tmp_path)
+
+    class DummyCommand:
+        def __init__(self, command, description):
+            self.command = command
+            self.description = description
+
+    monkeypatch.setattr(aiogram.types, "BotCommand", DummyCommand)
+    monkeypatch.setattr(plugin_manager, "BotCommand", DummyCommand)
+
+    dp = aiogram.Dispatcher()
+    router = aiogram.Router()
+    bot = DummyBot()
+    pm = PluginManager(dp, bot, plugin_dir=pkg_dir, router=router)
+
+    asyncio.run(pm.load_plugins())
+    asyncio.run(pm.setup_bot_commands(bot))
+
+    assert bot.commands
+    names = [c.command for c in bot.commands]
+    assert names.count("dup") == 1
+    assert names.count("start") == 1
 
 
 def test_plugins_load_from_env_dir(tmp_path, monkeypatch):
