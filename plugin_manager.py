@@ -70,7 +70,9 @@ class PluginManager:
             await self.load_plugin(plugin_name)
 
         logger.info("Загружены плагины: %s", ", ".join(self.list_plugin_names()))
-        self.dp.include_router(self.router)
+        include = getattr(self.dp, "include_router", None)
+        if callable(include):
+            include(self.router)
 
     async def load_plugin(self, plugin_name: str) -> bool:
         """Загружает конкретный плагин по имени"""
