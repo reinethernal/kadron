@@ -11,7 +11,7 @@ class DummyBot(aiogram.Bot):
 
 def make_plugin_file(path: Path, name: str):
     path.write_text(
-        f"""
+        """
 from aiogram.types import BotCommand
 class Plugin:
     async def register_handlers(self, router):
@@ -21,7 +21,7 @@ class Plugin:
 
 def load_plugin(bot=None, plugin_manager=None):
     return Plugin()
-"""
+    """
     )
 
 
