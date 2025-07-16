@@ -71,7 +71,8 @@ class PluginManager:
 
         logger.info("Загружены плагины: %s", ", ".join(self.list_plugin_names()))
         include = getattr(self.dp, "include_router", None)
-        if callable(include):
+        parent = getattr(self.router, "parent_router", None)
+        if callable(include) and parent is None:
             include(self.router)
 
     async def load_plugin(self, plugin_name: str) -> bool:
