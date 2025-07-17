@@ -73,6 +73,7 @@ class PluginManager:
         include = getattr(self.dp, "include_router", None)
         parent = getattr(self.router, "parent_router", None)
         if callable(include) and parent is None:
+            # Ensure the router is attached only once
             include(self.router)
 
     async def load_plugin(self, plugin_name: str) -> bool:
