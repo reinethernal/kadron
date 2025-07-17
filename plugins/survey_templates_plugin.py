@@ -43,12 +43,8 @@ class SurveyTemplatesPlugin:
 
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_save_template, Command("save_template"))
-        router.message.register(
-            self.cmd_list_templates, Command("list_templates")
-        )
-        router.message.register(
-            self.cmd_delete_template, Command("delete_template")
-        )
+        router.message.register(self.cmd_list_templates, Command("list_templates"))
+        router.message.register(self.cmd_delete_template, Command("delete_template"))
         router.message.register(self.cmd_use_template, Command("use_template"))
 
     async def unregister_handlers(self, router: Router):

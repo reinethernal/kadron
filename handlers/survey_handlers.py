@@ -155,7 +155,13 @@ async def start_handler(message: types.Message, bot: Bot, state: FSMContext):
         markup = None
         if message.from_user.id in admin_ids:
             markup = InlineKeyboardMarkup(
-                inline_keyboard=[[InlineKeyboardButton(text="Админ меню", callback_data="admin_menu")]]
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="Админ меню", callback_data="admin_menu"
+                        )
+                    ]
+                ]
             )
         await message.answer(welcome_text, reply_markup=markup)
     except Exception as e:
@@ -170,14 +176,18 @@ async def answer_callback_handler(
     try:
         data = callback_query.data.split("_")
         if len(data) != 3:
-            await bot.send_message(callback_query.from_user.id, "Неверный формат ответа.")
+            await bot.send_message(
+                callback_query.from_user.id, "Неверный формат ответа."
+            )
             return
         _, q_index_str, opt_index_str = data
         try:
             q_index = int(q_index_str)
             opt_index = int(opt_index_str)
         except ValueError:
-            await bot.send_message(callback_query.from_user.id, "Неверный формат ответа.")
+            await bot.send_message(
+                callback_query.from_user.id, "Неверный формат ответа."
+            )
             return
 
         current_data = await state.get_data()
@@ -191,7 +201,9 @@ async def answer_callback_handler(
         try:
             option = question["options"][opt_index]
         except IndexError:
-            await bot.send_message(callback_query.from_user.id, "Выбран неверный вариант.")
+            await bot.send_message(
+                callback_query.from_user.id, "Выбран неверный вариант."
+            )
             return
 
         responses = current_data.get("responses", [])
@@ -199,14 +211,18 @@ async def answer_callback_handler(
         await state.update_data(responses=responses, current_question_index=q_index + 1)
         poll_info = get_poll_by_id(poll_id)
         db_user_id = (
-            None if poll_info and poll_info.get("anonymous") else callback_query.from_user.id
+            None
+            if poll_info and poll_info.get("anonymous")
+            else callback_query.from_user.id
         )
         add_response(poll_id, question["id"], db_user_id, option, datetime.utcnow())
         await bot.send_message(callback_query.from_user.id, f"Вы выбрали: {option}")
         await send_question(callback_query.from_user.id, bot, state)
     except Exception as e:
         logger.exception(f"Ошибка выбора варианта: {e}")
-        await bot.send_message(callback_query.from_user.id, "Произошла ошибка. Попробуйте позже.")
+        await bot.send_message(
+            callback_query.from_user.id, "Произошла ошибка. Попробуйте позже."
+        )
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("toggle_"))
@@ -216,14 +232,18 @@ async def toggle_option_handler(
     try:
         data = callback_query.data.split("_")
         if len(data) != 3:
-            await bot.send_message(callback_query.from_user.id, "Неверный формат ответа.")
+            await bot.send_message(
+                callback_query.from_user.id, "Неверный формат ответа."
+            )
             return
         _, q_index_str, opt_index_str = data
         try:
             q_index = int(q_index_str)
             opt_index = int(opt_index_str)
         except ValueError:
-            await bot.send_message(callback_query.from_user.id, "Неверный формат ответа.")
+            await bot.send_message(
+                callback_query.from_user.id, "Неверный формат ответа."
+            )
             return
 
         current_data = await state.get_data()
@@ -252,7 +272,11 @@ async def toggle_option_handler(
                 ]
             )
         buttons.append(
-            [InlineKeyboardButton(text="Подтвердить", callback_data=f"confirm_{q_index}")]
+            [
+                InlineKeyboardButton(
+                    text="Подтвердить", callback_data=f"confirm_{q_index}"
+                )
+            ]
         )
         keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
         await bot.edit_message_reply_markup(
@@ -263,7 +287,9 @@ async def toggle_option_handler(
         await callback_query.answer()
     except Exception as e:
         logger.exception(f"Ошибка выбора опций: {e}")
-        await bot.send_message(callback_query.from_user.id, "Произошла ошибка. Попробуйте позже.")
+        await bot.send_message(
+            callback_query.from_user.id, "Произошла ошибка. Попробуйте позже."
+        )
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("confirm_"))
@@ -273,15 +299,21 @@ async def confirm_multiple_handler(
     try:
         data = callback_query.data.split("_")
         if len(data) != 2:
-            await bot.send_message(callback_query.from_user.id, "Неверный формат ответа.")
+            await bot.send_message(
+                callback_query.from_user.id, "Неверный формат ответа."
+            )
             return
         try:
             q_index = int(data[1])
         except ValueError:
-            await bot.send_message(callback_query.from_user.id, "Неверный формат ответа.")
+            await bot.send_message(
+                callback_query.from_user.id, "Неверный формат ответа."
+            )
             return
         current_data = await state.get_data()
-        selected_options = current_data.get("selected_options", {}).get(str(q_index), [])
+        selected_options = current_data.get("selected_options", {}).get(
+            str(q_index), []
+        )
         poll_id = current_data.get("poll_id")
         questions = get_questions(poll_id)
         if q_index >= len(questions):
@@ -289,7 +321,9 @@ async def confirm_multiple_handler(
             return
         question = questions[q_index]
         chosen = [
-            question["options"][i] for i in selected_options if i < len(question["options"])
+            question["options"][i]
+            for i in selected_options
+            if i < len(question["options"])
         ]
         answer_text = ", ".join(chosen)
         responses = current_data.get("responses", [])
@@ -297,9 +331,13 @@ async def confirm_multiple_handler(
         await state.update_data(responses=responses, current_question_index=q_index + 1)
         poll_info = get_poll_by_id(poll_id)
         db_user_id = (
-            None if poll_info and poll_info.get("anonymous") else callback_query.from_user.id
+            None
+            if poll_info and poll_info.get("anonymous")
+            else callback_query.from_user.id
         )
-        add_response(poll_id, question["id"], db_user_id, answer_text, datetime.utcnow())
+        add_response(
+            poll_id, question["id"], db_user_id, answer_text, datetime.utcnow()
+        )
         selected_options_all = current_data.get("selected_options", {})
         selected_options_all[str(q_index)] = []
         await state.update_data(selected_options=selected_options_all)
@@ -307,7 +345,9 @@ async def confirm_multiple_handler(
         await send_question(callback_query.from_user.id, bot, state)
     except Exception as e:
         logger.exception(f"Ошибка подтверждения выбора: {e}")
-        await bot.send_message(callback_query.from_user.id, "Произошла ошибка. Попробуйте позже.")
+        await bot.send_message(
+            callback_query.from_user.id, "Произошла ошибка. Попробуйте позже."
+        )
 
 
 @router.callback_query(lambda c: c.data and c.data.startswith("send_text_"))
@@ -317,20 +357,26 @@ async def send_text_answer_handler(
     try:
         data = callback_query.data.split("_")
         if len(data) != 3:
-            await bot.send_message(callback_query.from_user.id, "Неверный формат ответа.")
+            await bot.send_message(
+                callback_query.from_user.id, "Неверный формат ответа."
+            )
             return
         _, action, q_index_str = data
         try:
             q_index = int(q_index_str)
         except ValueError:
-            await bot.send_message(callback_query.from_user.id, "Неверный формат ответа.")
+            await bot.send_message(
+                callback_query.from_user.id, "Неверный формат ответа."
+            )
             return
         await bot.send_message(callback_query.from_user.id, "Введите ваш ответ:")
         await state.update_data(current_question_index=q_index + 1)
         await state.set_state("awaiting_text_answer")
     except Exception as e:
         logger.exception(f"Ошибка текстового ответа: {e}")
-        await bot.send_message(callback_query.from_user.id, "Произошла ошибка. Попробуйте позже.")
+        await bot.send_message(
+            callback_query.from_user.id, "Произошла ошибка. Попробуйте позже."
+        )
 
 
 @router.message(StateFilter("awaiting_text_answer"))

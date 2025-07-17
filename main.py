@@ -25,13 +25,18 @@ try:
     from aiogram.client.bot import Bot, DefaultBotProperties
 except ImportError:
     from aiogram.client.bot import Bot
+
     DefaultBotProperties = None
-    logging.warning("DefaultBotProperties not found – bot will be created without parse_mode.")
+    logging.warning(
+        "DefaultBotProperties not found – bot will be created without parse_mode."
+    )
 
 configure_logging()
 
 if parse_version(aiogram_version).major != 3:
-    raise RuntimeError("Kadron requires aiogram 3.x. Install dependencies via pip install -r requirements.txt.")
+    raise RuntimeError(
+        "Kadron requires aiogram 3.x. Install dependencies via pip install -r requirements.txt."
+    )
 
 if not os.path.exists(".env"):
     logging.warning("Файл .env не найден; переменные окружения не загружены")

@@ -140,9 +140,7 @@ class AdminMenuPlugin:
 
     def get_commands(self):
         """Возвращает команды плагина"""
-        return [
-            types.BotCommand(command="admin", description="Админ меню")
-        ]
+        return [types.BotCommand(command="admin", description="Админ меню")]
 
     def get_keyboards(self):
         """Возвращает словарь инлайн-клавиатур для различных меню"""
@@ -308,7 +306,12 @@ class AdminMenuPlugin:
             await self.test_mode_plugin.cmd_test_mode(message, state)
         elif data in {"settings_access", "Управление доступом"}:
             await self.roles_plugin.cmd_roles(message, state)
-        elif data in {"settings_general", "settings_notifications", "Общие настройки", "Настройки уведомлений"}:
+        elif data in {
+            "settings_general",
+            "settings_notifications",
+            "Общие настройки",
+            "Настройки уведомлений",
+        }:
             await message.answer("Функция в разработке")
         if hasattr(callback_query, "data"):
             await callback_query.answer()
