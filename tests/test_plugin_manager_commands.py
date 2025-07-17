@@ -147,3 +147,35 @@ def test_builtin_plugins_load_from_custom_package(tmp_path, monkeypatch):
     asyncio.run(pm.load_plugins())
 
     assert "admin_menu_plugin" in pm.plugins
+
+
+def test_setup_bot_commands_handles_network_error(tmp_path, monkeypatch):
+    dp = aiogram.Dispatcher()
+    router = aiogram.Router()
+
+    class ErrorBot(DummyBot):
+        async def set_my_commands(self, commands):
+            raise aiogram.exceptions.TelegramNetworkError("fail")
+
+    bot = ErrorBot()
+    pm = PluginManager(dp, bot, plugin_dir=tmp_path, router=router)
+
+    logged = []
+
+    def fake_error(msg, *args, **kwargs):
+        logged.append(msg)
+
+    monkeypatch.setattr(plugin_manager.logger, "error", fake_error)
+
+    class DummyCommand:
+        def __init__(self, command, description):
+            self.command = command
+            self.description = description
+
+    monkeypatch.setattr(aiogram.types, "BotCommand", DummyCommand)
+    monkeypatch.setattr(plugin_manager, "BotCommand", DummyCommand)
+
+    # Should not raise despite the network error
+    asyncio.run(pm.setup_bot_commands(bot))
+
+    assert logged
