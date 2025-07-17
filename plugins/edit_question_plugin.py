@@ -105,7 +105,7 @@ class EditQuestionPlugin:
     """Плагин для редактирования вопросов в опросах"""
 
     def __init__(self):
-        self.name = "edit_question"
+        self.name = "edit_question_plugin"
         self.description = "Редактировать вопросы в существующих опросах"
 
     async def register_handlers(self, router: Router):
