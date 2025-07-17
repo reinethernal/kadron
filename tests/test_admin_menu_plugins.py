@@ -61,7 +61,9 @@ def test_admin_menu_has_plugin_commands(monkeypatch):
     import plugin_manager as pm_module
 
     pm_module = importlib.reload(pm_module)
-    pm = pm_module.PluginManager(pm_module.Dispatcher(), pm_module.Bot(), router=pm_module.Router())
+    pm = pm_module.PluginManager(
+        pm_module.Dispatcher(), pm_module.Bot(), router=pm_module.Router()
+    )
     asyncio.run(pm.load_plugins())
     admin = pm.get_plugin("admin_menu_plugin")
     keyboards = admin.get_keyboards()

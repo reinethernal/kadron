@@ -33,7 +33,9 @@ load_dotenv()
 ENABLE_CAPTCHA = os.getenv("ENABLE_CAPTCHA", "False").lower() == "true"
 CAPTCHA_TIMEOUT = int(os.getenv("CAPTCHA_TIMEOUT", "5"))
 INACTIVITY_DAYS = int(os.getenv("INACTIVITY_DAYS", "30"))
-ENABLE_INACTIVE_CLEANUP = os.getenv("ENABLE_INACTIVE_CLEANUP", "False").lower() == "true"
+ENABLE_INACTIVE_CLEANUP = (
+    os.getenv("ENABLE_INACTIVE_CLEANUP", "False").lower() == "true"
+)
 DEFAULT_WELCOME_MESSAGE = "Привет, {username}!"
 
 logger = logging.getLogger(__name__)
@@ -137,7 +139,9 @@ class GroupEventPlugin:
         """Регистрирует обработчики событий группы."""
         router.chat_member.register(
             self.on_new_chat_member,
-            ChatMemberUpdatedFilter(member_status_changed=["member", "creator", "administrator"]),
+            ChatMemberUpdatedFilter(
+                member_status_changed=["member", "creator", "administrator"]
+            ),
         )
         router.message.register(
             self.on_private_message, lambda m: getattr(m.chat, "type", "") == "private"

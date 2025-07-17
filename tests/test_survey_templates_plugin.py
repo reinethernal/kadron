@@ -22,7 +22,9 @@ class DummyRouter:
 
 
 def test_survey_templates_plugin_registers_commands(monkeypatch):
-    module = importlib.reload(importlib.import_module("plugins.survey_templates_plugin"))
+    module = importlib.reload(
+        importlib.import_module("plugins.survey_templates_plugin")
+    )
     plugin = module.load_plugin()
     router = DummyRouter()
     asyncio.run(plugin.register_handlers(router))
