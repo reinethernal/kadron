@@ -118,6 +118,16 @@ keyboard_mod.InlineKeyboardBuilder = _Builder
 utils_mod.keyboard = keyboard_mod
 aiogram.utils = utils_mod
 
+exceptions_mod = types.ModuleType("aiogram.exceptions")
+
+
+class TelegramNetworkError(Exception):
+    pass
+
+
+exceptions_mod.TelegramNetworkError = TelegramNetworkError
+aiogram.exceptions = exceptions_mod
+
 client_bot_mod = types.ModuleType("aiogram.client.bot")
 client_bot_mod.Bot = aiogram.Bot
 
@@ -129,6 +139,7 @@ sys.modules.setdefault("aiogram.fsm.context", context_mod)
 sys.modules.setdefault("aiogram.fsm.state", state_mod)
 sys.modules.setdefault("aiogram.utils", utils_mod)
 sys.modules.setdefault("aiogram.utils.keyboard", keyboard_mod)
+sys.modules.setdefault("aiogram.exceptions", exceptions_mod)
 sys.modules.setdefault("aiogram.client.bot", client_bot_mod)
 
 # Stubs for additional libraries

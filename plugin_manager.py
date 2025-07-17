@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 from aiogram import Dispatcher, Bot, Router
 from aiogram.types import BotCommand
+from aiogram.exceptions import TelegramNetworkError
 
 logger = logging.getLogger(__name__)
 
@@ -179,8 +180,14 @@ class PluginManager:
                 unique.append(cmd)
                 seen.add(name)
 
-        await bot.set_my_commands(unique)
-        logger.info(f"Установлено {len(unique)} команд")
+        try:
+            await bot.set_my_commands(unique)
+        except TelegramNetworkError as e:
+            logger.error(f"Failed to set bot commands: {e}")
+        except Exception as e:  # pragma: no cover - unexpected errors
+            logger.error(f"Failed to set bot commands: {e}")
+        else:
+            logger.info(f"Установлено {len(unique)} команд")
 
     def get_all_keyboards(self) -> Dict[str, Any]:
         keyboards = {}
