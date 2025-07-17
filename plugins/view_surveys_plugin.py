@@ -87,7 +87,7 @@ class ViewSurveysPlugin:
     """Плагин для просмотра опросов"""
 
     def __init__(self):
-        self.name = "view_surveys"
+        self.name = "view_surveys_plugin"
         self.description = "Просмотр и управление опросами"
 
     async def register_handlers(self, router: Router):
