@@ -18,7 +18,6 @@ from plugin_manager import PluginManager
 from routers.menu_router import router as menu_router
 from handlers.survey_handlers import register_survey_handlers
 from handlers.group_handlers import register_group_handlers
-from handlers.view_surveys_handler import register_view_surveys_handler
 
 load_dotenv()
 
@@ -73,7 +72,6 @@ async def main():
 
     register_survey_handlers(dp)
     register_group_handlers(dp)
-    register_view_surveys_handler(dp)
 
     await plugin_manager.setup_bot_commands(bot)
 
