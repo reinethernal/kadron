@@ -81,7 +81,7 @@ class DummyState:
 
 
 def setup_plugin(monkeypatch):
-    module = importlib.reload(importlib.import_module("plugins.survey_plugin"))
+    module = importlib.reload(importlib.import_module("plugins_surveys.survey_plugin"))
     storage = DummyStorage()
     monkeypatch.setattr(module, "storage", storage, raising=False)
     monkeypatch.setattr(module, "get_all_groups", lambda: [])

@@ -17,10 +17,10 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import Command, StateFilter
 
 # Fallback plugin classes in case dependencies are missing
-from .survey_plugin import SurveyPlugin
-from .export_plugin import ExportPlugin
-from .test_mode_plugin import TestModePlugin
-from .survey_templates_plugin import SurveyTemplatesPlugin
+from plugins_surveys.survey_plugin import SurveyPlugin
+from plugins_surveys.export_plugin import ExportPlugin
+from plugins_surveys.test_mode_plugin import TestModePlugin
+from plugins_surveys.survey_templates_plugin import SurveyTemplatesPlugin
 from .roles_plugin import RolesPlugin
 
 # Загружаем переменные из .env файла

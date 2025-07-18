@@ -116,9 +116,10 @@ def test_plugins_load_from_env_dir(tmp_path, monkeypatch):
 
 
 def test_builtin_plugins_load_from_custom_package(tmp_path, monkeypatch):
-    src_dir = Path(__file__).resolve().parents[1] / "plugins"
+    base_dir = Path(__file__).resolve().parents[1]
     pkg_dir = tmp_path / "ext_plugins"
-    shutil.copytree(src_dir, pkg_dir)
+    shutil.copytree(base_dir / "plugins_admin", pkg_dir / "plugins_admin")
+    shutil.copytree(base_dir / "plugins_surveys", pkg_dir / "plugins_surveys")
     monkeypatch.setenv("PLUGIN_DIR", str(pkg_dir))
     monkeypatch.setenv("ENABLE_INACTIVE_CLEANUP", "False")
 

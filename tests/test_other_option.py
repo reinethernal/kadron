@@ -54,7 +54,9 @@ class DummyCallback:
 
 
 def setup_single(monkeypatch):
-    mod = importlib.reload(importlib.import_module("plugins.single_choice_plugin"))
+    mod = importlib.reload(
+        importlib.import_module("plugins_surveys.single_choice_plugin")
+    )
     storage = DummyStorage()
     monkeypatch.setattr(mod, "storage", storage, raising=False)
     called = []
@@ -64,7 +66,9 @@ def setup_single(monkeypatch):
 
 
 def setup_multi(monkeypatch):
-    mod = importlib.reload(importlib.import_module("plugins.multiple_choice_plugin"))
+    mod = importlib.reload(
+        importlib.import_module("plugins_surveys.multiple_choice_plugin")
+    )
     storage = DummyStorage()
     monkeypatch.setattr(mod, "storage", storage, raising=False)
     called = []
@@ -100,7 +104,7 @@ def test_single_other(monkeypatch):
 
 
 def test_generate_results_other(monkeypatch):
-    mod = importlib.reload(importlib.import_module("plugins.survey_plugin"))
+    mod = importlib.reload(importlib.import_module("plugins_surveys.survey_plugin"))
     plugin = mod.load_plugin()
     survey = {
         "title": "T",

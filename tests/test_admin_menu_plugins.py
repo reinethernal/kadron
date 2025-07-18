@@ -55,7 +55,7 @@ def test_admin_menu_has_plugin_commands(monkeypatch):
         sys.path.insert(0, root)
 
     for k in list(sys.modules.keys()):
-        if k.startswith("plugins."):
+        if k.startswith("plugins_admin.") or k.startswith("plugins_surveys."):
             sys.modules.pop(k)
 
     import plugin_manager as pm_module
