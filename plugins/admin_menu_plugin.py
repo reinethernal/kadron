@@ -175,6 +175,7 @@ class AdminMenuPlugin:
             [
                 [btn("Создать опрос", "surveys_create")],
                 [btn("Мои опросы", "surveys_my")],
+                [btn("Рассылка опроса", "surveys_send")],
                 [btn("Шаблоны вопросов", "surveys_templates")],
                 [btn("Настройки опросов", "surveys_settings")],
                 [btn("🔙 Назад", "admin_back")],

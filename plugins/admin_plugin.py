@@ -43,7 +43,19 @@ class AdminPlugin:
             ]
 
     def get_commands(self):
-        return []
+        """Возвращает список команд плагина"""
+        try:
+            BotCommandCls = types.BotCommand
+        except AttributeError:
+            # Fallback for tests where BotCommand may be mocked elsewhere
+            from aiogram.types import BotCommand as BotCommandCls
+
+        return [
+            BotCommandCls(
+                command="send_survey",
+                description="Рассылка опроса",
+            )
+        ]
 
     async def cmd_send_survey(self, message: types.Message):
         """Команда для рассылки существующего опроса по группам"""
