@@ -14,7 +14,7 @@ from utils.env_utils import parse_admin_ids
 from dotenv import load_dotenv
 
 from core.db_manager import initialize_db
-from plugin_manager import PluginManager
+from plugin_manager import PluginManager, MissingRequiredPluginsError
 from routers.menu_router import router as menu_router
 from handlers.survey_handlers import register_survey_handlers
 from handlers.group_handlers import register_group_handlers
@@ -71,9 +71,18 @@ async def main():
     plugin_manager = PluginManager(dp, bot, plugin_dir=PLUGIN_DIR, router=menu_router)
 
     try:
-        await plugin_manager.load_plugins()
+        loaded = await plugin_manager.load_plugins(
+            required_plugins=["admin_menu_plugin"]
+        )
+        if not loaded:
+            logger.error("Не удалось загрузить ни одного плагина. Завершение работы")
+            return
+    except MissingRequiredPluginsError as e:
+        logger.critical(str(e))
+        return
     except Exception as e:
         logger.exception(f"Ошибка загрузки плагинов: {e}")
+        return
 
     register_survey_handlers(dp)
     register_group_handlers(dp)

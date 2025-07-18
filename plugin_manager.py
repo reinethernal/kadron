@@ -17,6 +17,16 @@ from aiogram import Dispatcher, Bot, Router
 from aiogram.types import BotCommand
 from aiogram.exceptions import TelegramNetworkError
 
+
+class MissingRequiredPluginsError(Exception):
+    """Raised when one or more required plugins could not be loaded."""
+
+    def __init__(self, missing: List[str]):
+        self.missing = missing
+        super().__init__(
+            f"Required plugins missing: {', '.join(missing)}"
+        )
+
 logger = logging.getLogger(__name__)
 
 
@@ -62,8 +72,16 @@ class PluginManager:
         # compatibility attribute
         self.plugin_dir = self.plugin_dirs[0]
 
-    async def load_plugins(self):
-        """Загружает все плагины из каталогов"""
+    async def load_plugins(
+        self, required_plugins: Optional[List[str]] | None = None
+    ) -> bool:
+        """Загружает все плагины из каталогов.
+
+        Returns ``True`` if at least one plugin was loaded successfully.
+        Raises :class:`MissingRequiredPluginsError` if any ``required_plugins``
+        are not present after loading.
+        """
+        loaded = False
         for pd, pkg in zip(self.plugin_dirs, self._packages):
             if not pd.exists():
                 msg = f"Каталог плагинов {pd} не найден"
@@ -86,14 +104,22 @@ class PluginManager:
                 logger.debug(f"Loading plugin file: {filename}")
                 plugin_name = filename[:-3]
                 self.plugin_packages[plugin_name] = pkg
-                await self.load_plugin(plugin_name, package=pkg)
+                ok = await self.load_plugin(plugin_name, package=pkg)
+                loaded = loaded or ok
 
         logger.info("Загружены плагины: %s", ", ".join(self.list_plugin_names()))
+        if required_plugins:
+            missing = [p for p in required_plugins if p not in self.plugins]
+            if missing:
+                logger.error("Отсутствуют обязательные плагины: %s", ", ".join(missing))
+                raise MissingRequiredPluginsError(missing)
         include = getattr(self.dp, "include_router", None)
         parent = getattr(self.router, "parent_router", None)
         if callable(include) and parent is None:
             # Ensure the router is attached only once
             include(self.router)
+
+        return loaded
 
     async def load_plugin(self, plugin_name: str, package: str | None = None) -> bool:
         """Загружает конкретный плагин по имени"""
