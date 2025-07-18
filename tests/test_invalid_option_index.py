@@ -55,7 +55,7 @@ class DummyCallback:
 
 
 def setup_single(monkeypatch):
-    mod = importlib.reload(importlib.import_module("plugins.single_choice_plugin"))
+    mod = importlib.reload(importlib.import_module("plugins.surveys.single_choice_plugin"))
     storage = DummyStorage()
     monkeypatch.setattr(mod, "storage", storage, raising=False)
     monkeypatch.setattr(mod, "add_response", lambda *a: None)
@@ -64,7 +64,7 @@ def setup_single(monkeypatch):
 
 
 def setup_multi(monkeypatch):
-    mod = importlib.reload(importlib.import_module("plugins.multiple_choice_plugin"))
+    mod = importlib.reload(importlib.import_module("plugins.surveys.multiple_choice_plugin"))
     storage = DummyStorage()
     monkeypatch.setattr(mod, "storage", storage, raising=False)
     monkeypatch.setattr(mod, "add_response", lambda *a: None)

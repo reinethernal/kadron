@@ -14,7 +14,7 @@ from aiogram.filters import StateFilter
 
 # Импортируем модуль хранилища
 try:
-    from .storage_plugin import storage
+    from ..surveys.storage_plugin import storage
 except ImportError:
     # Запасной вариант для тестирования
     class DummyStorage:
