@@ -41,4 +41,6 @@ def test_admin_plugin_registers_handler(monkeypatch):
 
     assert plugin.cmd_send_survey in router.message.handlers
     cmds = plugin.get_commands()
-    assert not cmds
+    assert len(cmds) == 1
+    assert cmds[0].command == "send_survey"
+    assert cmds[0].description == "Рассылка опроса"
