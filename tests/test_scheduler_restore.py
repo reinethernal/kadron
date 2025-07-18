@@ -86,7 +86,7 @@ def test_restore_scheduled(monkeypatch):
 
         return Dummy()
 
-    module = importlib.reload(importlib.import_module("plugins.scheduler_plugin"))
+    module = importlib.reload(importlib.import_module("plugins_admin.scheduler_plugin"))
     monkeypatch.setattr(module, "storage", storage, raising=False)
     bot = DummyBot()
     plugin = module.load_plugin(bot)
@@ -115,7 +115,7 @@ def test_scheduled_send(monkeypatch):
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-    module = importlib.reload(importlib.import_module("plugins.scheduler_plugin"))
+    module = importlib.reload(importlib.import_module("plugins_admin.scheduler_plugin"))
     monkeypatch.setattr(module, "storage", storage, raising=False)
 
     bot = DummyBot()

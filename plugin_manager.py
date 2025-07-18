@@ -36,39 +36,57 @@ class PluginManager:
         self.plugins: Dict[str, Any] = {}
 
         base = Path(__file__).resolve().parent
-        self.plugin_dir = Path(plugin_dir) if plugin_dir else base / "plugins"
-        self.plugin_dir = self.plugin_dir.resolve()
+        if plugin_dir:
+            pd = Path(plugin_dir).resolve()
+            if (pd / "plugins_admin").is_dir() and (pd / "plugins_surveys").is_dir():
+                self.plugin_dirs = [
+                    (pd / "plugins_surveys").resolve(),
+                    (pd / "plugins_admin").resolve(),
+                ]
+            else:
+                self.plugin_dirs = [pd]
+        else:
+            self.plugin_dirs = [
+                (base / "plugins_surveys").resolve(),
+                (base / "plugins_admin").resolve(),
+            ]
 
-        parent = str(self.plugin_dir.parent)
-        if parent not in sys.path:
-            sys.path.append(parent)
+        for pd in self.plugin_dirs:
+            parent = str(pd.parent)
+            if parent not in sys.path:
+                sys.path.append(parent)
 
-        self._package = self.plugin_dir.name
+        self._packages = [pd.name for pd in self.plugin_dirs]
+        self.plugin_packages: Dict[str, str] = {}
+
+        # compatibility attribute
+        self.plugin_dir = self.plugin_dirs[0]
 
     async def load_plugins(self):
-        """Загружает все плагины из каталога plugins"""
-        if not self.plugin_dir.exists():
-            msg = f"Каталог плагинов {self.plugin_dir} не найден"
-            logger.error(msg)
-            raise FileNotFoundError(msg)
+        """Загружает все плагины из каталогов"""
+        for pd, pkg in zip(self.plugin_dirs, self._packages):
+            if not pd.exists():
+                msg = f"Каталог плагинов {pd} не найден"
+                logger.error(msg)
+                raise FileNotFoundError(msg)
 
-        plugin_files = [
-            f.name
-            for f in sorted(self.plugin_dir.iterdir())
-            if f.is_file()
-            and f.name.endswith("_plugin.py")
-            and not f.name.startswith("__")
-        ]
+            plugin_files = [
+                f.name
+                for f in sorted(pd.iterdir())
+                if f.is_file()
+                and f.name.endswith("_plugin.py")
+                and not f.name.startswith("__")
+            ]
 
-        # Загружаем admin_menu_plugin последним, т.к. он зависит от других
-        if "admin_menu_plugin.py" in plugin_files:
-            plugin_files.remove("admin_menu_plugin.py")
-            plugin_files.append("admin_menu_plugin.py")
+            if pkg == "plugins_admin" and "admin_menu_plugin.py" in plugin_files:
+                plugin_files.remove("admin_menu_plugin.py")
+                plugin_files.append("admin_menu_plugin.py")
 
-        for filename in plugin_files:
-            logger.debug(f"Loading plugin file: {filename}")
-            plugin_name = filename[:-3]
-            await self.load_plugin(plugin_name)
+            for filename in plugin_files:
+                logger.debug(f"Loading plugin file: {filename}")
+                plugin_name = filename[:-3]
+                self.plugin_packages[plugin_name] = pkg
+                await self.load_plugin(plugin_name, package=pkg)
 
         logger.info("Загружены плагины: %s", ", ".join(self.list_plugin_names()))
         include = getattr(self.dp, "include_router", None)
@@ -77,14 +95,25 @@ class PluginManager:
             # Ensure the router is attached only once
             include(self.router)
 
-    async def load_plugin(self, plugin_name: str) -> bool:
+    async def load_plugin(self, plugin_name: str, package: str | None = None) -> bool:
         """Загружает конкретный плагин по имени"""
         if plugin_name in self.plugins:
             logger.warning(f"Плагин {plugin_name} уже загружен")
             return False
 
         try:
-            module = importlib.import_module(f"{self._package}.{plugin_name}")
+            pkg = package or self.plugin_packages.get(plugin_name)
+            if not pkg:
+                for pd, pk in zip(self.plugin_dirs, self._packages):
+                    if (pd / f"{plugin_name}.py").exists() or (
+                        pd / f"{plugin_name}_plugin.py"
+                    ).exists():
+                        pkg = pk
+                        break
+            if not pkg:
+                pkg = self._packages[0]
+            module = importlib.import_module(f"{pkg}.{plugin_name}")
+            self.plugin_packages[plugin_name] = pkg
             sig = inspect.signature(module.load_plugin)
             kwargs = {}
             if "bot" in sig.parameters:
@@ -127,7 +156,8 @@ class PluginManager:
 
     async def reload_plugin(self, plugin_name: str) -> bool:
         """Перезагружает указанный плагин"""
-        module_name = f"{self._package}.{plugin_name}"
+        pkg = self.plugin_packages.get(plugin_name, self._packages[0])
+        module_name = f"{pkg}.{plugin_name}"
         if plugin_name in self.plugins:
             await self.unload_plugin(plugin_name)
 
@@ -141,7 +171,7 @@ class PluginManager:
             logger.exception(f"Не удалось перезагрузить модуль {plugin_name}: {e}")
             return False
 
-        return await self.load_plugin(plugin_name)
+        return await self.load_plugin(plugin_name, package=pkg)
 
     def get_plugin(self, plugin_name: str) -> Optional[Any]:
         return self.plugins.get(plugin_name)

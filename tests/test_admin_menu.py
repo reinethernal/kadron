@@ -26,7 +26,9 @@ class DummyState:
 
 
 def test_admin_menu_calls(monkeypatch):
-    adm_module = importlib.reload(importlib.import_module("plugins.admin_menu_plugin"))
+    adm_module = importlib.reload(
+        importlib.import_module("plugins_admin.admin_menu_plugin")
+    )
 
     class DummyPlugin:
         pass

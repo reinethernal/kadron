@@ -24,10 +24,10 @@ class DummyRouter:
 def test_admin_plugin_registers_handler(monkeypatch):
     monkeypatch.setenv("ADMIN_IDS", "1")
     for k in list(sys.modules.keys()):
-        if k.startswith("plugins."):
+        if k.startswith("plugins_admin.") or k.startswith("plugins_surveys."):
             sys.modules.pop(k)
 
-    module = importlib.reload(importlib.import_module("plugins.admin_plugin"))
+    module = importlib.reload(importlib.import_module("plugins_admin.admin_plugin"))
 
     class DummyBotCommand:
         def __init__(self, command=None, description=None):

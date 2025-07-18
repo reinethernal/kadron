@@ -23,7 +23,7 @@ class DummyRouter:
 
 def test_survey_templates_plugin_registers_commands(monkeypatch):
     module = importlib.reload(
-        importlib.import_module("plugins.survey_templates_plugin")
+        importlib.import_module("plugins_surveys.survey_templates_plugin")
     )
     plugin = module.load_plugin()
     router = DummyRouter()
