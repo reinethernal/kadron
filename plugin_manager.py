@@ -53,22 +53,22 @@ class PluginManager:
             raise FileNotFoundError(msg)
 
         plugin_files = [
-            f.name
-            for f in sorted(self.plugin_dir.iterdir())
-            if f.is_file()
-            and f.name.endswith("_plugin.py")
-            and not f.name.startswith("__")
+            f
+            for f in sorted(self.plugin_dir.rglob("*_plugin.py"))
+            if f.is_file() and not f.name.startswith("__")
         ]
 
         # Загружаем admin_menu_plugin последним, т.к. он зависит от других
-        if "admin_menu_plugin.py" in plugin_files:
-            plugin_files.remove("admin_menu_plugin.py")
-            plugin_files.append("admin_menu_plugin.py")
+        admin_files = [f for f in plugin_files if f.name == "admin_menu_plugin.py"]
+        plugin_files = [f for f in plugin_files if f.name != "admin_menu_plugin.py"]
+        plugin_files.extend(admin_files)
 
-        for filename in plugin_files:
-            logger.debug(f"Loading plugin file: {filename}")
-            plugin_name = filename[:-3]
-            await self.load_plugin(plugin_name)
+        for path in plugin_files:
+            logger.debug(f"Loading plugin file: {path}")
+            plugin_name = path.stem
+            rel = path.relative_to(self.plugin_dir).with_suffix("")
+            subpackage = ".".join(rel.parts[:-1]) or None
+            await self.load_plugin(plugin_name, subpackage=subpackage)
 
         logger.info("Загружены плагины: %s", ", ".join(self.list_plugin_names()))
         include = getattr(self.dp, "include_router", None)
@@ -77,14 +77,15 @@ class PluginManager:
             # Ensure the router is attached only once
             include(self.router)
 
-    async def load_plugin(self, plugin_name: str) -> bool:
+    async def load_plugin(self, plugin_name: str, subpackage: str | None = None) -> bool:
         """Загружает конкретный плагин по имени"""
         if plugin_name in self.plugins:
             logger.warning(f"Плагин {plugin_name} уже загружен")
             return False
 
         try:
-            module = importlib.import_module(f"{self._package}.{plugin_name}")
+            module_path = f"{self._package}.{plugin_name}" if not subpackage else f"{self._package}.{subpackage}.{plugin_name}"
+            module = importlib.import_module(module_path)
             sig = inspect.signature(module.load_plugin)
             kwargs = {}
             if "bot" in sig.parameters:
@@ -127,9 +128,21 @@ class PluginManager:
 
     async def reload_plugin(self, plugin_name: str) -> bool:
         """Перезагружает указанный плагин"""
-        module_name = f"{self._package}.{plugin_name}"
+        subpackage = None
+        module_name = None
+
+        for path in self.plugin_dir.rglob(f"{plugin_name}.py"):
+            if path.name == f"{plugin_name}.py":
+                rel = path.relative_to(self.plugin_dir).with_suffix("")
+                subpackage = ".".join(rel.parts[:-1]) or None
+                module_name = f"{self._package}.{plugin_name}" if subpackage is None else f"{self._package}.{subpackage}.{plugin_name}"
+                break
+
         if plugin_name in self.plugins:
             await self.unload_plugin(plugin_name)
+
+        if module_name is None:
+            module_name = f"{self._package}.{plugin_name}"
 
         try:
             module = sys.modules.get(module_name)
@@ -141,7 +154,7 @@ class PluginManager:
             logger.exception(f"Не удалось перезагрузить модуль {plugin_name}: {e}")
             return False
 
-        return await self.load_plugin(plugin_name)
+        return await self.load_plugin(plugin_name, subpackage=subpackage)
 
     def get_plugin(self, plugin_name: str) -> Optional[Any]:
         return self.plugins.get(plugin_name)

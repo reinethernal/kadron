@@ -27,7 +27,7 @@ def test_admin_plugin_registers_handler(monkeypatch):
         if k.startswith("plugins."):
             sys.modules.pop(k)
 
-    module = importlib.reload(importlib.import_module("plugins.admin_plugin"))
+    module = importlib.reload(importlib.import_module("plugins.admin.admin_plugin"))
 
     class DummyBotCommand:
         def __init__(self, command=None, description=None):

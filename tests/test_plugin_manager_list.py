@@ -42,3 +42,26 @@ def test_list_plugin_names(tmp_path, monkeypatch):
     asyncio.run(pm.load_plugins())
 
     assert set(pm.list_plugin_names()) == {"a_plugin", "b_plugin"}
+
+
+def test_recurses_into_subpackages(tmp_path, monkeypatch):
+    pkg_dir = tmp_path / "pluglistrec"
+    admin_dir = pkg_dir / "admin"
+    survey_dir = pkg_dir / "surveys"
+    admin_dir.mkdir(parents=True)
+    survey_dir.mkdir()
+    for d in (pkg_dir, admin_dir, survey_dir):
+        (d / "__init__.py").write_text("")
+    make_plugin_file(admin_dir / "x_plugin.py", "x")
+    make_plugin_file(survey_dir / "y_plugin.py", "y")
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.chdir(tmp_path)
+
+    dp = aiogram.Dispatcher()
+    router = aiogram.Router()
+    bot = DummyBot()
+    pm = PluginManager(dp, bot, plugin_dir=pkg_dir, router=router)
+
+    asyncio.run(pm.load_plugins())
+
+    assert set(pm.list_plugin_names()) == {"x_plugin", "y_plugin"}
