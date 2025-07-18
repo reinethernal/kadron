@@ -158,11 +158,11 @@ def test_admin_menu_creates_survey(monkeypatch):
         if k.startswith("plugins."):
             sys.modules.pop(k)
 
-    storage_mod = importlib.reload(importlib.import_module("plugins.storage_plugin"))
+    storage_mod = importlib.reload(importlib.import_module("plugins.surveys.storage_plugin"))
     storage = DummyStorage()
     monkeypatch.setattr(storage_mod, "storage", storage, raising=False)
 
-    survey_mod = importlib.reload(importlib.import_module("plugins.survey_plugin"))
+    survey_mod = importlib.reload(importlib.import_module("plugins.surveys.survey_plugin"))
     monkeypatch.setattr(survey_mod, "storage", storage, raising=False)
     monkeypatch.setattr(survey_mod, "get_all_groups", lambda: [])
     monkeypatch.setattr(
@@ -172,7 +172,7 @@ def test_admin_menu_creates_survey(monkeypatch):
     )
 
     scheduler_mod = importlib.reload(
-        importlib.import_module("plugins.scheduler_plugin")
+        importlib.import_module("plugins.surveys.scheduler_plugin")
     )
     monkeypatch.setattr(scheduler_mod, "storage", storage, raising=False)
     monkeypatch.setattr(
@@ -182,7 +182,7 @@ def test_admin_menu_creates_survey(monkeypatch):
     )
     monkeypatch.setattr(scheduler_mod, "get_all_groups", lambda: [])
 
-    group_mod = importlib.reload(importlib.import_module("plugins.group_event_plugin"))
+    group_mod = importlib.reload(importlib.import_module("plugins.admin.group_event_plugin"))
     monkeypatch.setattr(group_mod, "storage", storage, raising=False)
     monkeypatch.setattr(group_mod, "remove_inactive_users", lambda bot: None)
     called = {}
@@ -202,7 +202,7 @@ def test_admin_menu_creates_survey(monkeypatch):
         group_mod, "unrestrict_user_if_needed", fake_unrestrict, raising=False
     )
 
-    importlib.reload(importlib.import_module("plugins.admin_menu_plugin"))
+    importlib.reload(importlib.import_module("plugins.admin.admin_menu_plugin"))
 
     pm_module = importlib.reload(importlib.import_module("plugin_manager"))
     dp = pm_module.Dispatcher()

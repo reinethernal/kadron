@@ -38,7 +38,7 @@ class DummyTask:
 
 
 def test_join_restrict(monkeypatch):
-    module = importlib.reload(importlib.import_module("plugins.captcha_plugin"))
+    module = importlib.reload(importlib.import_module("plugins.admin.captcha_plugin"))
     plugin = module.load_plugin()
 
     bot = DummyBot()

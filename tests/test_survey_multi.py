@@ -58,7 +58,7 @@ class DummyMessage:
 
 
 def setup_plugin(monkeypatch):
-    module = importlib.reload(importlib.import_module("plugins.survey_plugin"))
+    module = importlib.reload(importlib.import_module("plugins.surveys.survey_plugin"))
     storage = DummyStorage()
     monkeypatch.setattr(module, "storage", storage, raising=False)
     plugin = module.load_plugin()

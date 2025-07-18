@@ -10,7 +10,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 # Импорт хранилища
 try:
-    from .storage_plugin import storage
+    from ..surveys.storage_plugin import storage
 except ImportError:
 
     class DummyStorage:

@@ -19,7 +19,7 @@ from core.db_manager import (
 from dotenv import load_dotenv
 
 try:
-    from .storage_plugin import storage
+    from ..surveys.storage_plugin import storage
 except ImportError:
 
     class DummyStorage:

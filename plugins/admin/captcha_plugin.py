@@ -21,7 +21,7 @@ from core.db_manager import add_user_to_pending
 from .group_event_plugin import unrestrict_user_if_needed
 
 try:
-    from .storage_plugin import storage
+    from ..surveys.storage_plugin import storage
 except ImportError:
 
     class DummyStorage:
