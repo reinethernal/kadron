@@ -48,6 +48,8 @@ if not BOT_TOKEN:
 ADMIN_IDS = parse_admin_ids(os.getenv("ADMIN_IDS", ""))
 
 PLUGIN_DIR = os.getenv("PLUGIN_DIR")
+ADMIN_PLUGIN_DIR = os.getenv("ADMIN_PLUGIN_DIR")
+SURVEY_PLUGIN_DIR = os.getenv("SURVEY_PLUGIN_DIR")
 
 logger = logging.getLogger(__name__)
 logger.debug(f"ADMIN_IDS parsed: {ADMIN_IDS}")
@@ -68,7 +70,14 @@ async def main():
     dp = Dispatcher()
     dp.include_router(menu_router)
 
-    plugin_manager = PluginManager(dp, bot, plugin_dir=PLUGIN_DIR, router=menu_router)
+    plugin_manager = PluginManager(
+        dp,
+        bot,
+        plugin_dir=PLUGIN_DIR,
+        admin_plugin_dir=ADMIN_PLUGIN_DIR,
+        survey_plugin_dir=SURVEY_PLUGIN_DIR,
+        router=menu_router,
+    )
 
     try:
         loaded = await plugin_manager.load_plugins(

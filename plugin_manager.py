@@ -10,6 +10,7 @@
 import importlib
 import inspect
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -38,15 +39,38 @@ class PluginManager:
         dp: Dispatcher,
         bot: Bot,
         plugin_dir: str | None = None,
+        *,
+        admin_plugin_dir: str | None = None,
+        survey_plugin_dir: str | None = None,
         router: Router | None = None,
     ):
+        """Create a plugin manager.
+
+        ``plugin_dir`` points to a single directory containing plugins or a
+        package with ``plugins_admin`` and ``plugins_surveys`` subdirectories.
+        ``admin_plugin_dir`` and ``survey_plugin_dir`` can be used to specify
+        directories separately. Environment variables ``ADMIN_PLUGIN_DIR`` and
+        ``SURVEY_PLUGIN_DIR`` override the respective arguments.
+        """
         self.dp = dp
         self.bot = bot
         self.router = router or Router()
         self.plugins: Dict[str, Any] = {}
 
         base = Path(__file__).resolve().parent
-        if plugin_dir:
+
+        env_admin = os.getenv("ADMIN_PLUGIN_DIR")
+        env_survey = os.getenv("SURVEY_PLUGIN_DIR")
+
+        admin_plugin_dir = admin_plugin_dir or env_admin
+        survey_plugin_dir = survey_plugin_dir or env_survey
+
+        if admin_plugin_dir or survey_plugin_dir:
+            self.plugin_dirs = [
+                Path(survey_plugin_dir or (base / "plugins_surveys")).resolve(),
+                Path(admin_plugin_dir or (base / "plugins_admin")).resolve(),
+            ]
+        elif plugin_dir:
             pd = Path(plugin_dir).resolve()
             if (pd / "plugins_admin").is_dir() and (pd / "plugins_surveys").is_dir():
                 self.plugin_dirs = [

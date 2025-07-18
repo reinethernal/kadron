@@ -45,6 +45,8 @@ cp example.env .env
 | `INACTIVITY_DAYS` | Количество дней неактивности до удаления (используется при включённой очистке) |
 | `WELCOME_MESSAGE` | Приветственное сообщение по умолчанию |
 | `PLUGIN_DIR` | Путь к каталогу плагинов (по умолчанию используются `plugins_admin` и `plugins_surveys`) |
+| `ADMIN_PLUGIN_DIR` | Путь к каталогу административных плагинов |
+| `SURVEY_PLUGIN_DIR` | Путь к каталогу плагинов опросов |
 
 ### Отладочное логирование
 
@@ -67,10 +69,13 @@ python main.py
 Важно запускать `main.py` из корня репозитория. Если стартовать бот из другого каталога
 (например, указав абсолютный путь к скрипту), менеджер плагинов может не найти
 плагины в папках `plugins_admin` и `plugins_surveys`. Для нестандартных случаев можно задать путь к каталогу
-плагинов через переменную окружения `PLUGIN_DIR`:
+плагинов через переменную окружения `PLUGIN_DIR` или задать каталоги отдельно
+через `ADMIN_PLUGIN_DIR` и `SURVEY_PLUGIN_DIR`:
 
 ```bash
-PLUGIN_DIR=/path/to/plugins python /absolute/path/to/main.py
+ADMIN_PLUGIN_DIR=/path/to/admin \
+SURVEY_PLUGIN_DIR=/path/to/surveys \
+python /absolute/path/to/main.py
 ```
 
 Начиная с версии с относительными импортами, пакет с плагинами может называться как угодно
