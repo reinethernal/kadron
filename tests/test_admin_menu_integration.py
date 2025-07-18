@@ -148,7 +148,9 @@ def test_admin_menu_creates_survey(monkeypatch):
     monkeypatch.setattr(aiogram, "Dispatcher", DummyDispatcher, raising=False)
     monkeypatch.setattr(aiogram, "Router", DummyRouter, raising=False)
     monkeypatch.setattr(aiogram.types, "BotCommand", DummyBotCommand, raising=False)
-    monkeypatch.setattr(aiogram.types, "ReplyKeyboardMarkup", DummyMarkup, raising=False)
+    monkeypatch.setattr(
+        aiogram.types, "ReplyKeyboardMarkup", DummyMarkup, raising=False
+    )
     monkeypatch.setattr(aiogram.types, "KeyboardButton", DummyButton, raising=False)
     monkeypatch.setattr(asyncio, "create_task", lambda coro: DummyTask())
 
@@ -164,13 +166,19 @@ def test_admin_menu_creates_survey(monkeypatch):
     monkeypatch.setattr(survey_mod, "storage", storage, raising=False)
     monkeypatch.setattr(survey_mod, "get_all_groups", lambda: [])
     monkeypatch.setattr(
-        survey_mod.SurveyPlugin, "_schedule_survey_notifications", lambda self, survey: None
+        survey_mod.SurveyPlugin,
+        "_schedule_survey_notifications",
+        lambda self, survey: None,
     )
 
-    scheduler_mod = importlib.reload(importlib.import_module("plugins.scheduler_plugin"))
+    scheduler_mod = importlib.reload(
+        importlib.import_module("plugins.scheduler_plugin")
+    )
     monkeypatch.setattr(scheduler_mod, "storage", storage, raising=False)
     monkeypatch.setattr(
-        scheduler_mod.SchedulerPlugin, "_create_scheduled_task", lambda self, sid, st: None
+        scheduler_mod.SchedulerPlugin,
+        "_create_scheduled_task",
+        lambda self, sid, st: None,
     )
     monkeypatch.setattr(scheduler_mod, "get_all_groups", lambda: [])
 
@@ -190,7 +198,9 @@ def test_admin_menu_creates_survey(monkeypatch):
 
     monkeypatch.setattr(group_mod, "restrict_user", fake_restrict, raising=False)
     monkeypatch.setattr(group_mod, "start_captcha_timer", fake_timer, raising=False)
-    monkeypatch.setattr(group_mod, "unrestrict_user_if_needed", fake_unrestrict, raising=False)
+    monkeypatch.setattr(
+        group_mod, "unrestrict_user_if_needed", fake_unrestrict, raising=False
+    )
 
     importlib.reload(importlib.import_module("plugins.admin_menu_plugin"))
 

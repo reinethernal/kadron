@@ -115,7 +115,9 @@ class SurveyPlugin:
         router.message.register(
             self.process_options, StateFilter(SurveyStates.ADDING_OPTIONS)
         )
-        router.message.register(self.process_deadline, StateFilter(SurveyStates.DEADLINE))
+        router.message.register(
+            self.process_deadline, StateFilter(SurveyStates.DEADLINE)
+        )
         router.callback_query.register(
             self.process_anonymity_selection,
             lambda c: c.data.startswith("anon_"),
@@ -158,7 +160,9 @@ class SurveyPlugin:
 
         # Обработчики управления опросами
         # просмотр доступен через меню
-        router.message.register(self.cmd_view_surveys, lambda msg: msg.text == "Мои опросы")
+        router.message.register(
+            self.cmd_view_surveys, lambda msg: msg.text == "Мои опросы"
+        )
         router.callback_query.register(
             self.process_survey_action, lambda c: c.data.startswith("survey_")
         )
