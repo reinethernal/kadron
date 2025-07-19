@@ -51,10 +51,7 @@ def register_group_handlers(dp: Dispatcher):
     dp.include_router(router)
 
     # Если вы хотите на старте что-то делать (например, удалять неактивных)
-    # можно объявить on_startup:
-    # from plugins.group_event_plugin import remove_inactive_users
-    #
+    # можно объявить on_startup и зарегистрировать его в диспетчере:
     # async def on_startup(bot: Bot, **kwargs):
-    #     asyncio.create_task(remove_inactive_users(bot))
-    #
+    #     ...
     # dp.startup.register(on_startup)
