@@ -15,6 +15,7 @@ from aiogram import Router, types, Bot
 from aiogram.fsm.context import FSMContext  # <-- Вместо dispatcher.FSMContext
 from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.filters.state
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from utils import remove_plugin_handlers
 
 # Если используем собственное хранилище (storage_plugin)
 try:
@@ -109,16 +110,7 @@ class SchedulerPlugin:
         )
 
     async def unregister_handlers(self, router: Router):
-        for attr in dir(router):
-            event = getattr(router, attr)
-            handlers = getattr(event, "handlers", None)
-            if handlers is None:
-                continue
-            handlers[:] = [
-                h
-                for h in handlers
-                if getattr(getattr(h, "callback", h), "__self__", None) is not self
-            ]
+        remove_plugin_handlers(self, router)
 
     def get_commands(self):
         """Возвращаем список команд, которые добавляет этот плагин (для /help и т.п.)"""

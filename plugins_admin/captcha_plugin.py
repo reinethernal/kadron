@@ -19,6 +19,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import ChatMemberUpdatedFilter, StateFilter
 from core.db_manager import add_user_to_pending
 from .group_event_plugin import unrestrict_user_if_needed
+from utils import remove_plugin_handlers
 
 try:
     from .storage_plugin import storage
@@ -118,16 +119,7 @@ class CaptchaPlugin:
         )
 
     async def unregister_handlers(self, router: Router):
-        for attr in dir(router):
-            event = getattr(router, attr)
-            handlers = getattr(event, "handlers", None)
-            if handlers is None:
-                continue
-            handlers[:] = [
-                h
-                for h in handlers
-                if getattr(getattr(h, "callback", h), "__self__", None) is not self
-            ]
+        remove_plugin_handlers(self, router)
 
     def get_commands(self):
         return []

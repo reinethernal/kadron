@@ -5,19 +5,25 @@ from pathlib import Path
 import aiogram
 
 from plugin_manager import PluginManager
+from utils import remove_plugin_handlers
 
 
 def make_plugin_file(path: Path):
     path.write_text(
         """
 from aiogram import Router
+from utils import remove_plugin_handlers
+
 class Plugin:
     async def register_handlers(self, router: Router):
         router.message.register(self.echo)
+
     async def unregister_handlers(self, router: Router):
-        router.message.handlers = [h for h in router.message.handlers if h != self.echo]
+        remove_plugin_handlers(self, router)
+
     async def echo(self, message):
         pass
+
     def get_commands(self):
         return []
 

@@ -13,6 +13,7 @@ from aiogram.filters import StateFilter  # Добавляем фильтр со�
 import logging
 from core.db_manager import add_response
 from .response_mixin import ResponseMixin
+from utils import remove_plugin_handlers
 
 # Импорт хранилища из storage_plugin
 try:
@@ -55,16 +56,7 @@ class TextAnswerPlugin(ResponseMixin):
         )
 
     async def unregister_handlers(self, router: Router):
-        for attr in dir(router):
-            event = getattr(router, attr)
-            handlers = getattr(event, "handlers", None)
-            if handlers is None:
-                continue
-            handlers[:] = [
-                h
-                for h in handlers
-                if getattr(getattr(h, "callback", h), "__self__", None) is not self
-            ]
+        remove_plugin_handlers(self, router)
 
     def get_commands(self):
         """Возвращает список команд плагина"""

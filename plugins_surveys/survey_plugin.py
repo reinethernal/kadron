@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, time
 import asyncio
 import re
 from core.db_manager import get_all_groups
+from utils import remove_plugin_handlers
 
 # Импортируем модуль хранилища
 try:
@@ -176,16 +177,7 @@ class SurveyPlugin:
         )
 
     async def unregister_handlers(self, router: Router):
-        for attr in dir(router):
-            event = getattr(router, attr)
-            handlers = getattr(event, "handlers", None)
-            if handlers is None:
-                continue
-            handlers[:] = [
-                h
-                for h in handlers
-                if getattr(getattr(h, "callback", h), "__self__", None) is not self
-            ]
+        remove_plugin_handlers(self, router)
 
     def get_commands(self):
         """Возвращает список команд, предоставляемых плагином"""
