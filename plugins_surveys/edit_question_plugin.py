@@ -23,6 +23,7 @@ from core.db_manager import (
 import sqlite3
 from dotenv import load_dotenv
 from utils.env_utils import parse_admin_ids
+from utils import remove_plugin_handlers
 from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
@@ -154,16 +155,7 @@ class EditQuestionPlugin:
         )
 
     async def unregister_handlers(self, router: Router):
-        for attr in dir(router):
-            event = getattr(router, attr)
-            handlers = getattr(event, "handlers", None)
-            if handlers is None:
-                continue
-            handlers[:] = [
-                h
-                for h in handlers
-                if getattr(getattr(h, "callback", h), "__self__", None) is not self
-            ]
+        remove_plugin_handlers(self, router)
 
     def get_commands(self):
         """Возвращает список команд плагина"""

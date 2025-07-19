@@ -8,6 +8,7 @@ import os
 import logging
 from typing import Dict, Any, Optional
 from aiogram import Router
+from utils import remove_plugin_handlers
 
 logger = logging.getLogger(__name__)
 
@@ -119,16 +120,7 @@ class StoragePlugin:
         pass
 
     async def unregister_handlers(self, router: Router):
-        for attr in dir(router):
-            event = getattr(router, attr)
-            handlers = getattr(event, "handlers", None)
-            if handlers is None:
-                continue
-            handlers[:] = [
-                h
-                for h in handlers
-                if getattr(getattr(h, "callback", h), "__self__", None) is not self
-            ]
+        remove_plugin_handlers(self, router)
 
     def get_commands(self):
         """Команды для этого плагина отсутствуют"""

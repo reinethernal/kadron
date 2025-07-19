@@ -10,6 +10,7 @@ from aiogram.filters import Command
 from datetime import datetime
 import uuid
 import logging
+from utils import remove_plugin_handlers
 
 logger = logging.getLogger(__name__)
 
@@ -48,16 +49,7 @@ class SurveyTemplatesPlugin:
         router.message.register(self.cmd_use_template, Command("use_template"))
 
     async def unregister_handlers(self, router: Router):
-        for attr in dir(router):
-            event = getattr(router, attr)
-            handlers = getattr(event, "handlers", None)
-            if handlers is None:
-                continue
-            handlers[:] = [
-                h
-                for h in handlers
-                if getattr(getattr(h, "callback", h), "__self__", None) is not self
-            ]
+        remove_plugin_handlers(self, router)
 
     def get_commands(self):
         return []
