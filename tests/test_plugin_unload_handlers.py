@@ -5,7 +5,6 @@ from pathlib import Path
 import aiogram
 
 from plugin_manager import PluginManager
-from utils import remove_plugin_handlers
 
 
 def make_plugin_file(path: Path):

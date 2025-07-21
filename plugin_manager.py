@@ -24,9 +24,8 @@ class MissingRequiredPluginsError(Exception):
 
     def __init__(self, missing: List[str]):
         self.missing = missing
-        super().__init__(
-            f"Required plugins missing: {', '.join(missing)}"
-        )
+        super().__init__(f"Required plugins missing: {', '.join(missing)}")
+
 
 logger = logging.getLogger(__name__)
 

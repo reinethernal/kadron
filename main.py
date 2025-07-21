@@ -5,10 +5,8 @@ import logging
 import os
 
 from aiogram import __version__ as aiogram_version
-from aiogram import Dispatcher, Router, types
+from aiogram import Dispatcher, Router
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart, Command
-from aiogram.types import BotCommand
 from packaging.version import parse as parse_version
 from utils.logging_utils import configure_logging
 from utils.env_utils import parse_admin_ids
@@ -28,6 +26,7 @@ try:
     from aiogram.client.bot import Bot, DefaultBotProperties
 except ImportError:  # pragma: no cover - older aiogram
     from aiogram.client.bot import Bot
+
     DefaultBotProperties = None
     logging.warning(
         "DefaultBotProperties not found – bot will be created with parse_mode parameter"
@@ -68,10 +67,11 @@ async def main():
         return
 
     if DefaultBotProperties:
-        bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+        bot = Bot(
+            token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+        )
     else:
         bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
-
 
     dp = Dispatcher()
     dp.include_router(router)
