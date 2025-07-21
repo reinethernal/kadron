@@ -33,6 +33,7 @@ except ImportError:  # pragma: no cover - older aiogram
         "DefaultBotProperties not found – bot will be created with parse_mode parameter"
     )
 
+
 configure_logging()
 
 if parse_version(aiogram_version).major != 3:
@@ -80,6 +81,7 @@ async def main():
         bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     else:
         bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
+
 
     dp = Dispatcher()
     dp.include_router(router)
