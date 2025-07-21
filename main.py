@@ -5,7 +5,10 @@ import logging
 import os
 
 from aiogram import __version__ as aiogram_version
-from aiogram import Dispatcher
+from aiogram import Dispatcher, Router, types
+from aiogram.enums import ParseMode
+from aiogram.filters import CommandStart, Command
+from aiogram.types import BotCommand
 from packaging.version import parse as parse_version
 from utils.logging_utils import configure_logging
 from utils.env_utils import parse_admin_ids
@@ -23,12 +26,11 @@ load_dotenv()
 
 try:
     from aiogram.client.bot import Bot, DefaultBotProperties
-except ImportError:
+except ImportError:  # pragma: no cover - older aiogram
     from aiogram.client.bot import Bot
-
     DefaultBotProperties = None
     logging.warning(
-        "DefaultBotProperties not found – bot will be created without parse_mode."
+        "DefaultBotProperties not found – bot will be created with parse_mode parameter"
     )
 
 configure_logging()
@@ -54,6 +56,18 @@ SURVEY_PLUGIN_DIR = os.getenv("SURVEY_PLUGIN_DIR")
 logger = logging.getLogger(__name__)
 logger.debug(f"ADMIN_IDS parsed: {ADMIN_IDS}")
 
+router = Router()
+
+
+@router.message(CommandStart())
+async def start_command(message: types.Message):
+    await message.answer("Запуск")
+
+
+@router.message(Command("admin"))
+async def admin_command(message: types.Message):
+    await message.answer("Админ-панель")
+
 
 async def main():
     try:
@@ -63,11 +77,12 @@ async def main():
         return
 
     if DefaultBotProperties:
-        bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
+        bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     else:
-        bot = Bot(token=BOT_TOKEN)
+        bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
 
     dp = Dispatcher()
+    dp.include_router(router)
     dp.include_router(menu_router)
 
     plugin_manager = PluginManager(
@@ -97,6 +112,12 @@ async def main():
     register_group_handlers(dp)
 
     await plugin_manager.setup_bot_commands(bot)
+    await bot.set_my_commands(
+        [
+            BotCommand(command="start", description="Запуск"),
+            BotCommand(command="admin", description="Админ-панель"),
+        ]
+    )
 
     logger.info("Бот запущен и ожидает обновлений...")
     allowed_updates = dp.resolve_used_update_types()
