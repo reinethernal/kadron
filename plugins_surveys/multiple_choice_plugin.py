@@ -15,24 +15,7 @@ from .response_mixin import ResponseMixin
 from utils import remove_plugin_handlers
 
 # Поправленные импорты для хранилища
-try:
-    from .storage_plugin import storage
-except ImportError:
-    # Запасной вариант для тестов
-    class DummyStorage:
-        def get_survey(self, survey_id):
-            return {}
-
-        def save_survey(self, survey_id, data):
-            pass
-
-        def get_user_state(self, user_id):
-            return {}
-
-        def set_user_state(self, user_id, key, value):
-            pass
-
-    storage = DummyStorage()
+from plugins_admin.storage_plugin import storage
 
 logger = logging.getLogger(__name__)
 

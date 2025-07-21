@@ -8,27 +8,7 @@ import copy
 from utils import remove_plugin_handlers
 
 # Импорт хранилища
-try:
-    from .storage_plugin import storage
-except ImportError:
-
-    class DummyStorage:
-        def get_survey(self, survey_id):
-            return {}
-
-        def save_survey(self, survey_id, data):
-            pass
-
-        def get_setting(self, key, default=None):
-            return default
-
-        def set_setting(self, key, value):
-            pass
-
-        def get_all_surveys(self):
-            return {}
-
-    storage = DummyStorage()
+from plugins_admin.storage_plugin import storage
 
 logger = logging.getLogger(__name__)
 

@@ -10,30 +10,13 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from utils import remove_plugin_handlers
 
 # Импорт хранилища
-try:
-    from .storage_plugin import storage
-except ImportError:
-
-    class DummyStorage:
-        def get_survey(self, survey_id):
-            return {}
-
-        def get_all_surveys(self):
-            return {}
-
-    storage = DummyStorage()
+from plugins_admin.storage_plugin import storage
 
 # Импорт ролей для проверки прав
-try:
-    from .roles_plugin import RolesPlugin
+from plugins_admin.roles_plugin import RolesPlugin
 
-    roles_plugin = RolesPlugin()
-    has_permission = roles_plugin.has_permission
-except ImportError:
-
-    def has_permission(user_id, permission):
-        admin_ids = storage.get_setting("admin_ids", [])
-        return user_id in admin_ids
+roles_plugin = RolesPlugin()
+has_permission = roles_plugin.has_permission
 
 
 logger = logging.getLogger(__name__)

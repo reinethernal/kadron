@@ -15,24 +15,7 @@ from utils import remove_plugin_handlers
 logger = logging.getLogger(__name__)
 
 # Используем хранилище из storage_plugin
-try:
-    from .storage_plugin import storage
-except Exception:
-
-    class DummyStorage:
-        def __init__(self):
-            self.data = {}
-
-        def get_survey(self, sid):
-            return None
-
-        def save_survey(self, sid, data):
-            pass
-
-        def _save_data(self):
-            pass
-
-    storage = DummyStorage()
+from plugins_admin.storage_plugin import storage
 
 
 class SurveyTemplatesPlugin:

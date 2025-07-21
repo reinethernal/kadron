@@ -9,18 +9,7 @@ from .response_mixin import ResponseMixin
 from utils import remove_plugin_handlers
 import logging
 
-try:
-    from .storage_plugin import storage
-except ImportError:
-
-    class DummyStorage:
-        def get_survey(self, survey_id):
-            return {}
-
-        def save_survey(self, survey_id, data):
-            pass
-
-    storage = DummyStorage()
+from plugins_admin.storage_plugin import storage
 
 logger = logging.getLogger(__name__)
 
