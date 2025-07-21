@@ -27,6 +27,16 @@ class MissingRequiredPluginsError(Exception):
         super().__init__(f"Required plugins missing: {', '.join(missing)}")
 
 
+class PluginLoadError(Exception):
+    """Raised when a plugin cannot be imported or initialized."""
+
+    def __init__(self, plugin_name: str, original: Exception):
+        self.plugin_name = plugin_name
+        self.original = original
+        msg = f"Failed to load plugin {plugin_name}: {type(original).__name__}: {original}"
+        super().__init__(msg)
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -150,19 +160,30 @@ class PluginManager:
             logger.warning(f"Плагин {plugin_name} уже загружен")
             return False
 
+        pkg = package or self.plugin_packages.get(plugin_name)
+        if not pkg:
+            for pd, pk in zip(self.plugin_dirs, self._packages):
+                if (pd / f"{plugin_name}.py").exists() or (
+                    pd / f"{plugin_name}_plugin.py"
+                ).exists():
+                    pkg = pk
+                    break
+        if not pkg:
+            pkg = self._packages[0]
         try:
-            pkg = package or self.plugin_packages.get(plugin_name)
-            if not pkg:
-                for pd, pk in zip(self.plugin_dirs, self._packages):
-                    if (pd / f"{plugin_name}.py").exists() or (
-                        pd / f"{plugin_name}_plugin.py"
-                    ).exists():
-                        pkg = pk
-                        break
-            if not pkg:
-                pkg = self._packages[0]
             module = importlib.import_module(f"{pkg}.{plugin_name}")
-            self.plugin_packages[plugin_name] = pkg
+        except ImportError as e:
+            logger.error(
+                "Не удалось импортировать плагин %s: %s: %s",
+                plugin_name,
+                type(e).__name__,
+                e,
+            )
+            raise PluginLoadError(plugin_name, e) from e
+
+        self.plugin_packages[plugin_name] = pkg
+
+        try:
             sig = inspect.signature(module.load_plugin)
             kwargs = {}
             if "bot" in sig.parameters:
@@ -175,14 +196,18 @@ class PluginManager:
 
             if hasattr(plugin, "on_plugin_load"):
                 plugin.on_plugin_load()
-
-            self.plugins[plugin_name] = plugin
-            logger.info(f"Плагин {plugin_name} успешно загружен")
-            return True
-
         except Exception as e:
-            logger.exception(f"Не удалось загрузить плагин {plugin_name}: {e}")
-            return False
+            logger.exception(
+                "Ошибка инициализации плагина %s: %s: %s",
+                plugin_name,
+                type(e).__name__,
+                e,
+            )
+            raise PluginLoadError(plugin_name, e) from e
+
+        self.plugins[plugin_name] = plugin
+        logger.info(f"Плагин {plugin_name} успешно загружен")
+        return True
 
     async def unload_plugin(self, plugin_name: str) -> bool:
         """Выгружает конкретный плагин по имени"""
