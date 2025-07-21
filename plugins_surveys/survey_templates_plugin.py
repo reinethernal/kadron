@@ -11,11 +11,9 @@ from datetime import datetime
 import uuid
 import logging
 from utils import remove_plugin_handlers
+from plugins_admin.storage_plugin import storage
 
 logger = logging.getLogger(__name__)
-
-# Используем хранилище из storage_plugin
-from plugins_admin.storage_plugin import storage
 
 
 class SurveyTemplatesPlugin:

@@ -13,4 +13,3 @@ def remove_plugin_handlers(plugin, router: Router) -> None:
             for h in handlers
             if getattr(getattr(h, "callback", h), "__self__", None) is not plugin
         ]
-

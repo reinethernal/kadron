@@ -3,10 +3,9 @@ import importlib
 from pathlib import Path
 import sys
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
 import aiogram
-from plugin_manager import PluginManager
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 class DummyBot(aiogram.Bot):
@@ -29,4 +28,3 @@ def test_survey_plugins_use_admin_storage_and_roles():
     assert surv.storage is sp.storage
     assert exp.storage is sp.storage
     assert isinstance(exp.roles_plugin, rp.RolesPlugin)
-
