@@ -5,7 +5,6 @@
 """
 
 import logging
-from dotenv import load_dotenv
 from utils.env_utils import parse_admin_ids
 from utils import remove_plugin_handlers
 
@@ -23,9 +22,6 @@ from plugins_surveys.export_plugin import ExportPlugin
 from plugins_surveys.test_mode_plugin import TestModePlugin
 from plugins_surveys.survey_templates_plugin import SurveyTemplatesPlugin
 from .roles_plugin import RolesPlugin
-
-# Загружаем переменные из .env файла
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
