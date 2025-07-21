@@ -17,7 +17,6 @@ from core.db_manager import (
     get_all_groups,
 )
 from utils import remove_plugin_handlers
-from dotenv import load_dotenv
 
 try:
     from .storage_plugin import storage
@@ -28,8 +27,6 @@ except ImportError:
             return default
 
     storage = DummyStorage()
-
-load_dotenv()
 
 ENABLE_CAPTCHA = os.getenv("ENABLE_CAPTCHA", "False").lower() == "true"
 CAPTCHA_TIMEOUT = int(os.getenv("CAPTCHA_TIMEOUT", "5"))

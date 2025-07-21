@@ -10,11 +10,9 @@ from aiogram import Router, types
 from aiogram.filters import Command
 
 from core.db_manager import get_all_groups, get_poll_by_id
-from dotenv import load_dotenv
 from utils.env_utils import parse_admin_ids
 from utils import remove_plugin_handlers
 
-load_dotenv()
 ADMIN_IDS = parse_admin_ids()
 logger = logging.getLogger(__name__)
 logger.debug(f"Parsed ADMIN_IDS: {ADMIN_IDS}")
