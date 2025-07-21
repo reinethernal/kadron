@@ -24,7 +24,15 @@ from handlers.group_handlers import register_group_handlers
 
 load_dotenv()
 
-from aiogram.client.bot import Bot
+try:
+    from aiogram.client.bot import Bot, DefaultBotProperties
+except ImportError:  # pragma: no cover - older aiogram
+    from aiogram.client.bot import Bot
+    DefaultBotProperties = None
+    logging.warning(
+        "DefaultBotProperties not found – bot will be created with parse_mode parameter"
+    )
+
 
 configure_logging()
 
@@ -69,7 +77,11 @@ async def main():
         logger.exception(f"Ошибка инициализации базы данных: {e}")
         return
 
-    bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
+    if DefaultBotProperties:
+        bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    else:
+        bot = Bot(token=BOT_TOKEN, parse_mode=ParseMode.HTML)
+
 
     dp = Dispatcher()
     dp.include_router(router)
