@@ -21,14 +21,12 @@ from core.db_manager import (
     get_questions_by_poll,
 )
 import sqlite3
-from dotenv import load_dotenv
 from utils.env_utils import parse_admin_ids
 from utils import remove_plugin_handlers
 from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
 ADMIN_IDS = parse_admin_ids()
 
 

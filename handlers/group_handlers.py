@@ -3,10 +3,8 @@
 import logging
 from aiogram import Router, Dispatcher, types
 from aiogram.types import Message
-from dotenv import load_dotenv
 from core.db_manager import add_group, update_user_activity
 
-load_dotenv()
 logger = logging.getLogger(__name__)
 router = Router()
 
