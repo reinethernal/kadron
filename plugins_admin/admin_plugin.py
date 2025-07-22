@@ -13,6 +13,15 @@ from core.db_manager import get_all_groups, get_poll_by_id
 from utils.env_utils import parse_admin_ids
 from utils import remove_plugin_handlers
 
+__plugin_meta__ = {
+    "admin_menu": [
+        {"text": "\ud83d\udcec \u0420\u0430\u0441\u0441\u044b\u043b\u043a\u0430", "callback": "send_survey"},
+    ],
+    "commands": [
+        {"command": "send_survey", "description": "\u0420\u0430\u0441\u0441\u044b\u043b\u043a\u0430 \u043e\u043f\u0440\u043e\u0441\u0430"},
+    ],
+}
+
 ADMIN_IDS = parse_admin_ids()
 logger = logging.getLogger(__name__)
 logger.debug(f"Parsed ADMIN_IDS: {ADMIN_IDS}")
@@ -28,6 +37,13 @@ class AdminPlugin:
     async def register_handlers(self, router: Router):
         """Регистрирует обработчики административных команд"""
         router.message.register(self.cmd_send_survey, Command("send_survey"))
+        router.callback_query.register(
+            self._cb_send_survey,
+            lambda c: c.data == "send_survey",
+        )
+
+    async def _cb_send_survey(self, callback_query: types.CallbackQuery):
+        await self.cmd_send_survey(callback_query.message)
 
     async def unregister_handlers(self, router: Router):
         remove_plugin_handlers(self, router)

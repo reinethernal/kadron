@@ -5,8 +5,18 @@ import io
 import datetime
 import os
 
+__plugin_meta__ = {
+    "admin_menu": [
+        {"text": "\ud83d\udce6 \u042d\u043a\u0441\u043f\u043e\u0440\u0442", "callback": "export_data"},
+    ],
+    "commands": [
+        {"command": "export_data", "description": "\u042d\u043a\u0441\u043f\u043e\u0440\u0442 \u0434\u0430\u043d\u043d\u044b\u0445"},
+    ],
+}
+
 from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.filters import Command
 from utils import remove_plugin_handlers
 
 # Импорт хранилища
@@ -28,12 +38,19 @@ class ExportPlugin:
         self.description = "Экспорт данных опросов в разные форматы"
 
     async def register_handlers(self, router: Router):
+        router.message.register(self.cmd_export, Command("export_data"))
+        router.callback_query.register(
+            self._cb_export, lambda c: c.data == "export_data"
+        )
         router.callback_query.register(
             self.handle_survey_selection, lambda c: c.data.startswith("export_survey_")
         )
         router.callback_query.register(
             self.handle_format_selection, lambda c: c.data.startswith("export_format_")
         )
+
+    async def _cb_export(self, callback_query: types.CallbackQuery):
+        await self.cmd_export(callback_query.message)
 
     async def unregister_handlers(self, router: Router):
         remove_plugin_handlers(self, router)

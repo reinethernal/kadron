@@ -26,6 +26,15 @@
 
 import logging
 
+__plugin_meta__ = {
+    "admin_menu": [
+        {"text": "⚙ Шаблон", "callback": "template_command"},
+    ],
+    "commands": [
+        {"command": "template_command", "description": "Шаблонная команда"},
+    ],
+}
+
 from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
