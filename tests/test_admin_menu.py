@@ -24,73 +24,45 @@ class DummyState:
     async def set_state(self, state):
         self.state = state
 
+    async def clear(self):
+        self.state = None
 
-def test_admin_menu_calls(monkeypatch):
+
+def test_admin_menu_shows_items(monkeypatch):
+    monkeypatch.setenv("ADMIN_IDS", "1")
+    import aiogram.types as types
+
+    class DummyInlineButton:
+        def __init__(self, *args, **kwargs):
+            self.kwargs = kwargs
+
+    class DummyInlineMarkup:
+        def __init__(self, *args, **kwargs):
+            self.inline_keyboard = kwargs.get("inline_keyboard", [])
+
+    monkeypatch.setattr(types, "InlineKeyboardButton", DummyInlineButton, raising=False)
+    monkeypatch.setattr(types, "InlineKeyboardMarkup", DummyInlineMarkup, raising=False)
     adm_module = importlib.reload(
         importlib.import_module("plugins_admin.admin_menu_plugin")
     )
 
-    class DummyPlugin:
-        pass
-
     class DummyPM:
         def __init__(self):
-            self.plugins = {
-                "survey_plugin": DummyPlugin(),
-                "export_plugin": DummyPlugin(),
-                "test_mode_plugin": DummyPlugin(),
-                "survey_templates_plugin": DummyPlugin(),
-                "roles_plugin": DummyPlugin(),
-            }
+            self.called = False
 
-        def get_plugin(self, name):
-            return self.plugins.get(name)
+        def get_admin_menu_items(self):
+            self.called = True
+            return [
+                {"text": "Создать опрос", "callback": "create"},
+                {"text": "Экспорт данных", "callback": "export"},
+            ]
 
     pm = DummyPM()
     plugin = adm_module.load_plugin(plugin_manager=pm)
 
-    called = {}
-
-    async def fake_create(msg, state):
-        called["create"] = msg.text
-
-    monkeypatch.setattr(
-        plugin.survey_plugin,
-        "cmd_create_survey",
-        fake_create,
-        raising=False,
-    )
-
-    async def fake_export(msg):
-        called["export"] = msg.text
-
-    monkeypatch.setattr(
-        plugin.export_plugin,
-        "cmd_export",
-        fake_export,
-        raising=False,
-    )
-
-    async def fake_test_mode(msg, state):
-        called["test_mode"] = msg.text
-
-    monkeypatch.setattr(
-        plugin.test_mode_plugin,
-        "cmd_test_mode",
-        fake_test_mode,
-        raising=False,
-    )
-
     state = DummyState()
-    msg = DummyMessage("Создать опрос")
-    asyncio.run(plugin.handle_surveys_menu(msg, state))
-    msg = DummyMessage("Экспорт данных")
-    asyncio.run(plugin.handle_analytics_menu(msg, state))
-    msg = DummyMessage("Тестовый режим")
-    asyncio.run(plugin.handle_settings_menu(msg, state))
+    msg = DummyMessage("/admin", user_id=1)
+    asyncio.run(plugin.cmd_admin_menu(msg, state))
 
-    assert called == {
-        "create": "Создать опрос",
-        "export": "Экспорт данных",
-        "test_mode": "Тестовый режим",
-    }
+    assert pm.called
+    assert "Добро пожаловать" in msg.responses[0]

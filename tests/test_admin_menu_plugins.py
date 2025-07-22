@@ -1,5 +1,5 @@
-import importlib
 import asyncio
+import importlib
 import aiogram.types as types
 
 
@@ -19,7 +19,7 @@ class DummyMarkup:
         self.keyboard = keyboard or []
 
 
-def test_admin_menu_has_plugin_commands(monkeypatch):
+def test_admin_menu_collects_menu_items(monkeypatch):
     class DummyHandler:
         def __call__(self, *args, **kwargs):
             def decorator(func):
@@ -65,35 +65,14 @@ def test_admin_menu_has_plugin_commands(monkeypatch):
         pm_module.Dispatcher(), pm_module.Bot(), router=pm_module.Router()
     )
     asyncio.run(pm.load_plugins())
-    admin = pm.get_plugin("admin_menu_plugin")
-    keyboards = admin.get_keyboards()
-    plugin_cmds = pm.get_plugin_commands()
+    items = pm.get_admin_menu_items()
+    callbacks = {i["callback"] for i in items}
 
-    # ensure admin command is exposed
-    admin_cmds = plugin_cmds.get("admin_menu_plugin")
-    assert any(cmd.command == "admin" for cmd in admin_cmds)
-    # exclude admin command from common checks
-    plugin_cmds.pop("admin_menu_plugin", None)
+    expected = set()
+    for plugin in pm.get_all_plugins().values():
+        meta = getattr(plugin, "__plugin_meta__", None)
+        if meta and isinstance(meta.get("admin_menu"), list):
+            for entry in meta["admin_menu"]:
+                expected.add(entry["callback"])
 
-    button_texts = []
-    for kb in keyboards.values():
-        for row in kb.keyboard:
-            for btn in row:
-                button_texts.append(btn.text)
-
-    for cmds in plugin_cmds.values():
-        for cmd in cmds:
-            desc = getattr(cmd, "description", None)
-            cmd_name = getattr(cmd, "command", None)
-            assert any(t == desc or t == cmd_name for t in button_texts)
-
-    survey_texts = []
-    for row in keyboards["admin_surveys"].keyboard:
-        for btn in row:
-            survey_texts.append(btn.text)
-
-    for cmds in plugin_cmds.values():
-        for cmd in cmds:
-            desc = getattr(cmd, "description", None)
-            cmd_name = getattr(cmd, "command", None)
-            assert any(t == desc or t == cmd_name for t in survey_texts)
+    assert callbacks == expected
