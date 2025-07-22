@@ -3,9 +3,19 @@ from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.filters import Command
 import logging
 import copy
 from utils import remove_plugin_handlers
+
+__plugin_meta__ = {
+    "admin_menu": [
+        {"text": "\ud83e\uddea \u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0440\u0435\u0436\u0438\u043c", "callback": "test_mode"},
+    ],
+    "commands": [
+        {"command": "test_mode", "description": "\u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0440\u0435\u0436\u0438\u043c"},
+    ],
+}
 
 # Импорт хранилища
 from plugins_admin.storage_plugin import storage
@@ -25,6 +35,7 @@ class TestModePlugin:
         self.test_surveys = {}
 
     async def register_handlers(self, router: Router):
+        router.message.register(self.cmd_test_mode, Command("test_mode"))
         router.callback_query.register(
             self.handle_survey_selection, lambda c: c.data.startswith("test_survey_")
         )

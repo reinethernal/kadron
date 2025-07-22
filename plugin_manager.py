@@ -192,6 +192,11 @@ class PluginManager:
                 kwargs["plugin_manager"] = self
             plugin = module.load_plugin(**kwargs)
 
+            # attach meta-data defined on module level
+            plugin_meta = getattr(module, "__plugin_meta__", None)
+            if plugin_meta is not None:
+                setattr(plugin, "__plugin_meta__", plugin_meta)
+
             await plugin.register_handlers(self.router)
 
             if hasattr(plugin, "on_plugin_load"):
@@ -253,14 +258,63 @@ class PluginManager:
     def get_all_plugins(self) -> Dict[str, Any]:
         return self.plugins
 
+    def get_admin_menu_items(self) -> List[Dict[str, str]]:
+        """Собирает пункты административного меню из мета-данных плагинов."""
+        items: List[Dict[str, str]] = []
+        for name, plugin in self.plugins.items():
+            meta = getattr(plugin, "__plugin_meta__", None)
+            if not meta:
+                continue
+            menu = meta.get("admin_menu")
+            if menu is None:
+                continue
+            if not isinstance(menu, list):
+                logger.warning(f"admin_menu в плагине {name} должен быть списком")
+                continue
+            for item in menu:
+                if (
+                    isinstance(item, dict)
+                    and isinstance(item.get("text"), str)
+                    and isinstance(item.get("callback"), str)
+                ):
+                    items.append({"text": item["text"], "callback": item["callback"]})
+                else:
+                    logger.warning(
+                        f"Неверный элемент admin_menu в плагине {name}: {item}"
+                    )
+        return items
+
     def get_all_commands(self) -> List[BotCommand]:
         commands = []
-        for plugin in self.plugins.values():
+        for name, plugin in self.plugins.items():
             if hasattr(plugin, "get_commands"):
                 try:
                     commands.extend(plugin.get_commands() or [])
                 except Exception as e:
                     logger.warning(f"Ошибка get_commands у {plugin.name}: {e}")
+
+            meta = getattr(plugin, "__plugin_meta__", None)
+            if not meta:
+                continue
+            meta_cmds = meta.get("commands")
+            if meta_cmds is None:
+                continue
+            if not isinstance(meta_cmds, list):
+                logger.warning(f"commands в плагине {name} должен быть списком")
+                continue
+            for cmd in meta_cmds:
+                if (
+                    isinstance(cmd, dict)
+                    and isinstance(cmd.get("command"), str)
+                    and isinstance(cmd.get("description", ""), str)
+                ):
+                    commands.append(
+                        BotCommand(command=cmd["command"], description=cmd.get("description", ""))
+                    )
+                else:
+                    logger.warning(
+                        f"Неверный элемент commands в плагине {name}: {cmd}"
+                    )
         return commands
 
     def get_plugin_commands(self) -> Dict[str, List[BotCommand]]:
@@ -270,6 +324,25 @@ class PluginManager:
                 plugin_commands[name] = plugin.get_commands() or []
             else:
                 plugin_commands[name] = []
+
+            meta = getattr(plugin, "__plugin_meta__", None)
+            if meta and isinstance(meta.get("commands"), list):
+                for cmd in meta["commands"]:
+                    if (
+                        isinstance(cmd, dict)
+                        and isinstance(cmd.get("command"), str)
+                        and isinstance(cmd.get("description", ""), str)
+                    ):
+                        plugin_commands[name].append(
+                            BotCommand(
+                                command=cmd["command"],
+                                description=cmd.get("description", ""),
+                            )
+                        )
+                    else:
+                        logger.warning(
+                            f"Неверный элемент commands в плагине {name}: {cmd}"
+                        )
         return plugin_commands
 
     async def setup_bot_commands(self, bot: Bot):

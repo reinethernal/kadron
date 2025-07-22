@@ -13,6 +13,15 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 import logging
 from utils import remove_plugin_handlers
 
+__plugin_meta__ = {
+    "admin_menu": [
+        {"text": "\ud83d\udcca \u041c\u043e\u0438 \u043e\u043f\u0440\u043e\u0441\u044b", "callback": "view_surveys"},
+    ],
+    "commands": [
+        {"command": "view_surveys", "description": "\u041c\u043e\u0438 \u043e\u043f\u0440\u043e\u0441\u044b"},
+    ],
+}
+
 # Используем функции из db_manager вместо отсутствующего модуля базы данных
 from core.db_manager import (
     get_all_polls,
@@ -95,6 +104,9 @@ class ViewSurveysPlugin:
         """Регистрирует все обработчики плагина"""
         router.message.register(self.cmd_view_surveys, Command("view_surveys"))
         router.callback_query.register(
+            self._cb_view_surveys, lambda c: c.data == "view_surveys"
+        )
+        router.callback_query.register(
             self.handle_survey_selection,
             lambda c: c.data.startswith("view_survey_"),
             StateFilter(ViewSurveysStates.Viewing),
@@ -109,6 +121,11 @@ class ViewSurveysPlugin:
             lambda c: c.data.startswith("survey_action_"),
             StateFilter(ViewSurveysStates.ViewingDetails),
         )
+
+    async def _cb_view_surveys(
+        self, callback_query: types.CallbackQuery, state: FSMContext
+    ):
+        await self.cmd_view_surveys(callback_query.message, state)
 
     async def unregister_handlers(self, router: Router):
         remove_plugin_handlers(self, router)
