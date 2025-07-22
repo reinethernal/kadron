@@ -13,6 +13,13 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import StateFilter
 from utils import remove_plugin_handlers
 
+__plugin_meta__ = {
+    "admin_menu": [{"text": "\ud83d\udd11 \u0420\u043e\u043b\u0438", "callback": "roles"}],
+    "commands": [
+        {"command": "roles", "description": "\u0423\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u0440\u043e\u043b\u044f\u043c\u0438"},
+    ],
+}
+
 # Импортируем модуль хранилища
 try:
     from .storage_plugin import storage

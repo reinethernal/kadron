@@ -17,6 +17,13 @@ from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from utils import remove_plugin_handlers
 
+__plugin_meta__ = {
+    "admin_menu": [{"text": "\u23f0 \u041f\u043b\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435", "callback": "schedule"}],
+    "commands": [
+        {"command": "schedule", "description": "\u041f\u043b\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u043e\u043f\u0440\u043e\u0441\u043e\u0432"},
+    ],
+}
+
 # Если используем собственное хранилище (storage_plugin)
 try:
     from .storage_plugin import storage
