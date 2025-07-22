@@ -65,9 +65,7 @@ class AdminMenuPlugin:
                 for i in items
             ]
         )
-        await message.answer(
-            "Добро пожаловать в админ-панель.", reply_markup=keyboard
-        )
+        await message.answer("Добро пожаловать в админ-панель.", reply_markup=keyboard)
 
     async def cmd_admin_menu(self, message: types.Message, state: FSMContext):
         logger.debug(f"{message.text} from {message.from_user.id}")
@@ -90,4 +88,3 @@ class AdminMenuPlugin:
 
 def load_plugin(plugin_manager: PluginManager):
     return AdminMenuPlugin(plugin_manager=plugin_manager)
-

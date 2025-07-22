@@ -19,6 +19,7 @@ class DummyHandler:
 class DummyRouter:
     def __init__(self):
         self.message = DummyHandler()
+        self.callback_query = DummyHandler()
 
 
 def test_admin_plugin_registers_handler(monkeypatch):

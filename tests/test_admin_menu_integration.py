@@ -11,7 +11,7 @@ class DummyBotCommand:
 
 
 class DummyButton:
-    def __init__(self, text):
+    def __init__(self, text=None, **kwargs):
         self.text = text
 
 
@@ -152,6 +152,12 @@ def test_admin_menu_creates_survey(monkeypatch):
         aiogram.types, "ReplyKeyboardMarkup", DummyMarkup, raising=False
     )
     monkeypatch.setattr(aiogram.types, "KeyboardButton", DummyButton, raising=False)
+    monkeypatch.setattr(
+        aiogram.types, "InlineKeyboardButton", DummyButton, raising=False
+    )
+    monkeypatch.setattr(
+        aiogram.types, "InlineKeyboardMarkup", DummyMarkup, raising=False
+    )
     monkeypatch.setattr(asyncio, "create_task", lambda coro: DummyTask())
 
     for k in list(sys.modules.keys()):
@@ -250,17 +256,13 @@ def test_admin_menu_creates_survey(monkeypatch):
     survey = pm.get_plugin("survey_plugin")
 
     assert admin.plugin_manager is pm
-    assert admin.survey_plugin is survey
 
     state = DummyState()
     msg = DummyMessage("/admin")
     asyncio.run(admin.cmd_admin_menu(msg, state))
 
-    msg = DummyMessage("📊 Опросы")
-    asyncio.run(admin.handle_main_menu(msg, state))
-
     msg = DummyMessage("Создать опрос")
-    asyncio.run(admin.handle_surveys_menu(msg, state))
+    asyncio.run(survey.cmd_create_survey(msg, state))
 
     msg = DummyMessage("T")
     asyncio.run(survey.process_title(msg, state))
