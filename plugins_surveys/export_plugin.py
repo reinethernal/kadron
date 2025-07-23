@@ -4,13 +4,22 @@ import csv
 import io
 import datetime
 import os
+from typing import Optional
+
+from cryptography.fernet import Fernet
 
 __plugin_meta__ = {
     "admin_menu": [
-        {"text": "\ud83d\udce6 \u042d\u043a\u0441\u043f\u043e\u0440\u0442", "callback": "export_data"},
+        {
+            "text": "\ud83d\udce6 \u042d\u043a\u0441\u043f\u043e\u0440\u0442",
+            "callback": "export_data",
+        },
     ],
     "commands": [
-        {"command": "export_data", "description": "\u042d\u043a\u0441\u043f\u043e\u0440\u0442 \u0434\u0430\u043d\u043d\u044b\u0445"},
+        {
+            "command": "export_data",
+            "description": "\u042d\u043a\u0441\u043f\u043e\u0440\u0442 \u0434\u0430\u043d\u043d\u044b\u0445",
+        },
     ],
 }
 
@@ -30,6 +39,32 @@ has_permission = roles_plugin.has_permission
 
 
 logger = logging.getLogger(__name__)
+
+
+def _get_fernet() -> Optional[Fernet]:
+    """Return a :class:`Fernet` instance if an encryption key is configured."""
+    key = storage.get_setting("export_encryption_key") or os.getenv(
+        "EXPORT_ENCRYPTION_KEY"
+    )
+    if not key:
+        return None
+    try:
+        return Fernet(key)
+    except Exception:
+        logger.error("Invalid export encryption key")
+        return None
+
+
+def _encrypt(data: bytes) -> tuple[bytes, bool]:
+    """Encrypt bytes if key configured. Returns encrypted data and flag."""
+    f = _get_fernet()
+    if not f:
+        return data, False
+    try:
+        return f.encrypt(data), True
+    except Exception as e:
+        logger.error("Failed to encrypt data: %s", e)
+        return data, False
 
 
 class ExportPlugin:
@@ -145,8 +180,10 @@ class ExportPlugin:
             )
         csv_data = output.getvalue()
         output.close()
-        bio = io.BytesIO(csv_data.encode("utf-8"))
-        bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.csv"
+        data, encrypted = _encrypt(csv_data.encode("utf-8"))
+        bio = io.BytesIO(data)
+        suffix = ".csv.enc" if encrypted else ".csv"
+        bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}{suffix}"
         await callback_query.message.answer_document(
             bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}"
         )
@@ -181,8 +218,13 @@ class ExportPlugin:
         )
 
         with open(filename, "rb") as f:
-            bio = io.BytesIO(f.read())
-        bio.name = os.path.basename(filename)
+            file_bytes = f.read()
+
+        data, encrypted = _encrypt(file_bytes)
+        bio = io.BytesIO(data)
+        suffix = ".xlsx.enc" if encrypted else ".xlsx"
+        base = os.path.splitext(os.path.basename(filename))[0]
+        bio.name = f"{base}{suffix}"
         await callback_query.message.answer_document(
             bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}"
         )
@@ -201,8 +243,10 @@ class ExportPlugin:
             "responses": survey.get("responses", []),
         }
         json_data = json.dumps(export_data, ensure_ascii=False, indent=2)
-        bio = io.BytesIO(json_data.encode("utf-8"))
-        bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.json"
+        data, encrypted = _encrypt(json_data.encode("utf-8"))
+        bio = io.BytesIO(data)
+        suffix = ".json.enc" if encrypted else ".json"
+        bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}{suffix}"
         await callback_query.message.answer_document(
             bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}"
         )
@@ -274,8 +318,10 @@ class ExportPlugin:
                     report.append(f"  {i+1}. {answer}")
             report.append("")
         report_text = "\n".join(report)
-        bio = io.BytesIO(report_text.encode("utf-8"))
-        bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.txt"
+        data, encrypted = _encrypt(report_text.encode("utf-8"))
+        bio = io.BytesIO(data)
+        suffix = ".txt.enc" if encrypted else ".txt"
+        bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}{suffix}"
         await callback_query.message.answer_document(
             bio,
             caption=f"Текстовый отчет по опросу: {survey.get('title', 'Без названия')}",
