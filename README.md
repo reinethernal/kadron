@@ -120,6 +120,7 @@ flake8
 ## Архитектура плагинов
 
 Плагины расположены в каталогах `plugins_admin` и `plugins_surveys`. `plugin_manager.py` автоматически загружает каждый файл с окончанием `_plugin.py`.
+Функции планирования опросов реализованы отдельным `scheduler_plugin` в каталоге `plugins_surveys`.
 
 Подробности создания собственных плагинов описаны в [CONTRIBUTING.md](CONTRIBUTING.md).
 
