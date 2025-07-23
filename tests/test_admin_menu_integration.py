@@ -182,7 +182,7 @@ def test_admin_menu_creates_survey(monkeypatch):
     )
 
     scheduler_mod = importlib.reload(
-        importlib.import_module("plugins_admin.scheduler_plugin")
+        importlib.import_module("plugins_surveys.scheduler_plugin")
     )
     monkeypatch.setattr(scheduler_mod, "storage", storage, raising=False)
     monkeypatch.setattr(
