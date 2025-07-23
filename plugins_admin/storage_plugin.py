@@ -12,6 +12,12 @@ from utils import remove_plugin_handlers
 
 logger = logging.getLogger(__name__)
 
+__plugin_meta__ = {
+    "admin_menu": [],
+    "commands": [],
+    "permissions": [],
+}
+
 
 class Storage:
     """Класс для хранения постоянных данных"""

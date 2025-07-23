@@ -2,6 +2,12 @@
 
 from aiogram import Router
 
+__plugin_meta__ = {
+    "admin_menu": [],
+    "commands": [],
+    "permissions": [],
+}
+
 
 class AnalyticsPlugin:
     """Placeholder analytics plugin."""

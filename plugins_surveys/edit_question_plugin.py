@@ -29,6 +29,12 @@ logger = logging.getLogger(__name__)
 
 ADMIN_IDS = parse_admin_ids()
 
+__plugin_meta__ = {
+    "admin_menu": [],
+    "commands": [],
+    "permissions": [],
+}
+
 
 def is_admin(user_id: int) -> bool:
     """Проверяет, является ли пользователь администратором."""

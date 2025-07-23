@@ -38,6 +38,12 @@ DEFAULT_WELCOME_MESSAGE = "Привет, {username}!"
 
 logger = logging.getLogger(__name__)
 
+__plugin_meta__ = {
+    "admin_menu": [],
+    "commands": [],
+    "permissions": [],
+}
+
 
 async def restrict_user(bot: Bot, chat_id: int, user_id: int):
     try:
