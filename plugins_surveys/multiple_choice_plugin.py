@@ -8,8 +8,7 @@
 import logging
 
 from aiogram import Router
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardMarkup, KeyboardButton
 from core.db_manager import add_response
 from .response_mixin import ResponseMixin
 from utils import remove_plugin_handlers
@@ -35,13 +34,13 @@ class MultipleChoicePlugin(ResponseMixin):
 
     async def register_handlers(self, router: Router):
         """Регистрирует обработчики плагина (стиль aiogram 3.x)"""
-        router.callback_query.register(
+        router.message.register(
             self.process_multiple_choice_selection,
-            lambda c: c.data.startswith("multi_choice_"),
+            lambda m: m.text and m.text.startswith("multi_choice_"),
         )
-        router.callback_query.register(
+        router.message.register(
             self.process_multiple_choice_submit,
-            lambda c: c.data.startswith("multi_submit_"),
+            lambda m: m.text and m.text.startswith("multi_submit_"),
         )
         router.message.register(self.process_other_input)
 
@@ -83,29 +82,34 @@ class MultipleChoicePlugin(ResponseMixin):
 
     def render_question(self, question, survey_id):
         """Отрисовывает вопрос для ответа пользователя"""
-        builder = InlineKeyboardBuilder()
-
-        for i, option in enumerate(question["options"]):
-            builder.button(
-                text=option,
-                callback_data=f"multi_choice_{survey_id}_{question['id']}_{i}",
-            )
-
-        builder.button(
-            text="Подтвердить выбор",
-            callback_data=f"multi_submit_{survey_id}_{question['id']}",
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(
+                        text=f"multi_choice_{survey_id}_{question['id']}_{i}"
+                    )
+                ]
+                for i, _ in enumerate(question["options"])
+            ]
+            + [
+                [
+                    KeyboardButton(
+                        text=f"multi_submit_{survey_id}_{question['id']}"
+                    )
+                ]
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
         )
-        builder.adjust(1)
-        markup = builder.as_markup()
 
         return {
             "text": question["text"] + "\n\nВыберите один или несколько вариантов:",
-            "markup": markup,
+            "markup": keyboard,
         }
 
-    async def process_multiple_choice_selection(self, callback_query: CallbackQuery):
+    async def process_multiple_choice_selection(self, message: Message):
         """Обрабатывает выбор пользователя в вопросе с множественным выбором"""
-        parts = callback_query.data.split("_")
+        parts = message.text.split("_")
         # Примерный формат: multi_choice_<survey_id>_<question_id>_<option_index>
         survey_id = parts[2]
         question_id = parts[3]
@@ -113,16 +117,16 @@ class MultipleChoicePlugin(ResponseMixin):
 
         survey = storage.get_survey(survey_id)
         if not survey or survey["status"] != "active":
-            await callback_query.answer("Этот опрос недоступен")
+            await message.answer("Этот опрос недоступен")
             return
 
-        user_id = callback_query.from_user.id
+        user_id = message.from_user.id
 
         question = next(
             (q for q in survey["questions"] if q["id"] == question_id), None
         )
         if question and not (0 <= option_index < len(question["options"])):
-            await callback_query.answer("Неверный вариант")
+            await message.answer("Неверный вариант")
             return
         if question and question["options"][option_index].startswith("Другое"):
             state = storage.get_user_state(user_id)
@@ -131,8 +135,7 @@ class MultipleChoicePlugin(ResponseMixin):
                 user_id, f"multi_other_{survey_id}_{question_id}", True
             )
             storage.set_user_state(user_id, f"multi_{survey_id}_{question_id}", None)
-            await callback_query.message.answer("Пожалуйста, введите свой вариант:")
-            await callback_query.answer()
+            await message.answer("Пожалуйста, введите свой вариант:")
             return
 
         # Получаем или создаём выбор пользователя для данного вопроса
@@ -158,46 +161,29 @@ class MultipleChoicePlugin(ResponseMixin):
         )
         if question:
             options = question["options"]
-            builder = InlineKeyboardBuilder()
+            await message.answer("Вариант отмечен")
 
-            for i, option in enumerate(options):
-                text = f"✅ {option}" if i in selections else option
-                builder.button(
-                    text=text,
-                    callback_data=f"multi_choice_{survey_id}_{question_id}_{i}",
-                )
+        await message.answer("Выберите следующее действие или подтвердите выбор")
 
-            # Добавляем кнопку подтверждения
-            builder.button(
-                text="Подтвердить выбор",
-                callback_data=f"multi_submit_{survey_id}_{question_id}",
-            )
-            builder.adjust(1)
-            markup = builder.as_markup()
-
-            await callback_query.message.edit_reply_markup(reply_markup=markup)
-
-        await callback_query.answer()
-
-    async def process_multiple_choice_submit(self, callback_query: CallbackQuery):
+    async def process_multiple_choice_submit(self, message: Message):
         """Обрабатывает отправку ответов множественного выбора"""
-        parts = callback_query.data.split("_")
+        parts = message.text.split("_")
         # Примерный формат: multi_submit_<survey_id>_<question_id>
         survey_id = parts[2]
         question_id = parts[3]
 
         survey = storage.get_survey(survey_id)
         if not survey or survey["status"] != "active":
-            await callback_query.answer("Этот опрос недоступен")
+            await message.answer("Этот опрос недоступен")
             return
 
-        user_id = callback_query.from_user.id
+        user_id = message.from_user.id
 
         # Проверяем, не ожидается ли текстовый вариант
         if storage.get_user_state(user_id).get(
             f"multi_other_{survey_id}_{question_id}"
         ):
-            await callback_query.answer("Пожалуйста, сначала введите свой вариант")
+            await message.answer("Пожалуйста, сначала введите свой вариант")
             return
 
         # Получаем выбор пользователя
@@ -206,7 +192,7 @@ class MultipleChoicePlugin(ResponseMixin):
         selections = user_state.get(selection_key, [])
 
         if not selections:
-            await callback_query.answer("Пожалуйста, выберите хотя бы один вариант")
+            await message.answer("Пожалуйста, выберите хотя бы один вариант")
             return
 
         # Сохраняем ответ
@@ -214,7 +200,7 @@ class MultipleChoicePlugin(ResponseMixin):
             "user_id": None if survey.get("is_anonymous") else user_id,
             "question_id": question_id,
             "answer": selections,
-            "timestamp": callback_query.message.date.isoformat(),
+            "timestamp": message.date.isoformat(),
         }
 
         # Добавляем или обновляем ответ
@@ -224,18 +210,14 @@ class MultipleChoicePlugin(ResponseMixin):
             question_id,
             response["user_id"],
             ",".join(map(str, selections)),
-            callback_query.message.date,
+            message.date,
         )
         storage.save_survey(survey_id, survey)
 
         # Очищаем выбор пользователя
         storage.set_user_state(user_id, selection_key, None)
 
-        await callback_query.answer("Ваши ответы записаны!")
-
-        # Обновляем сообщение, что ответ принят
-        old_text = callback_query.message.text or ""
-        await callback_query.message.edit_text(f"{old_text}\n\n✅ Ваш ответ принят!")
+        await message.answer("Ваши ответы записаны!")
 
     async def process_other_input(self, message: Message):
         user_id = message.from_user.id

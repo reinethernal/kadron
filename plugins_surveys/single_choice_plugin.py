@@ -3,7 +3,7 @@
 """
 
 from aiogram import Router, types
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from core.db_manager import add_response
 from .response_mixin import ResponseMixin
 from utils import remove_plugin_handlers
@@ -28,9 +28,9 @@ class SingleChoicePlugin(ResponseMixin):
         self.description = "Тип вопроса - одиночный выбор"
 
     async def register_handlers(self, router: Router):
-        router.callback_query.register(
+        router.message.register(
             self.process_single_choice_selection,
-            lambda c: c.data.startswith("single_choice_"),
+            lambda m: m.text and m.text.startswith("single_choice_"),
         )
         router.message.register(self.process_other_input)
 
@@ -67,47 +67,50 @@ class SingleChoicePlugin(ResponseMixin):
         }
 
     def render_question(self, question, survey_id):
-        builder = InlineKeyboardBuilder()
-        for i, option in enumerate(question["options"]):
-            builder.button(
-                text=option,
-                callback_data=f"single_choice_{survey_id}_{question['id']}_{i}",
-            )
-        builder.adjust(1)
-        markup = builder.as_markup()
-        return {"text": question["text"], "markup": markup}
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(
+                        text=f"single_choice_{survey_id}_{question['id']}_{i}"
+                    )
+                ]
+                for i, _ in enumerate(question["options"])
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True,
+        )
+        return {"text": question["text"], "markup": keyboard}
 
     async def process_single_choice_selection(
-        self, callback_query: types.CallbackQuery
+        self, message: types.Message
     ):
-        parts = callback_query.data.split("_")
+        parts = message.text.split("_")
         survey_id = parts[2]
         question_id = parts[3]
         option_index = int(parts[4])
         survey = storage.get_survey(survey_id)
         if not survey or survey["status"] != "active":
-            await callback_query.answer("Этот опрос недоступен")
+            await message.answer("Этот опрос недоступен")
             return
-        user_id = callback_query.from_user.id
+        user_id = message.from_user.id
         question = next(
             (q for q in survey["questions"] if q["id"] == question_id), None
         )
         if question and not (0 <= option_index < len(question["options"])):
-            await callback_query.answer("Неверный вариант")
+            await message.answer("Неверный вариант")
             return
         if question and question["options"][option_index].startswith("Другое"):
             state = storage.get_user_state(user_id)
             state["single_other"] = {"survey_id": survey_id, "question_id": question_id}
             storage.set_user_state(user_id, "single_other", state["single_other"])
-            await callback_query.message.answer("Пожалуйста, введите свой вариант:")
-            await callback_query.answer()
+            await message.answer("Пожалуйста, введите свой вариант:")
             return
 
         response = {
             "user_id": None if survey["is_anonymous"] else user_id,
             "question_id": question_id,
             "answer": option_index,
-            "timestamp": callback_query.message.date.isoformat(),
+            "timestamp": message.date.isoformat(),
         }
         self._add_or_update_response(survey, user_id, question_id, response)
         add_response(
@@ -115,22 +118,11 @@ class SingleChoicePlugin(ResponseMixin):
             question_id,
             response["user_id"],
             option_index,
-            callback_query.message.date,
+            message.date,
         )
         storage.save_survey(survey_id, survey)
         if question:
-            options = question["options"]
-            builder = InlineKeyboardBuilder()
-            for i, option in enumerate(options):
-                text = f"✅ {option}" if i == option_index else option
-                builder.button(
-                    text=text,
-                    callback_data=f"single_choice_{survey_id}_{question_id}_{i}",
-                )
-            builder.adjust(1)
-            markup = builder.as_markup()
-            await callback_query.message.edit_reply_markup(reply_markup=markup)
-        await callback_query.answer("Ваш ответ записан!")
+            await message.answer("Ваш ответ записан!")
 
     async def process_other_input(self, message: types.Message):
         user_id = message.from_user.id
