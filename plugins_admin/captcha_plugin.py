@@ -39,6 +39,12 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+__plugin_meta__ = {
+    "admin_menu": [],
+    "commands": [],
+    "permissions": [],
+}
+
 
 class PrimarySurveyStates(StatesGroup):
     """States for primary survey after captcha"""

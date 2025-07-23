@@ -19,6 +19,12 @@ from plugins_admin.storage_plugin import storage
 
 logger = logging.getLogger(__name__)
 
+__plugin_meta__ = {
+    "admin_menu": [],
+    "commands": [],
+    "permissions": [],
+}
+
 
 class MultipleChoicePlugin(ResponseMixin):
     """Плагин для вопросов с множественным выбором"""

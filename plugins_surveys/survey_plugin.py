@@ -21,6 +21,12 @@ from plugins_admin.storage_plugin import storage
 
 logger = logging.getLogger(__name__)
 
+__plugin_meta__ = {
+    "admin_menu": [],
+    "commands": [],
+    "permissions": [],
+}
+
 
 async def _state_info(state: FSMContext):
     """Safely get current state name and data from FSM context."""
