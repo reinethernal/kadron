@@ -43,14 +43,6 @@ class DummyMessage:
         pass
 
 
-class DummyCallback:
-    def __init__(self, data, user_id=1):
-        self.data = data
-        self.from_user = type("U", (), {"id": user_id})
-        self.message = DummyMessage("")
-
-    async def answer(self, *a, **kw):
-        pass
 
 
 def setup_single(monkeypatch):
@@ -94,8 +86,8 @@ def test_single_other(monkeypatch):
         "responses": [],
     }
     storage.save_survey("s1", survey)
-    cb = DummyCallback("single_choice_s1_q1_1")
-    asyncio.run(plugin.process_single_choice_selection(cb))
+    msg_cmd = DummyMessage("single_choice_s1_q1_1")
+    asyncio.run(plugin.process_single_choice_selection(msg_cmd))
     assert storage.get_user_state(1).get("single_other")
     msg = DummyMessage("X")
     asyncio.run(plugin.process_other_input(msg))

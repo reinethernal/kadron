@@ -6,7 +6,7 @@
 """
 
 from aiogram import Router, types
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.filters import StateFilter  # Добавляем фильтр состояния
@@ -42,8 +42,8 @@ class TextAnswerPlugin(ResponseMixin):
 
     async def register_handlers(self, router: Router):
         """Регистрирует все обработчики плагина"""
-        router.callback_query.register(
-            self.start_text_answer, lambda c: c.data.startswith("text_answer_")
+        router.message.register(
+            self.start_text_answer, lambda m: m.text and m.text.startswith("text_answer_")
         )
         router.message.register(
             self.process_text_answer,
@@ -82,35 +82,34 @@ class TextAnswerPlugin(ResponseMixin):
 
     def render_question(self, question, survey_id):
         """Отображает вопрос для ответа"""
-        builder = InlineKeyboardBuilder()
-        builder.button(
-            text="Ответить", callback_data=f"text_answer_{survey_id}_{question['id']}"
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text=f"text_answer_{survey_id}_{question['id']}")]],
+            resize_keyboard=True,
+            one_time_keyboard=True,
         )
-        markup = builder.as_markup()
 
-        return {"text": question["text"], "markup": markup}
+        return {"text": question["text"], "markup": keyboard}
 
     async def start_text_answer(
-        self, callback_query: types.CallbackQuery, state: FSMContext
+        self, message: types.Message, state: FSMContext
     ):
         """Запускает процесс ввода текстового ответа"""
-        parts = callback_query.data.split("_")
+        parts = message.text.split("_")
         survey_id = parts[2]
         question_id = parts[3]
 
         survey = storage.get_survey(survey_id)
         if not survey or survey["status"] != "active":
-            await callback_query.answer("Этот опрос недоступен")
+            await message.answer("Этот опрос недоступен")
             return
 
         # Сохраняем информацию о вопросе в состоянии
         await state.update_data(survey_id=survey_id, question_id=question_id)
 
         await state.set_state(TextAnswerStates.WAITING_FOR_ANSWER)
-        await callback_query.message.reply(
+        await message.answer(
             "Пожалуйста, введите ваш ответ на вопрос. Отправьте сообщение с текстом:"
         )
-        await callback_query.answer()
 
     async def process_text_answer(self, message: types.Message, state: FSMContext):
         """Обрабатывает введённый текстовый ответ"""

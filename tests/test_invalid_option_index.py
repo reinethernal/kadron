@@ -43,15 +43,6 @@ class DummyMessage:
         pass
 
 
-class DummyCallback:
-    def __init__(self, data, user_id=1):
-        self.data = data
-        self.from_user = type("U", (), {"id": user_id})
-        self.message = DummyMessage("")
-        self.answered = []
-
-    async def answer(self, text=None, **kw):
-        self.answered.append(text)
 
 
 def setup_single(monkeypatch):
@@ -88,9 +79,9 @@ def test_single_invalid_index(monkeypatch):
         "responses": [],
     }
     storage.save_survey("s1", survey)
-    cb = DummyCallback("single_choice_s1_q1_5")
-    asyncio.run(plugin.process_single_choice_selection(cb))
-    assert cb.answered and cb.answered[0] == "Неверный вариант"
+    msg_cmd = DummyMessage("single_choice_s1_q1_5")
+    asyncio.run(plugin.process_single_choice_selection(msg_cmd))
+    assert msg_cmd.sent and msg_cmd.sent[0] == "Неверный вариант"
     assert not survey["responses"]
 
 
@@ -106,7 +97,7 @@ def test_multi_invalid_index(monkeypatch):
         "responses": [],
     }
     storage.save_survey("s1", survey)
-    cb = DummyCallback("multi_choice_s1_q1_3")
-    asyncio.run(plugin.process_multiple_choice_selection(cb))
-    assert cb.answered and cb.answered[0] == "Неверный вариант"
+    msg_cmd = DummyMessage("multi_choice_s1_q1_3")
+    asyncio.run(plugin.process_multiple_choice_selection(msg_cmd))
+    assert msg_cmd.sent and msg_cmd.sent[0] == "Неверный вариант"
     assert not survey["responses"]
