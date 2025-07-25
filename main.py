@@ -18,7 +18,6 @@ from core.db_manager import initialize_db
 from plugin_manager import PluginManager, MissingRequiredPluginsError
 from routers.menu_router import router as menu_router
 from handlers.survey_handlers import register_survey_handlers
-from handlers.group_handlers import register_group_handlers
 
 load_dotenv()
 
@@ -101,7 +100,6 @@ async def main():
         return
 
     register_survey_handlers(dp)
-    register_group_handlers(dp)
 
     await plugin_manager.setup_bot_commands(bot)
 
