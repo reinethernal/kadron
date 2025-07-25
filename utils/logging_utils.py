@@ -11,6 +11,7 @@ def configure_logging():
 
     enable_logging = os.getenv("ENABLE_LOGGING", "True").lower() == "true"
     if not enable_logging:
+
         logging.disable(logging.CRITICAL)
         return
 
