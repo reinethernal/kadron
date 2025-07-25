@@ -28,7 +28,7 @@ class TestModeStates(StatesGroup):
     TESTING_SURVEY = State()
 
 
-class TestModePlugin:
+class SurveyTestModePlugin:
     def __init__(self):
         self.name = "test_mode_plugin"
         self.description = "Тестовый режим для опросов"
@@ -409,4 +409,4 @@ class TestModePlugin:
 
 
 def load_plugin():
-    return TestModePlugin()
+    return SurveyTestModePlugin()
