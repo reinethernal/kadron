@@ -15,6 +15,7 @@ from core.db_manager import (
     get_pending_chats_for_user,
     get_inactive_users,
     get_all_groups,
+    add_group,
 )
 from utils import remove_plugin_handlers
 
@@ -158,6 +159,7 @@ class GroupEventPlugin:
         user = event.from_user
         if user.is_bot:
             return
+        add_group(event.chat.id, getattr(event.chat, "title", ""))
         if ENABLE_CAPTCHA:
             await restrict_user(event.bot, event.chat.id, user.id)
             asyncio.create_task(start_captcha_timer(event.bot, user.id, event.chat.id))

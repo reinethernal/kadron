@@ -213,6 +213,7 @@ def test_admin_menu_creates_survey(monkeypatch):
     monkeypatch.setattr(
         group_mod, "unrestrict_user_if_needed", fake_unrestrict, raising=False
     )
+    monkeypatch.setattr(group_mod, "add_group", lambda gid, title: called.setdefault("group", (gid, title)))
 
     importlib.reload(importlib.import_module("plugins_admin.admin_menu_plugin"))
 
@@ -232,11 +233,12 @@ def test_admin_menu_creates_survey(monkeypatch):
         (),
         {
             "bot": bot,
-            "chat": type("C", (), {"id": 42})(),
+            "chat": type("C", (), {"id": 42, "title": "T"})(),
             "from_user": type("U", (), {"id": 1, "full_name": "U", "is_bot": False})(),
         },
     )()
     asyncio.run(group.on_new_chat_member(event))
+    assert called.get("group") == (42, "T")
     msg = type(
         "Msg",
         (),
