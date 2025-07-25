@@ -9,6 +9,7 @@ import logging
 from typing import Dict, Any, Optional
 from aiogram import Router
 from utils import remove_plugin_handlers
+from utils.env_utils import parse_admin_ids
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +135,9 @@ class StoragePlugin:
 
     def on_plugin_load(self):
         """Вызывается при загрузке плагина"""
+        parsed_ids = parse_admin_ids()
+        if not storage.get_setting("admin_ids"):
+            storage.set_setting("admin_ids", parsed_ids)
         logger.info(
             f"Плагин хранения данных загружен, файл данных: {storage.storage_file}"
         )
