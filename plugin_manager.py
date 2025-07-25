@@ -110,9 +110,11 @@ class PluginManager:
     ) -> bool:
         """Загружает все плагины из каталогов.
 
-        Returns ``True`` if at least one plugin was loaded successfully.
-        Raises :class:`MissingRequiredPluginsError` if any ``required_plugins``
-        are not present after loading.
+        Errors in individual plugins do not interrupt the process – they are
+        logged and loading continues.  Returns ``True`` if at least one plugin
+        was loaded successfully.  Raises
+        :class:`MissingRequiredPluginsError` if any ``required_plugins`` are not
+        present after all attempts.
         """
         loaded = False
         for pd, pkg in zip(self.plugin_dirs, self._packages):
@@ -137,8 +139,13 @@ class PluginManager:
                 logger.debug(f"Loading plugin file: {filename}")
                 plugin_name = filename[:-3]
                 self.plugin_packages[plugin_name] = pkg
-                ok = await self.load_plugin(plugin_name, package=pkg)
-                loaded = loaded or ok
+                try:
+                    ok = await self.load_plugin(plugin_name, package=pkg)
+                except PluginLoadError:
+                    # Error details are already logged in ``load_plugin``
+                    continue
+                else:
+                    loaded = loaded or ok
 
         logger.info("Загружены плагины: %s", ", ".join(self.list_plugin_names()))
         if required_plugins:
@@ -309,12 +316,13 @@ class PluginManager:
                     and isinstance(cmd.get("description", ""), str)
                 ):
                     commands.append(
-                        BotCommand(command=cmd["command"], description=cmd.get("description", ""))
+                        BotCommand(
+                            command=cmd["command"],
+                            description=cmd.get("description", ""),
+                        )
                     )
                 else:
-                    logger.warning(
-                        f"Неверный элемент commands в плагине {name}: {cmd}"
-                    )
+                    logger.warning(f"Неверный элемент commands в плагине {name}: {cmd}")
         return commands
 
     def get_plugin_commands(self) -> Dict[str, List[BotCommand]]:
