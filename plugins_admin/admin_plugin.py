@@ -37,6 +37,9 @@ class AdminPlugin:
     async def register_handlers(self, router: Router):
         """Регистрирует обработчики административных команд"""
         router.message.register(self.cmd_send_survey, Command("send_survey"))
+        router.message.register(
+            self.cmd_send_survey, lambda msg: msg.text == "\ud83d\udcec \u0420\u0430\u0441\u0441\u044b\u043b\u043a\u0430"
+        )
         router.callback_query.register(
             self._cb_send_survey,
             lambda c: c.data == "send_survey",

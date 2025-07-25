@@ -20,7 +20,7 @@ import logging
 from plugin_manager import PluginManager
 from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 
 from utils.env_utils import parse_admin_ids
@@ -59,13 +59,13 @@ class AdminMenuPlugin:
 
     async def _show_menu(self, message: types.Message):
         items = self.plugin_manager.get_admin_menu_items()
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text=i["text"], callback_data=i["callback"])]
-                for i in items
-            ]
+        keyboard = ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text=i["text"])] for i in items],
+            resize_keyboard=True,
         )
-        await message.answer("Добро пожаловать в админ-панель.", reply_markup=keyboard)
+        await message.answer(
+            "Добро пожаловать в админ-панель.", reply_markup=keyboard
+        )
 
     async def cmd_admin_menu(self, message: types.Message, state: FSMContext):
         logger.debug(f"{message.text} from {message.from_user.id}")

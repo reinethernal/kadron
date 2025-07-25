@@ -79,6 +79,10 @@ class SchedulerPlugin:
         Регистрируем хендлеры (обработчики) в стиле aiogram 3.x
         """
 
+        router.message.register(
+            self.cmd_schedule, lambda msg: msg.text == "\u23f0 \u041f\u043b\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435"
+        )
+
         # Вместо dp.register_message_handler(...), используем dp.message.register(...)
         # вход через меню админа
 

@@ -83,6 +83,10 @@ class RolesPlugin:
     async def register_handlers(self, router: Router):
         """Регистрирует все обработчики для этого плагина"""
 
+        router.message.register(
+            self.cmd_roles, lambda msg: msg.text == "\ud83d\udd11 \u0420\u043e\u043b\u0438"
+        )
+
         router.callback_query.register(
             self.handle_roles_action, lambda c: c.data.startswith("roles_")
         )

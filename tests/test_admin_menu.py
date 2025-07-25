@@ -32,16 +32,16 @@ def test_admin_menu_shows_items(monkeypatch):
     monkeypatch.setenv("ADMIN_IDS", "1")
     import aiogram.types as types
 
-    class DummyInlineButton:
+    class DummyButton:
         def __init__(self, *args, **kwargs):
             self.kwargs = kwargs
 
-    class DummyInlineMarkup:
-        def __init__(self, *args, **kwargs):
-            self.inline_keyboard = kwargs.get("inline_keyboard", [])
+    class DummyMarkup:
+        def __init__(self, keyboard=None, **kwargs):
+            self.keyboard = keyboard or []
 
-    monkeypatch.setattr(types, "InlineKeyboardButton", DummyInlineButton, raising=False)
-    monkeypatch.setattr(types, "InlineKeyboardMarkup", DummyInlineMarkup, raising=False)
+    monkeypatch.setattr(types, "KeyboardButton", DummyButton, raising=False)
+    monkeypatch.setattr(types, "ReplyKeyboardMarkup", DummyMarkup, raising=False)
     adm_module = importlib.reload(
         importlib.import_module("plugins_admin.admin_menu_plugin")
     )
