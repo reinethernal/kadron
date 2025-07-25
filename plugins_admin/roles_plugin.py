@@ -10,7 +10,7 @@ from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import StateFilter
+from aiogram.filters import Command, StateFilter
 from utils import remove_plugin_handlers
 
 __plugin_meta__ = {
@@ -83,6 +83,7 @@ class RolesPlugin:
     async def register_handlers(self, router: Router):
         """Регистрирует все обработчики для этого плагина"""
 
+        router.message.register(self.cmd_roles, Command("roles"))
         router.message.register(
             self.cmd_roles, lambda msg: msg.text == "\ud83d\udd11 \u0420\u043e\u043b\u0438"
         )
