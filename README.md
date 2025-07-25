@@ -155,8 +155,9 @@ await pm.reload_plugin('test_mode_plugin')
 
 ```python
 names = pm.list_plugin_names()
-print(names)  # ['survey_plugin', 'admin_menu_plugin']
+print(names)  # ['survey_plugin', 'admin_menu_plugin', 'plugin_list_plugin']
 ```
+`plugin_list_plugin` добавляет команду `/plugins`, выводящую все загруженные плагины.
 ## Примеры использования
 
 Ниже пример того, как выглядит административное меню:
