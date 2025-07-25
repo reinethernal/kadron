@@ -59,6 +59,7 @@ class AdminMenuPlugin:
 
     async def _show_menu(self, message: types.Message):
         items = self.plugin_manager.get_admin_menu_items()
+        logger.debug("Admin menu items: %s", items)
         keyboard = ReplyKeyboardMarkup(
             keyboard=[[KeyboardButton(text=i["text"])] for i in items],
             resize_keyboard=True,
