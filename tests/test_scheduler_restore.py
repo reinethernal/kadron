@@ -53,7 +53,7 @@ class DummyBot:
         return Member()
 
     async def pin_chat_message(self, chat_id, message_id, **kwargs):
-        self.pinned.append((chat_id, message_id))
+        self.pinned.append((chat_id, message_id, kwargs))
 
 
 def test_restore_scheduled(monkeypatch):
@@ -139,3 +139,4 @@ def test_scheduled_send(monkeypatch):
 
     assert bot.sent
     assert bot.pinned
+    assert bot.pinned[0][2].get("disable_notification") is False
