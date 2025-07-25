@@ -103,6 +103,10 @@ class ViewSurveysPlugin:
     async def register_handlers(self, router: Router):
         """Регистрирует все обработчики плагина"""
         router.message.register(self.cmd_view_surveys, Command("view_surveys"))
+        router.message.register(
+            self.cmd_view_surveys,
+            lambda msg: msg.text == "\ud83d\udcca \u041c\u043e\u0438 \u043e\u043f\u0440\u043e\u0441\u044b",
+        )
         router.callback_query.register(
             self._cb_view_surveys, lambda c: c.data == "view_surveys"
         )

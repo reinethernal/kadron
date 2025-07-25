@@ -46,6 +46,9 @@ class ExportPlugin:
 
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_export, Command("export_data"))
+        router.message.register(
+            self.cmd_export, lambda msg: msg.text == "\ud83d\udce6 \u042d\u043a\u0441\u043f\u043e\u0440\u0442"
+        )
         router.callback_query.register(
             self._cb_export, lambda c: c.data == "export_data"
         )

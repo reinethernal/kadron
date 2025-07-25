@@ -36,6 +36,10 @@ class TestModePlugin:
 
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_test_mode, Command("test_mode"))
+        router.message.register(
+            self.cmd_test_mode,
+            lambda msg: msg.text == "\ud83e\uddea \u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0440\u0435\u0436\u0438\u043c",
+        )
         router.callback_query.register(
             self.handle_survey_selection, lambda c: c.data.startswith("test_survey_")
         )
