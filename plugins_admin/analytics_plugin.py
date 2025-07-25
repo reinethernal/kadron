@@ -1,6 +1,6 @@
 """Basic analytics plugin skeleton."""
 
-from aiogram import Router
+from aiogram import Router, types
 
 __plugin_meta__ = {
     "admin_menu": [],
@@ -19,6 +19,24 @@ class AnalyticsPlugin:
         """Register plugin handlers."""
         # Handlers would be registered here
         pass
+
+    def get_commands(self):
+        """Return bot commands from plugin meta-data."""
+        meta = getattr(self, "__plugin_meta__", None)
+        try:
+            BotCommandCls = types.BotCommand
+        except AttributeError:  # pragma: no cover - tests may patch
+            from aiogram.types import BotCommand as BotCommandCls
+        if meta and isinstance(meta.get("commands"), list):
+            return [
+                BotCommandCls(
+                    command=c.get("command"),
+                    description=c.get("description", ""),
+                )
+                for c in meta["commands"]
+                if isinstance(c, dict) and "command" in c
+            ]
+        return []
 
 
 def load_plugin():

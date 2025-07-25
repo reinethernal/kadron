@@ -7,7 +7,7 @@ import json
 import os
 import logging
 from typing import Dict, Any, Optional
-from aiogram import Router
+from aiogram import Router, types
 from utils import remove_plugin_handlers
 from utils.env_utils import parse_admin_ids
 
@@ -131,6 +131,20 @@ class StoragePlugin:
 
     def get_commands(self):
         """Команды для этого плагина отсутствуют"""
+        meta = getattr(self, "__plugin_meta__", None)
+        try:
+            BotCommandCls = types.BotCommand
+        except AttributeError:  # pragma: no cover - tests may patch
+            from aiogram.types import BotCommand as BotCommandCls
+        if meta and isinstance(meta.get("commands"), list):
+            return [
+                BotCommandCls(
+                    command=c.get("command"),
+                    description=c.get("description", ""),
+                )
+                for c in meta["commands"]
+                if isinstance(c, dict) and "command" in c
+            ]
         return []
 
     def on_plugin_load(self):

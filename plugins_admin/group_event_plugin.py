@@ -7,7 +7,7 @@ import logging
 import asyncio
 from aiogram.types import ChatPermissions, ChatMemberUpdated, Message
 from aiogram.client.bot import Bot
-from aiogram import Router
+from aiogram import Router, types
 from aiogram.filters import ChatMemberUpdatedFilter
 from core.db_manager import (
     is_user_pending,
@@ -176,6 +176,20 @@ class GroupEventPlugin:
         await unrestrict_user_if_needed(message.bot, message.from_user.id)
 
     def get_commands(self):
+        meta = getattr(self, "__plugin_meta__", None)
+        try:
+            BotCommandCls = types.BotCommand
+        except AttributeError:  # pragma: no cover - tests may patch
+            from aiogram.types import BotCommand as BotCommandCls
+        if meta and isinstance(meta.get("commands"), list):
+            return [
+                BotCommandCls(
+                    command=c.get("command"),
+                    description=c.get("description", ""),
+                )
+                for c in meta["commands"]
+                if isinstance(c, dict) and "command" in c
+            ]
         return []
 
     def on_plugin_load(self):

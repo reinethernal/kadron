@@ -34,6 +34,23 @@ class PluginListPlugin:
         router.message.register(self.cmd_plugins, Command("plugins"))
         router.callback_query.register(self.cb_plugins, lambda c: c.data == "plugins")
 
+    def get_commands(self):
+        meta = getattr(self, "__plugin_meta__", None)
+        try:
+            BotCommandCls = types.BotCommand
+        except AttributeError:  # pragma: no cover - tests may patch
+            from aiogram.types import BotCommand as BotCommandCls
+        if meta and isinstance(meta.get("commands"), list):
+            return [
+                BotCommandCls(
+                    command=c.get("command"),
+                    description=c.get("description", ""),
+                )
+                for c in meta["commands"]
+                if isinstance(c, dict) and "command" in c
+            ]
+        return []
+
     async def unregister_handlers(self, router: Router):
         remove_plugin_handlers(self, router)
 

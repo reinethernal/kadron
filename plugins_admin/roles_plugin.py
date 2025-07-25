@@ -125,6 +125,20 @@ class RolesPlugin:
 
     def get_commands(self):
         """Возвращает список команд, предоставляемых плагином"""
+        meta = getattr(self, "__plugin_meta__", None)
+        try:
+            BotCommandCls = types.BotCommand
+        except AttributeError:  # pragma: no cover
+            from aiogram.types import BotCommand as BotCommandCls
+        if meta and isinstance(meta.get("commands"), list):
+            return [
+                BotCommandCls(
+                    command=c.get("command"),
+                    description=c.get("description", ""),
+                )
+                for c in meta["commands"]
+                if isinstance(c, dict) and "command" in c
+            ]
         return []
 
     def has_permission(self, user_id, permission):

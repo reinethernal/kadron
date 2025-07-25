@@ -11,7 +11,7 @@ import logging
 import random
 import string
 
-from aiogram import Dispatcher, Router
+from aiogram import Dispatcher, Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ChatMemberUpdated, Message, CallbackQuery, ChatPermissions
@@ -128,6 +128,20 @@ class CaptchaPlugin:
         remove_plugin_handlers(self, router)
 
     def get_commands(self):
+        meta = getattr(self, "__plugin_meta__", None)
+        try:
+            BotCommandCls = types.BotCommand
+        except AttributeError:  # pragma: no cover - tests may patch
+            from aiogram.types import BotCommand as BotCommandCls
+        if meta and isinstance(meta.get("commands"), list):
+            return [
+                BotCommandCls(
+                    command=c.get("command"),
+                    description=c.get("description", ""),
+                )
+                for c in meta["commands"]
+                if isinstance(c, dict) and "command" in c
+            ]
         return []
 
     def is_access_granted(self, user_id: int) -> bool:
