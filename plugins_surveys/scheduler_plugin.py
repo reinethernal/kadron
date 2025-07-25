@@ -24,25 +24,8 @@ __plugin_meta__ = {
     ],
 }
 
-# Если используем собственное хранилище (storage_plugin)
-try:
-    from .storage_plugin import storage
-except ImportError:
-    # Для тестов, fallback
-    class DummyStorage:
-        def get_survey(self, survey_id):
-            return {}
-
-        def save_survey(self, survey_id, data):
-            pass
-
-        def get_setting(self, key, default=None):
-            return default
-
-        def set_setting(self, key, value):
-            pass
-
-    storage = DummyStorage()
+# Используем хранилище из plugins_admin
+from plugins_admin.storage_plugin import storage
 
 logger = logging.getLogger(__name__)
 scheduler_instance = None
