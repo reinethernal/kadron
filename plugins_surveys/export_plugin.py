@@ -4,6 +4,7 @@ import csv
 import io
 import datetime
 import os
+from collections import defaultdict
 
 
 __plugin_meta__ = {
@@ -168,7 +169,7 @@ class ExportPlugin:
     async def export_excel(self, callback_query: types.CallbackQuery, survey):
         from utils.data_manager import save_to_excel
 
-        responses = []
+        grouped = defaultdict(list)
         for response in survey.get("responses", []):
             question_id = response.get("question_id")
             question = next(
@@ -186,11 +187,29 @@ class ExportPlugin:
                 answer = ", ".join(
                     [options[i] for i in answer if 0 <= i < len(options)]
                 )
-            responses.append({"question": question_text, "answer": answer})
+            key = (
+                response.get("user_id"),
+                response.get("username", ""),
+                response.get("group_id", ""),
+                response.get("group_name", ""),
+                response.get("timestamp", ""),
+            )
+            grouped[key].append({"question": question_text, "answer": answer})
 
-        filename = save_to_excel(
-            "", "", "", "", "", "", "", responses, survey.get("title", "survey")
-        )
+        filename = None
+        for key, resp_list in grouped.items():
+            user_id, username, group_id, group_name, timestamp = key
+            filename = save_to_excel(
+                user_id or "",
+                "",
+                "",
+                username or "",
+                group_id or "",
+                group_name or "",
+                timestamp,
+                resp_list,
+                survey.get("title", "survey"),
+            )
 
         with open(filename, "rb") as f:
             file_bytes = f.read()
