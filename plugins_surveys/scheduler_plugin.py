@@ -15,6 +15,7 @@ from aiogram import Router, types, Bot
 from aiogram.fsm.context import FSMContext  # <-- Вместо dispatcher.FSMContext
 from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.filters.state
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.filters import Command
 from utils import remove_plugin_handlers, try_pin_message
 
 __plugin_meta__ = {
@@ -62,6 +63,7 @@ class SchedulerPlugin:
         Регистрируем хендлеры (обработчики) в стиле aiogram 3.x
         """
 
+        router.message.register(self.cmd_schedule, Command("schedule"))
         router.message.register(
             self.cmd_schedule, lambda msg: msg.text == "\u23f0 \u041f\u043b\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435"
         )
@@ -93,6 +95,8 @@ class SchedulerPlugin:
             lambda c: c.data.startswith("schedule_confirm_"),
             SchedulerStates.CONFIRMING,
         )
+
+        router.message.register(self.cmd_list_scheduled, Command("scheduled"))
 
         # Команда /scheduled (без конкретного состояния)
         # список также вызывается через меню
