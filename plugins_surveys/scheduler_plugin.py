@@ -15,7 +15,7 @@ from aiogram import Router, types, Bot
 from aiogram.fsm.context import FSMContext  # <-- Вместо dispatcher.FSMContext
 from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.filters.state
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from utils import remove_plugin_handlers
+from utils import remove_plugin_handlers, try_pin_message
 
 __plugin_meta__ = {
     "admin_menu": [{"text": "\u23f0 \u041f\u043b\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435", "callback": "schedule"}],
@@ -489,20 +489,7 @@ class SchedulerPlugin:
 
     async def _try_pin(self, chat_id: int, message_id: int):
         """Пытается закрепить сообщение, если у бота есть такие права"""
-        try:
-            me = await self.bot.get_me()
-            member = await self.bot.get_chat_member(chat_id, me.id)
-            can_pin = (
-                getattr(member, "can_pin_messages", False) or member.status == "creator"
-            )
-            if can_pin:
-                await self.bot.pin_chat_message(
-                    chat_id=chat_id, message_id=message_id, disable_notification=False
-                )
-            else:
-                logger.warning(f"У бота нет прав закреплять сообщения в чате {chat_id}")
-        except Exception as e:
-            logger.error(f"Не удалось закрепить сообщение в чате {chat_id}: {e}")
+        await try_pin_message(self.bot, chat_id, message_id)
 
     async def cmd_list_scheduled(self, message: types.Message):
         """Обработка команды /scheduled — список запланированных опросов для данного пользователя"""

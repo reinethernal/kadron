@@ -11,7 +11,7 @@ from aiogram.filters import Command
 
 from core.db_manager import get_all_groups, get_poll_by_id
 from utils.env_utils import parse_admin_ids
-from utils import remove_plugin_handlers
+from utils import remove_plugin_handlers, try_pin_message
 
 __plugin_meta__ = {
     "admin_menu": [
@@ -82,7 +82,9 @@ class AdminPlugin:
     def on_plugin_unload(self):
         logger.info("Плагин администратора выгружен")
 
-    async def send_survey_to_users(self, poll_id: int, bot: Bot):
+    async def send_survey_to_users(
+        self, poll_id: int, bot: Bot, *, skip_pin: bool = False
+    ):
         poll = get_poll_by_id(poll_id)
         if not poll:
             logger.error(f"Опрос с ID {poll_id} не найден.")
@@ -95,11 +97,15 @@ class AdminPlugin:
         for group in groups:
             group_id = group["group_id"]
             try:
-                await bot.send_message(
+                msg = await bot.send_message(
                     chat_id=group_id,
                     text=f"Внимание! Новый опрос '{poll_name}': {survey_link}",
                 )
-                logger.info(f"Опрос '{poll_name}' отправлен в группу {group_id}.")
+                if not skip_pin:
+                    await try_pin_message(bot, group_id, msg.message_id)
+                logger.info(
+                    f"Опрос '{poll_name}' отправлен в группу {group_id}."
+                )
             except Exception as e:
                 logger.error(f"Не удалось отправить опрос в группу {group_id}: {e}")
 
