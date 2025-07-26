@@ -66,3 +66,42 @@ def test_admin_menu_shows_items(monkeypatch):
 
     assert pm.called == 1
     assert "Добро пожаловать" in msg.responses[0]
+
+
+def test_admin_menu_button_text(monkeypatch):
+    """cmd_admin_menu should handle messages with text 'Админ меню'."""
+    monkeypatch.setenv("ADMIN_IDS", "1")
+    import aiogram.types as types
+
+    class DummyButton:
+        def __init__(self, *args, **kwargs):
+            self.kwargs = kwargs
+
+    class DummyMarkup:
+        def __init__(self, keyboard=None, **kwargs):
+            self.keyboard = keyboard or []
+
+    monkeypatch.setattr(types, "KeyboardButton", DummyButton, raising=False)
+    monkeypatch.setattr(types, "ReplyKeyboardMarkup", DummyMarkup, raising=False)
+
+    adm_module = importlib.reload(
+        importlib.import_module("plugins_admin.admin_menu_plugin")
+    )
+
+    class DummyPM:
+        def __init__(self):
+            self.called = False
+
+        def get_admin_menu_items(self, user_id=None):
+            self.called = user_id
+            return [{"text": "T", "callback": "c"}]
+
+    pm = DummyPM()
+    plugin = adm_module.load_plugin(plugin_manager=pm)
+
+    state = DummyState()
+    msg = DummyMessage("Админ меню", user_id=1)
+    asyncio.run(plugin.cmd_admin_menu(msg, state))
+
+    assert pm.called == 1
+    assert "Добро пожаловать" in msg.responses[0]
