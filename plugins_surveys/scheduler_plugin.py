@@ -15,7 +15,13 @@ from aiogram import Router, types, Bot
 from aiogram.fsm.context import FSMContext  # <-- Вместо dispatcher.FSMContext
 from aiogram.fsm.state import StatesGroup, State  # <-- Вместо dispatcher.filters.state
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.filters import Command
+try:
+    from aiogram.filters import Command, Text
+except Exception:  # pragma: no cover - fallback for test stubs
+    from aiogram.filters import Command
+
+    def Text(text):
+        return lambda m: getattr(m, "text", None) == text
 from utils import remove_plugin_handlers, try_pin_message
 
 __plugin_meta__ = {
@@ -65,7 +71,8 @@ class SchedulerPlugin:
 
         router.message.register(self.cmd_schedule, Command("schedule"))
         router.message.register(
-            self.cmd_schedule, lambda msg: msg.text == "\u23f0 \u041f\u043b\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435"
+            self.cmd_schedule,
+            Text("\u23f0 \u041f\u043b\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435"),
         )
 
         # Вместо dp.register_message_handler(...), используем dp.message.register(...)

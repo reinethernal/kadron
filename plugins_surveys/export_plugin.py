@@ -24,7 +24,13 @@ __plugin_meta__ = {
 
 from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.filters import Command
+try:
+    from aiogram.filters import Command, Text
+except Exception:  # pragma: no cover - fallback for test stubs
+    from aiogram.filters import Command
+
+    def Text(text):
+        return lambda m: getattr(m, "text", None) == text
 from utils import remove_plugin_handlers
 
 # Импорт хранилища
@@ -48,7 +54,7 @@ class ExportPlugin:
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_export, Command("export_data"))
         router.message.register(
-            self.cmd_export, lambda msg: msg.text == "\ud83d\udce6 \u042d\u043a\u0441\u043f\u043e\u0440\u0442"
+            self.cmd_export, Text("\ud83d\udce6 \u042d\u043a\u0441\u043f\u043e\u0440\u0442")
         )
         router.callback_query.register(
             self._cb_export, lambda c: c.data == "export_data"

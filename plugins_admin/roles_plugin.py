@@ -10,7 +10,13 @@ from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import Command, StateFilter
+try:
+    from aiogram.filters import Command, StateFilter, Text
+except Exception:  # pragma: no cover - fallback for test stubs
+    from aiogram.filters import Command, StateFilter
+
+    def Text(text):
+        return lambda m: getattr(m, "text", None) == text
 from utils import remove_plugin_handlers
 
 __plugin_meta__ = {
@@ -85,7 +91,7 @@ class RolesPlugin:
 
         router.message.register(self.cmd_roles, Command("roles"))
         router.message.register(
-            self.cmd_roles, lambda msg: msg.text == "\ud83d\udd11 \u0420\u043e\u043b\u0438"
+            self.cmd_roles, Text("\ud83d\udd11 \u0420\u043e\u043b\u0438")
         )
 
         router.callback_query.register(

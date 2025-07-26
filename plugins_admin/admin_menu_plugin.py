@@ -22,6 +22,11 @@ from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
+try:
+    from aiogram.filters import Text
+except Exception:  # pragma: no cover - fallback for test stubs
+    def Text(text):
+        return lambda m: getattr(m, "text", None) == text
 
 from utils.env_utils import parse_admin_ids
 from utils import remove_plugin_handlers
@@ -48,7 +53,7 @@ class AdminMenuPlugin:
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_admin_menu, Command("admin"))
         router.message.register(
-            self.cmd_admin_menu, lambda m: m.text == "Админ меню"
+            self.cmd_admin_menu, Text("Админ меню")
         )
 
     async def unregister_handlers(self, router: Router):
