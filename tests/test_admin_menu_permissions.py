@@ -1,9 +1,10 @@
 import plugin_manager as pm_module
-import aiogram
+
 
 class DummyRoles:
     def has_permission(self, user_id, perm):
         return user_id == 1 and perm == "allow"
+
 
 class DummyPlugin:
     __plugin_meta__ = {
@@ -13,12 +14,15 @@ class DummyPlugin:
             {"text": "C", "callback": "c"},
         ]
     }
+
     async def register_handlers(self, router):
         pass
 
 
 def test_admin_menu_respects_permissions():
-    pm = pm_module.PluginManager(pm_module.Dispatcher(), pm_module.Bot(), router=pm_module.Router())
+    pm = pm_module.PluginManager(
+        pm_module.Dispatcher(), pm_module.Bot(), router=pm_module.Router()
+    )
     pm.plugins = {"roles_plugin": DummyRoles(), "dummy": DummyPlugin()}
 
     items_user1 = pm.get_admin_menu_items(user_id=1)

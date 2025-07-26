@@ -43,7 +43,8 @@ class TextAnswerPlugin(ResponseMixin):
     async def register_handlers(self, router: Router):
         """Регистрирует все обработчики плагина"""
         router.message.register(
-            self.start_text_answer, lambda m: m.text and m.text.startswith("text_answer_")
+            self.start_text_answer,
+            lambda m: m.text and m.text.startswith("text_answer_"),
         )
         router.message.register(
             self.process_text_answer,
@@ -83,16 +84,16 @@ class TextAnswerPlugin(ResponseMixin):
     def render_question(self, question, survey_id):
         """Отображает вопрос для ответа"""
         keyboard = ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text=f"text_answer_{survey_id}_{question['id']}")]],
+            keyboard=[
+                [KeyboardButton(text=f"text_answer_{survey_id}_{question['id']}")]
+            ],
             resize_keyboard=True,
             one_time_keyboard=True,
         )
 
         return {"text": question["text"], "markup": keyboard}
 
-    async def start_text_answer(
-        self, message: types.Message, state: FSMContext
-    ):
+    async def start_text_answer(self, message: types.Message, state: FSMContext):
         """Запускает процесс ввода текстового ответа"""
         parts = message.text.split("_")
         survey_id = parts[2]

@@ -36,7 +36,9 @@ class DummyPM:
 
 
 def test_plugin_list_registers_handlers():
-    module = importlib.reload(importlib.import_module("plugins_admin.plugin_list_plugin"))
+    module = importlib.reload(
+        importlib.import_module("plugins_admin.plugin_list_plugin")
+    )
     pm = DummyPM()
     plugin = module.load_plugin(plugin_manager=pm)
     router = DummyRouter()
@@ -47,7 +49,9 @@ def test_plugin_list_registers_handlers():
 
 
 def test_cmd_plugins_button_text():
-    module = importlib.reload(importlib.import_module("plugins_admin.plugin_list_plugin"))
+    module = importlib.reload(
+        importlib.import_module("plugins_admin.plugin_list_plugin")
+    )
     pm = DummyPM(["one", "two"])
     plugin = module.load_plugin(plugin_manager=pm)
     msg = DummyMessage("🔌 Плагины")

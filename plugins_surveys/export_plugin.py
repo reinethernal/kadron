@@ -24,6 +24,7 @@ __plugin_meta__ = {
 
 from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+
 try:
     from aiogram.filters import Command, Text
 except Exception:  # pragma: no cover - fallback for test stubs
@@ -31,6 +32,8 @@ except Exception:  # pragma: no cover - fallback for test stubs
 
     def Text(text):
         return lambda m: getattr(m, "text", None) == text
+
+
 from utils import remove_plugin_handlers
 
 # Импорт хранилища
@@ -54,7 +57,8 @@ class ExportPlugin:
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_export, Command("export_data"))
         router.message.register(
-            self.cmd_export, Text("\ud83d\udce6 \u042d\u043a\u0441\u043f\u043e\u0440\u0442")
+            self.cmd_export,
+            Text("\ud83d\udce6 \u042d\u043a\u0441\u043f\u043e\u0440\u0442"),
         )
         router.callback_query.register(
             self._cb_export, lambda c: c.data == "export_data"
@@ -163,9 +167,7 @@ class ExportPlugin:
         csv_data = output.getvalue()
         output.close()
         bio = io.BytesIO(csv_data.encode("utf-8"))
-        bio.name = (
-            f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.csv"
-        )
+        bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.csv"
         await callback_query.message.answer_document(
             bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}"
         )
@@ -242,9 +244,7 @@ class ExportPlugin:
         }
         json_data = json.dumps(export_data, ensure_ascii=False, indent=2)
         bio = io.BytesIO(json_data.encode("utf-8"))
-        bio.name = (
-            f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.json"
-        )
+        bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.json"
         await callback_query.message.answer_document(
             bio, caption=f"Экспорт опроса: {survey.get('title', 'Без названия')}"
         )
@@ -317,9 +317,7 @@ class ExportPlugin:
             report.append("")
         report_text = "\n".join(report)
         bio = io.BytesIO(report_text.encode("utf-8"))
-        bio.name = (
-            f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.txt"
-        )
+        bio.name = f"survey_{survey.get('id', 'export')}_{datetime.datetime.now().strftime('%Y%m%d')}.txt"
         await callback_query.message.answer_document(
             bio,
             caption=f"Текстовый отчет по опросу: {survey.get('title', 'Без названия')}",

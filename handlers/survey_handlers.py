@@ -169,6 +169,12 @@ async def start_handler(message: types.Message, bot: Bot, state: FSMContext):
         await message.answer("Произошла ошибка. Попробуйте позже.")
 
 
+# Fallback in case Command filter doesn't trigger
+router.message.register(
+    start_handler, lambda m: getattr(m, "text", "").startswith("/start")
+)
+
+
 @router.callback_query(lambda c: c.data and c.data.startswith("answer_"))
 async def answer_callback_handler(
     callback_query: types.CallbackQuery, state: FSMContext, bot: Bot

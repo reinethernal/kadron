@@ -22,11 +22,14 @@ from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
+
 try:
     from aiogram.filters import Text
 except Exception:  # pragma: no cover - fallback for test stubs
+
     def Text(text):
         return lambda m: getattr(m, "text", None) == text
+
 
 from utils.env_utils import parse_admin_ids
 from utils import remove_plugin_handlers
@@ -52,9 +55,7 @@ class AdminMenuPlugin:
 
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_admin_menu, Command("admin"))
-        router.message.register(
-            self.cmd_admin_menu, Text("Админ меню")
-        )
+        router.message.register(self.cmd_admin_menu, Text("Админ меню"))
 
     async def unregister_handlers(self, router: Router):
         remove_plugin_handlers(self, router)
@@ -69,9 +70,7 @@ class AdminMenuPlugin:
             keyboard=[[KeyboardButton(text=i["text"])] for i in items],
             resize_keyboard=True,
         )
-        await message.answer(
-            "Добро пожаловать в админ-панель.", reply_markup=keyboard
-        )
+        await message.answer("Добро пожаловать в админ-панель.", reply_markup=keyboard)
 
     async def cmd_admin_menu(self, message: types.Message, state: FSMContext):
         logger.debug(f"{message.text} from {message.from_user.id}")
@@ -80,6 +79,7 @@ class AdminMenuPlugin:
             return
         await self._show_menu(message)
         await state.clear()
+
 
 def load_plugin(plugin_manager: PluginManager):
     return AdminMenuPlugin(plugin_manager=plugin_manager)

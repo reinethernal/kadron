@@ -8,6 +8,7 @@
 from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+
 try:
     from aiogram.filters import Command, StateFilter, Text
 except Exception:  # pragma: no cover - fallback for test stubs
@@ -15,16 +16,24 @@ except Exception:  # pragma: no cover - fallback for test stubs
 
     def Text(text):
         return lambda m: getattr(m, "text", None) == text
+
+
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 import logging
 from utils import remove_plugin_handlers
 
 __plugin_meta__ = {
     "admin_menu": [
-        {"text": "\ud83d\udcca \u041c\u043e\u0438 \u043e\u043f\u0440\u043e\u0441\u044b", "callback": "view_surveys"},
+        {
+            "text": "\ud83d\udcca \u041c\u043e\u0438 \u043e\u043f\u0440\u043e\u0441\u044b",
+            "callback": "view_surveys",
+        },
     ],
     "commands": [
-        {"command": "view_surveys", "description": "\u041c\u043e\u0438 \u043e\u043f\u0440\u043e\u0441\u044b"},
+        {
+            "command": "view_surveys",
+            "description": "\u041c\u043e\u0438 \u043e\u043f\u0440\u043e\u0441\u044b",
+        },
     ],
 }
 
@@ -110,7 +119,10 @@ class ViewSurveysPlugin:
         """Регистрирует все обработчики плагина"""
         router.message.register(self.cmd_view_surveys, Command("view_surveys"))
         router.message.register(
-            self.cmd_view_surveys, Text("\ud83d\udcca \u041c\u043e\u0438 \u043e\u043f\u0440\u043e\u0441\u044b")
+            self.cmd_view_surveys,
+            Text(
+                "\ud83d\udcca \u041c\u043e\u0438 \u043e\u043f\u0440\u043e\u0441\u044b"
+            ),
         )
         router.callback_query.register(
             self._cb_view_surveys, lambda c: c.data == "view_surveys"

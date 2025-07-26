@@ -213,7 +213,11 @@ def test_admin_menu_creates_survey(monkeypatch):
     monkeypatch.setattr(
         group_mod, "unrestrict_user_if_needed", fake_unrestrict, raising=False
     )
-    monkeypatch.setattr(group_mod, "add_group", lambda gid, title: called.setdefault("group", (gid, title)))
+    monkeypatch.setattr(
+        group_mod,
+        "add_group",
+        lambda gid, title: called.setdefault("group", (gid, title)),
+    )
 
     importlib.reload(importlib.import_module("plugins_admin.admin_menu_plugin"))
 
