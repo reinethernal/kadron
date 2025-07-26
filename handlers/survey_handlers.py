@@ -3,7 +3,12 @@
 import logging
 from datetime import datetime
 from aiogram import Router, Bot, Dispatcher, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import (
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+)
 from aiogram.filters import Command, StateFilter
 from utils.env_utils import parse_admin_ids
 from aiogram.fsm.context import FSMContext
@@ -154,14 +159,9 @@ async def start_handler(message: types.Message, bot: Bot, state: FSMContext):
         admin_ids = parse_admin_ids()
         markup = None
         if message.from_user.id in admin_ids:
-            markup = InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(
-                            text="Админ меню", callback_data="admin_menu"
-                        )
-                    ]
-                ]
+            markup = ReplyKeyboardMarkup(
+                keyboard=[[KeyboardButton(text="Админ меню")]],
+                resize_keyboard=True,
             )
         await message.answer(welcome_text, reply_markup=markup)
     except Exception as e:
