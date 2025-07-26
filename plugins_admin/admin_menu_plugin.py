@@ -58,7 +58,7 @@ class AdminMenuPlugin:
         return [types.BotCommand(command="admin", description="Админ меню")]
 
     async def _show_menu(self, message: types.Message):
-        items = self.plugin_manager.get_admin_menu_items()
+        items = self.plugin_manager.get_admin_menu_items(message.from_user.id)
         logger.debug("Admin menu items: %s", items)
         keyboard = ReplyKeyboardMarkup(
             keyboard=[[KeyboardButton(text=i["text"])] for i in items],
