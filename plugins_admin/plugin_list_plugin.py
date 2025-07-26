@@ -32,6 +32,9 @@ class PluginListPlugin:
 
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_plugins, Command("plugins"))
+        router.message.register(
+            self.cmd_plugins, lambda m: m.text == "\ud83d\udd0c \u041f\u043b\u0430\u0433\u0438\u043d\u044b"
+        )
         router.callback_query.register(self.cb_plugins, lambda c: c.data == "plugins")
 
     def get_commands(self):
