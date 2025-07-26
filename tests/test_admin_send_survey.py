@@ -19,6 +19,7 @@ class DummyBot:
         class Msg:
             def __init__(self, mid):
                 self.message_id = mid
+
         return Msg(len(self.sent))
 
     async def get_me(self):
@@ -26,12 +27,14 @@ class DummyBot:
             def __init__(self, id_, username):
                 self.id = id_
                 self.username = username
+
         return Me(self.id, self.username)
 
     async def get_chat_member(self, chat_id, user_id):
         class Member:
             status = "administrator"
             can_pin_messages = True
+
         return Member()
 
     async def pin_chat_message(self, chat_id, message_id, **kwargs):

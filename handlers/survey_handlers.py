@@ -168,6 +168,7 @@ async def start_handler(message: types.Message, bot: Bot, state: FSMContext):
         logger.exception(f"Ошибка в обработчике /start: {e}")
         await message.answer("Произошла ошибка. Попробуйте позже.")
 
+
 # Fallback in case Command filter doesn't trigger
 router.message.register(
     start_handler, lambda m: getattr(m, "text", "").startswith("/start")

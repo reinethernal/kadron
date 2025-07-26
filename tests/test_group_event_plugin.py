@@ -28,12 +28,20 @@ class DummyEvent:
 
 
 def test_group_added_on_member_update(monkeypatch):
-    module = importlib.reload(importlib.import_module("plugins_admin.group_event_plugin"))
+    module = importlib.reload(
+        importlib.import_module("plugins_admin.group_event_plugin")
+    )
     plugin = module.load_plugin(bot=DummyBot())
 
     added = {}
-    monkeypatch.setattr(module, "add_group", lambda gid, title: added.update({"id": gid, "title": title}))
-    monkeypatch.setattr(module, "storage", type("S", (), {"get_setting": lambda self, k, d=None: d})())
+    monkeypatch.setattr(
+        module,
+        "add_group",
+        lambda gid, title: added.update({"id": gid, "title": title}),
+    )
+    monkeypatch.setattr(
+        module, "storage", type("S", (), {"get_setting": lambda self, k, d=None: d})()
+    )
 
     event = DummyEvent(plugin.bot, 42, 10, title="G")
     asyncio.run(plugin.on_new_chat_member(event))

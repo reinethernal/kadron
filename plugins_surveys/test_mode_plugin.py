@@ -3,6 +3,7 @@ from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+
 try:
     from aiogram.filters import Command, Text
 except Exception:  # pragma: no cover - fallback for test stubs
@@ -10,16 +11,24 @@ except Exception:  # pragma: no cover - fallback for test stubs
 
     def Text(text):
         return lambda m: getattr(m, "text", None) == text
+
+
 import logging
 import copy
 from utils import remove_plugin_handlers
 
 __plugin_meta__ = {
     "admin_menu": [
-        {"text": "\ud83e\uddea \u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0440\u0435\u0436\u0438\u043c", "callback": "test_mode"},
+        {
+            "text": "\ud83e\uddea \u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0440\u0435\u0436\u0438\u043c",
+            "callback": "test_mode",
+        },
     ],
     "commands": [
-        {"command": "test_mode", "description": "\u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0440\u0435\u0436\u0438\u043c"},
+        {
+            "command": "test_mode",
+            "description": "\u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0440\u0435\u0436\u0438\u043c",
+        },
     ],
 }
 
@@ -44,7 +53,9 @@ class SurveyTestModePlugin:
         router.message.register(self.cmd_test_mode, Command("test_mode"))
         router.message.register(
             self.cmd_test_mode,
-            Text("\ud83e\uddea \u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0440\u0435\u0436\u0438\u043c"),
+            Text(
+                "\ud83e\uddea \u0422\u0435\u0441\u0442\u043e\u0432\u044b\u0439 \u0440\u0435\u0436\u0438\u043c"
+            ),
         )
         router.callback_query.register(
             self.handle_survey_selection, lambda c: c.data.startswith("test_survey_")

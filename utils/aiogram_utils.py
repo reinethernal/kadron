@@ -24,7 +24,9 @@ async def try_pin_message(bot: Bot, chat_id: int, message_id: int) -> None:
     try:
         me = await bot.get_me()
         member = await bot.get_chat_member(chat_id, me.id)
-        can_pin = getattr(member, "can_pin_messages", False) or member.status == "creator"
+        can_pin = (
+            getattr(member, "can_pin_messages", False) or member.status == "creator"
+        )
         if can_pin:
             await bot.pin_chat_message(
                 chat_id=chat_id, message_id=message_id, disable_notification=False

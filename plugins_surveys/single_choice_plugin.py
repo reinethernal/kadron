@@ -69,11 +69,7 @@ class SingleChoicePlugin(ResponseMixin):
     def render_question(self, question, survey_id):
         keyboard = ReplyKeyboardMarkup(
             keyboard=[
-                [
-                    KeyboardButton(
-                        text=f"single_choice_{survey_id}_{question['id']}_{i}"
-                    )
-                ]
+                [KeyboardButton(text=f"single_choice_{survey_id}_{question['id']}_{i}")]
                 for i, _ in enumerate(question["options"])
             ],
             resize_keyboard=True,
@@ -81,9 +77,7 @@ class SingleChoicePlugin(ResponseMixin):
         )
         return {"text": question["text"], "markup": keyboard}
 
-    async def process_single_choice_selection(
-        self, message: types.Message
-    ):
+    async def process_single_choice_selection(self, message: types.Message):
         parts = message.text.split("_")
         survey_id = parts[2]
         question_id = parts[3]

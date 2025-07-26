@@ -84,20 +84,10 @@ class MultipleChoicePlugin(ResponseMixin):
         """Отрисовывает вопрос для ответа пользователя"""
         keyboard = ReplyKeyboardMarkup(
             keyboard=[
-                [
-                    KeyboardButton(
-                        text=f"multi_choice_{survey_id}_{question['id']}_{i}"
-                    )
-                ]
+                [KeyboardButton(text=f"multi_choice_{survey_id}_{question['id']}_{i}")]
                 for i, _ in enumerate(question["options"])
             ]
-            + [
-                [
-                    KeyboardButton(
-                        text=f"multi_submit_{survey_id}_{question['id']}"
-                    )
-                ]
-            ],
+            + [[KeyboardButton(text=f"multi_submit_{survey_id}_{question['id']}")]],
             resize_keyboard=True,
             one_time_keyboard=True,
         )

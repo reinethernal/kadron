@@ -1,6 +1,7 @@
 """Plugin that lists loaded plugins."""
 
 from aiogram import Router, types
+
 try:
     from aiogram.filters import Command, Text
 except Exception:  # pragma: no cover - fallback for test stubs
@@ -8,6 +9,7 @@ except Exception:  # pragma: no cover - fallback for test stubs
 
     def Text(text):
         return lambda m: getattr(m, "text", None) == text
+
 
 from plugin_manager import PluginManager
 from utils import remove_plugin_handlers
@@ -39,7 +41,8 @@ class PluginListPlugin:
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_plugins, Command("plugins"))
         router.message.register(
-            self.cmd_plugins, Text("\ud83d\udd0c \u041f\u043b\u0430\u0433\u0438\u043d\u044b")
+            self.cmd_plugins,
+            Text("\ud83d\udd0c \u041f\u043b\u0430\u0433\u0438\u043d\u044b"),
         )
         router.callback_query.register(self.cb_plugins, lambda c: c.data == "plugins")
 
