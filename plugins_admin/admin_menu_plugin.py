@@ -1,8 +1,8 @@
 """
 Admin menu plugin providing access to other plugin features.
 
-The inline keyboard is built dynamically based on meta-data declared in
-loaded plugins. Each plugin can expose menu entries via ``__plugin_meta__``
+The menu is built with ReplyKeyboardMarkup dynamically based on meta-data
+declared in loaded plugins. Each plugin can expose menu entries via ``__plugin_meta__``
 variable:
 
 __plugin_meta__ = {
