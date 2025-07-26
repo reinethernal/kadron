@@ -65,7 +65,7 @@ def test_admin_menu_collects_menu_items(monkeypatch):
         pm_module.Dispatcher(), pm_module.Bot(), router=pm_module.Router()
     )
     asyncio.run(pm.load_plugins())
-    items = pm.get_admin_menu_items()
+    items = pm.get_admin_menu_items(user_id=1)
     callbacks = {i["callback"] for i in items}
 
     expected = set()

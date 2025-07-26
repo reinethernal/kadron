@@ -50,8 +50,8 @@ def test_admin_menu_shows_items(monkeypatch):
         def __init__(self):
             self.called = False
 
-        def get_admin_menu_items(self):
-            self.called = True
+        def get_admin_menu_items(self, user_id=None):
+            self.called = user_id
             return [
                 {"text": "Создать опрос", "callback": "create"},
                 {"text": "Экспорт данных", "callback": "export"},
@@ -64,5 +64,5 @@ def test_admin_menu_shows_items(monkeypatch):
     msg = DummyMessage("/admin", user_id=1)
     asyncio.run(plugin.cmd_admin_menu(msg, state))
 
-    assert pm.called
+    assert pm.called == 1
     assert "Добро пожаловать" in msg.responses[0]

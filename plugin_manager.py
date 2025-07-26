@@ -265,9 +265,17 @@ class PluginManager:
     def get_all_plugins(self) -> Dict[str, Any]:
         return self.plugins
 
-    def get_admin_menu_items(self) -> List[Dict[str, str]]:
-        """Собирает пункты административного меню из мета-данных плагинов."""
+    def get_admin_menu_items(self, user_id: int | None = None) -> List[Dict[str, str]]:
+        """Собирает пункты административного меню из мета-данных плагинов.
+
+        Если указан ``user_id``, то элементы меню фильтруются в соответствии с
+        разрешениями пользователя с помощью плагина ``roles_plugin``. В каждом
+        элементе ``admin_menu`` может быть указан необязательный ключ
+        ``permission``. Если он присутствует, то соответствующий пункт меню будет
+        показан только если у пользователя есть данное разрешение.
+        """
         items: List[Dict[str, str]] = []
+        roles = self.plugins.get("roles_plugin") if user_id is not None else None
         for name, plugin in self.plugins.items():
             meta = getattr(plugin, "__plugin_meta__", None)
             if not meta:
@@ -279,16 +287,35 @@ class PluginManager:
                 logger.warning(f"admin_menu в плагине {name} должен быть списком")
                 continue
             for item in menu:
-                if (
+                if not (
                     isinstance(item, dict)
                     and isinstance(item.get("text"), str)
                     and isinstance(item.get("callback"), str)
                 ):
-                    items.append({"text": item["text"], "callback": item["callback"]})
-                else:
                     logger.warning(
                         f"Неверный элемент admin_menu в плагине {name}: {item}"
                     )
+                    continue
+
+                permission = item.get("permission")
+                if (
+                    roles is not None
+                    and permission is not None
+                    and hasattr(roles, "has_permission")
+                ):
+                    try:
+                        if not roles.has_permission(user_id, permission):
+                            continue
+                    except Exception as e:  # pragma: no cover - unexpected errors
+                        logger.warning(
+                            "Ошибка проверки разрешения %s для пользователя %s: %s",
+                            permission,
+                            user_id,
+                            e,
+                        )
+                        continue
+
+                items.append({"text": item["text"], "callback": item["callback"]})
         return items
 
     def get_all_commands(self) -> List[BotCommand]:
