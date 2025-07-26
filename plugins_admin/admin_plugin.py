@@ -7,7 +7,13 @@ Admin Plugin для Telegram бота.
 import logging
 from aiogram.client.bot import Bot
 from aiogram import Router, types
-from aiogram.filters import Command
+try:
+    from aiogram.filters import Command, Text
+except Exception:  # pragma: no cover - fallback for test stubs
+    from aiogram.filters import Command
+
+    def Text(text):
+        return lambda m: getattr(m, "text", None) == text
 
 from core.db_manager import get_all_groups, get_poll_by_id
 from utils.env_utils import parse_admin_ids
@@ -38,7 +44,8 @@ class AdminPlugin:
         """Регистрирует обработчики административных команд"""
         router.message.register(self.cmd_send_survey, Command("send_survey"))
         router.message.register(
-            self.cmd_send_survey, lambda msg: msg.text == "\ud83d\udcec \u0420\u0430\u0441\u0441\u044b\u043b\u043a\u0430"
+            self.cmd_send_survey,
+            Text("\ud83d\udcec \u0420\u0430\u0441\u0441\u044b\u043b\u043a\u0430"),
         )
         router.callback_query.register(
             self._cb_send_survey,

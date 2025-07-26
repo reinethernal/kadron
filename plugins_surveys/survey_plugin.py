@@ -8,7 +8,13 @@ from aiogram import Router, types
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.filters import StateFilter
+try:
+    from aiogram.filters import StateFilter, Text
+except Exception:  # pragma: no cover - fallback for test stubs
+    from aiogram.filters import StateFilter
+
+    def Text(text):
+        return lambda m: getattr(m, "text", None) == text
 import uuid
 from datetime import datetime, timedelta, time
 import asyncio
@@ -76,7 +82,7 @@ class SurveyPlugin:
         # Обработчики создания опроса
         # вход через меню администратора
         router.message.register(
-            self.cmd_create_survey, lambda msg: msg.text == "Создать опрос"
+            self.cmd_create_survey, Text("Создать опрос")
         )
         router.message.register(self.process_title, StateFilter(SurveyStates.TITLE))
         router.message.register(
@@ -139,7 +145,7 @@ class SurveyPlugin:
         # Обработчики управления опросами
         # просмотр доступен через меню
         router.message.register(
-            self.cmd_view_surveys, lambda msg: msg.text == "Мои опросы"
+            self.cmd_view_surveys, Text("Мои опросы")
         )
         router.callback_query.register(
             self.process_survey_action, lambda c: c.data.startswith("survey_")
