@@ -47,8 +47,8 @@ class AdminMenuPlugin:
 
     async def register_handlers(self, router: Router):
         router.message.register(self.cmd_admin_menu, Command("admin"))
-        router.callback_query.register(
-            self.admin_menu_callback, lambda c: c.data == "admin_menu"
+        router.message.register(
+            self.cmd_admin_menu, lambda m: m.text == "Админ меню"
         )
 
     async def unregister_handlers(self, router: Router):
@@ -75,17 +75,6 @@ class AdminMenuPlugin:
             return
         await self._show_menu(message)
         await state.clear()
-
-    async def admin_menu_callback(
-        self, callback_query: types.CallbackQuery, state: FSMContext
-    ):
-        if callback_query.from_user.id not in self.admin_ids:
-            await callback_query.answer("Нет доступа")
-            return
-        await self._show_menu(callback_query.message)
-        await callback_query.answer()
-        await state.clear()
-
 
 def load_plugin(plugin_manager: PluginManager):
     return AdminMenuPlugin(plugin_manager=plugin_manager)
