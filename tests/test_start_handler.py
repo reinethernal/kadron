@@ -69,3 +69,19 @@ def test_start_handler_with_survey(monkeypatch):
     asyncio.run(module.start_handler(msg, bot, state))
 
     assert called.get("poll") == (1, 7)
+
+
+def test_start_handler_fallback(monkeypatch):
+    """start_handler should work for plain text '/start'."""
+    module = importlib.reload(importlib.import_module("handlers.survey_handlers"))
+    monkeypatch.setattr(module, "get_questions", lambda pid: [])
+    monkeypatch.setattr(module, "get_welcome_message", lambda: None)
+    monkeypatch.setattr(module, "update_user_activity", lambda u, x=None: None)
+
+    bot = DummyBot()
+    state = DummyState()
+    msg = DummyMessage("/start")
+
+    asyncio.run(module.start_handler(msg, bot, state))
+
+    assert msg.responses and "Добро пожаловать" in msg.responses[0]
