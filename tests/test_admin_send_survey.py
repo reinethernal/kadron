@@ -15,6 +15,7 @@ class DummyBot:
 
     async def send_message(self, chat_id, text, **kwargs):
         self.sent.append((chat_id, text))
+
         class Msg:
             def __init__(self, mid):
                 self.message_id = mid

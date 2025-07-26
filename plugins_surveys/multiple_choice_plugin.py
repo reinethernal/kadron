@@ -8,7 +8,7 @@
 import logging
 
 from aiogram import Router
-from aiogram.types import CallbackQuery, Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from core.db_manager import add_response
 from .response_mixin import ResponseMixin
 from utils import remove_plugin_handlers
@@ -160,7 +160,6 @@ class MultipleChoicePlugin(ResponseMixin):
             (q for q in survey["questions"] if q["id"] == question_id), None
         )
         if question:
-            options = question["options"]
             await message.answer("Вариант отмечен")
 
         await message.answer("Выберите следующее действие или подтвердите выбор")

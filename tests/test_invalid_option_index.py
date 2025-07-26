@@ -43,8 +43,6 @@ class DummyMessage:
         pass
 
 
-
-
 def setup_single(monkeypatch):
     mod = importlib.reload(
         importlib.import_module("plugins_surveys.single_choice_plugin")

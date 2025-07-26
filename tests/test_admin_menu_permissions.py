@@ -1,9 +1,10 @@
 import plugin_manager as pm_module
-import aiogram
+
 
 class DummyRoles:
     def has_permission(self, user_id, perm):
         return user_id == 1 and perm == "allow"
+
 
 class DummyPlugin:
     __plugin_meta__ = {
@@ -13,6 +14,7 @@ class DummyPlugin:
             {"text": "C", "callback": "c"},
         ]
     }
+
     async def register_handlers(self, router):
         pass
 

@@ -81,5 +81,6 @@ class AdminMenuPlugin:
         await self._show_menu(message)
         await state.clear()
 
+
 def load_plugin(plugin_manager: PluginManager):
     return AdminMenuPlugin(plugin_manager=plugin_manager)
