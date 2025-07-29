@@ -204,6 +204,11 @@ class ExportPlugin:
             )
             grouped[key].append({"question": question_text, "answer": answer})
 
+        if not grouped:
+            await callback_query.message.edit_text("Нет данных для экспорта.")
+            await callback_query.answer()
+            return
+
         filename = None
         for key, resp_list in grouped.items():
             user_id, username, group_id, group_name, timestamp = key
