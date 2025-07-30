@@ -79,3 +79,27 @@ def test_export_excel_file(tmp_path, monkeypatch):
         "Question",
         "Answer",
     ]
+
+
+def test_export_excel_no_data(tmp_path, monkeypatch):
+    monkeypatch.setitem(sys.modules, "pandas", real_pandas)
+    monkeypatch.setitem(sys.modules, "openpyxl", real_openpyxl)
+    importlib.reload(data_manager)
+    monkeypatch.setattr(data_manager, "DATA_FOLDER", str(tmp_path))
+
+    mod = importlib.reload(importlib.import_module("plugins_surveys.export_plugin"))
+    plugin = mod.load_plugin()
+
+    survey = {
+        "id": "s1",
+        "title": "Survey 1",
+        "questions": [{"id": "q1", "text": "Q1", "type": "text_answer"}],
+        "responses": [],
+    }
+
+    cb = DummyCallback()
+    asyncio.run(plugin.export_excel(cb, survey))
+
+    # No document should be sent and no file created
+    assert cb.message.docs == []
+    assert list(tmp_path.iterdir()) == []
