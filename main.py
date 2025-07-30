@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+from pathlib import Path
 
 from aiogram import __version__ as aiogram_version
 from aiogram import Dispatcher, Router
@@ -19,7 +20,7 @@ from plugin_manager import PluginManager, MissingRequiredPluginsError
 from routers.menu_router import router as menu_router
 from handlers.survey_handlers import register_survey_handlers
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().with_name(".env"))
 
 try:
     from aiogram.client.bot import Bot, DefaultBotProperties
