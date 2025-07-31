@@ -20,7 +20,8 @@ from plugin_manager import PluginManager, MissingRequiredPluginsError
 from routers.menu_router import router as menu_router
 from handlers.survey_handlers import register_survey_handlers
 
-load_dotenv(Path(__file__).resolve().with_name(".env"))
+ENV_PATH = Path(__file__).resolve().with_name(".env")
+load_dotenv(ENV_PATH)
 
 try:
     from aiogram.client.bot import Bot, DefaultBotProperties
@@ -40,7 +41,7 @@ if parse_version(aiogram_version).major != 3:
         "Kadron requires aiogram 3.x. Install dependencies via pip install -r requirements.txt."
     )
 
-if not os.path.exists(".env"):
+if not ENV_PATH.exists():
     logging.warning("Файл .env не найден; переменные окружения не загружены")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
